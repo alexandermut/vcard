@@ -1,5 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIProvider, Language } from "../types";
+import { scanCardWithCustomLLM } from "./customLlmService";
+import type { LLMConfig } from "../hooks/useLLMConfig";
 
 // Helper to generate dynamic prompts based on language and context
 const getSystemPrompt = (lang: Language, mode: 'text' | 'vision', isUpdate = false): string => {
@@ -106,18 +108,18 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision', isUpdate = fal
 
 export const correctVCard = async (input: string, provider: AIProvider, apiKey: string, lang: Language): Promise<string> => {
   if (!apiKey) throw new Error("MISSING_KEY");
-  
+
   // Check if this is an update request
   const isUpdate = input.startsWith('VCARD_UPDATE_REQUEST|');
   let contentToSend = input;
-  
+
   if (isUpdate) {
-      const parts = input.split('|');
-      if (parts.length >= 3) {
-          const currentVCard = parts[1];
-          const instructions = parts.slice(2).join('|');
-          contentToSend = `EXISTING VCARD:\n${currentVCard}\n\nUSER INSTRUCTIONS:\n${instructions}`;
-      }
+    const parts = input.split('|');
+    if (parts.length >= 3) {
+      const currentVCard = parts[1];
+      const instructions = parts.slice(2).join('|');
+      contentToSend = `EXISTING VCARD:\n${currentVCard}\n\nUSER INSTRUCTIONS:\n${instructions}`;
+    }
   }
 
   return callGeminiWithRetry(contentToSend, apiKey, 'text', lang, 0, isUpdate);
@@ -128,7 +130,23 @@ export interface ImageInput {
   mimeType: string;
 }
 
-export const scanBusinessCard = async (images: ImageInput[], provider: AIProvider, apiKey: string, lang: Language): Promise<string> => {
+export const scanBusinessCard = async (
+  images: ImageInput[],
+  provider: AIProvider,
+  apiKey: string,
+  lang: Language,
+  llmConfig?: LLMConfig
+): Promise<string> => {
+  // Route to custom LLM if configured
+  if (llmConfig && llmConfig.provider === 'custom') {
+    return scanCardWithCustomLLM(images, {
+      baseUrl: llmConfig.customBaseUrl,
+      apiKey: llmConfig.customApiKey,
+      model: llmConfig.customModel,
+    }, lang);
+  }
+
+  // Default to Google Gemini
   if (!apiKey) throw new Error("MISSING_KEY");
   if (images.length === 0) throw new Error("NO_IMAGES");
   return callGeminiWithRetry(images, apiKey, 'vision', lang);
@@ -137,22 +155,22 @@ export const scanBusinessCard = async (images: ImageInput[], provider: AIProvide
 // --- INTERNAL LOGIC ---
 
 const callGeminiWithRetry = async (
-  input: string | ImageInput[], 
-  apiKey: string, 
+  input: string | ImageInput[],
+  apiKey: string,
   mode: 'text' | 'vision',
   lang: Language,
   retryCount = 0,
   isUpdate = false
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey });
-  
+
   // Use gemini-3-pro-preview for best reasoning and extraction quality
-  const modelName = 'gemini-3-pro-preview'; 
+  const modelName = 'gemini-3-pro-preview';
 
   const systemPrompt = getSystemPrompt(lang, mode, isUpdate);
 
   let promptConfig: any;
-  
+
   if (mode === 'text') {
     promptConfig = {
       contents: [
@@ -193,7 +211,7 @@ const callGeminiWithRetry = async (
 
     // --- SELF-CORRECTION LOOP ---
     const isValid = result.includes('BEGIN:VCARD') && result.includes('END:VCARD');
-    
+
     if (!isValid && retryCount < 1) {
       console.warn("AI produced invalid vCard. Attempting self-correction...", result);
       const fixPrompt = `
@@ -205,7 +223,7 @@ const callGeminiWithRetry = async (
         Previous Bad Output:
         ${result}
       `;
-      
+
       // Recursive retry with simple text prompt
       return callGeminiWithRetry(fixPrompt, apiKey, 'text', lang, retryCount + 1);
     }
@@ -223,10 +241,10 @@ const cleanResponse = (text: string): string => {
     .replace(/```vcard/gi, '')
     .replace(/```/g, '')
     .trim();
-    
+
   if (cleaned.toLowerCase().startsWith('vcard:')) {
     cleaned = cleaned.substring(6).trim();
   }
-  
+
   return cleaned;
 };

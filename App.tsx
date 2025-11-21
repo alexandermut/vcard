@@ -15,6 +15,7 @@ import { HistoryItem, Language, VCardData } from './types';
 import { translations } from './utils/translations';
 import { runSelfTests } from './utils/tests';
 import { useScanQueue } from './hooks/useScanQueue';
+import { useLLMConfig } from './hooks/useLLMConfig';
 import { clean_number } from './utils/regexParser'; // Import helper for phone matching
 
 const App: React.FC = () => {
@@ -61,6 +62,9 @@ const App: React.FC = () => {
   // Settings State
   const [apiKey, setApiKey] = useState('');
   const [hasSystemKey, setHasSystemKey] = useState(false);
+
+  // LLM Configuration
+  const { config: llmConfig, setProvider, setCustomConfig, setOllamaDefaults } = useLLMConfig();
 
   // Run Tests on Mount (Dev/Safety check)
   useEffect(() => {
@@ -278,7 +282,7 @@ const App: React.FC = () => {
   }, []);
 
   // --- SCAN QUEUE ---
-  const { queue, addJob } = useScanQueue(getKeyToUse(), lang, (vcard, images) => {
+  const { queue, addJob } = useScanQueue(getKeyToUse(), lang, llmConfig, (vcard, images) => {
     // Background job completed
     addToHistory(vcard, undefined, images);
   });
@@ -425,6 +429,13 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         setIsDarkMode={setIsDarkMode}
         errorMessage={error}
+        llmProvider={llmConfig.provider}
+        setLLMProvider={setProvider}
+        customBaseUrl={llmConfig.customBaseUrl}
+        customApiKey={llmConfig.customApiKey}
+        customModel={llmConfig.customModel}
+        setCustomConfig={setCustomConfig}
+        onOllamaDefaults={setOllamaDefaults}
       />
 
       <ScanModal

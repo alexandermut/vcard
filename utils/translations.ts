@@ -10,7 +10,7 @@ export const translations = {
     invalid: "Ungültig",
     saveHistory: "In Verlauf speichern",
     showQR: "QR Code anzeigen",
-    
+
     // Editor
     textTab: "Text-Eingabe",
     codeTab: "vCard Code",
@@ -26,7 +26,7 @@ export const translations = {
     enrichHint: "Die KI aktualisiert die bestehende vCard basierend auf Ihren Anweisungen.",
     chars: "Zeichen",
     lines: "Zeilen",
-    
+
     // Preview
     noCard: "Keine gültige vCard erkannt",
     noCardHint: "Beginnen Sie mit 'BEGIN:VCARD' und beenden Sie mit 'END:VCARD'.",
@@ -58,7 +58,7 @@ export const translations = {
     batchMode: "Stapel",
     addToQueue: "Scan & Weiter",
     batchHint: "Scannen Sie Karten nacheinander. Sie werden im Hintergrund verarbeitet.",
-    
+
     // Queue
     batchQueue: "Verarbeitung",
     processing: "Verarbeite...",
@@ -75,6 +75,12 @@ export const translations = {
     orManual: "oder manuell",
     apiKeyLabel: "Gemini API Key",
     generateKey: "Key generieren",
+    llmProvider: "LLM Anbieter",
+    googleDefault: "Google Gemini (Standard)",
+    customLLM: "Custom / Lokales LLM",
+    baseUrl: "Base URL",
+    modelName: "Modell Name",
+    ollamaDefaults: "Ollama Standardwerte",
     cancel: "Abbrechen",
     saveSettings: "Einstellungen speichern",
 
@@ -88,7 +94,7 @@ export const translations = {
     imgExport: "Bilder (ZIP)",
     clearHistory: "Verlauf leeren",
     confirmClear: "Verlauf wirklich leeren?",
-    
+
     // Social Search
     socialTitle: "Social Media Recherche",
     searchParams: "Suchparameter",
@@ -116,7 +122,7 @@ export const translations = {
     invalid: "Invalid",
     saveHistory: "Save to History",
     showQR: "Show QR Code",
-    
+
     // Editor
     textTab: "Text Input",
     codeTab: "vCard Code",
@@ -132,7 +138,7 @@ export const translations = {
     enrichHint: "The AI updates the existing vCard based on your instructions.",
     chars: "Chars",
     lines: "Lines",
-    
+
     // Preview
     noCard: "No valid vCard detected",
     noCardHint: "Start with 'BEGIN:VCARD' and end with 'END:VCARD'.",
@@ -164,7 +170,7 @@ export const translations = {
     batchMode: "Batch",
     addToQueue: "Scan & Next",
     batchHint: "Scan cards one by one. They are processed in the background.",
-    
+
     // Queue
     batchQueue: "Processing",
     processing: "Processing...",
@@ -181,6 +187,12 @@ export const translations = {
     orManual: "or manually",
     apiKeyLabel: "Gemini API Key",
     generateKey: "Generate Key",
+    llmProvider: "LLM Provider",
+    googleDefault: "Google Gemini (Default)",
+    customLLM: "Custom / Local LLM",
+    baseUrl: "Base URL",
+    modelName: "Model Name",
+    ollamaDefaults: "Use Ollama Defaults",
     cancel: "Cancel",
     saveSettings: "Save Settings",
 
@@ -194,7 +206,7 @@ export const translations = {
     imgExport: "Images (ZIP)",
     clearHistory: "Clear History",
     confirmClear: "Really clear history?",
-    
+
     // Social Search
     socialTitle: "Social Media Research",
     searchParams: "Search Parameters",

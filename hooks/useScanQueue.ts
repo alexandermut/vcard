@@ -2,8 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { ScanJob } from '../types';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { Language } from '../types';
+import type { LLMConfig } from './useLLMConfig';
 
-export const useScanQueue = (apiKey: string, lang: Language, onJobComplete: (vcard: string, images?: string[]) => void) => {
+export const useScanQueue = (
+  apiKey: string,
+  lang: Language,
+  llmConfig: LLMConfig,
+  onJobComplete: (vcard: string, images?: string[]) => void
+) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -33,7 +39,7 @@ export const useScanQueue = (apiKey: string, lang: Language, onJobComplete: (vca
     try {
       const images: ImageInput[] = [];
       const rawImages: string[] = [job.frontImage];
-      
+
       // Helper to strip data url prefix
       const toInput = (dataUrl: string): ImageInput => {
         const parts = dataUrl.split(',');
@@ -46,14 +52,14 @@ export const useScanQueue = (apiKey: string, lang: Language, onJobComplete: (vca
 
       images.push(toInput(job.frontImage));
       if (job.backImage) {
-          images.push(toInput(job.backImage));
-          rawImages.push(job.backImage);
+        images.push(toInput(job.backImage));
+        rawImages.push(job.backImage);
       }
 
-      const vcard = await scanBusinessCard(images, 'gemini', apiKey, lang);
+      const vcard = await scanBusinessCard(images, 'gemini', apiKey, lang, llmConfig);
 
       onJobComplete(vcard, rawImages);
-      
+
       setQueue(prev => prev.filter(j => j.id !== job.id));
 
     } catch (error: any) {
@@ -63,7 +69,7 @@ export const useScanQueue = (apiKey: string, lang: Language, onJobComplete: (vca
     } finally {
       setIsProcessing(false);
     }
-  }, [queue, isProcessing, apiKey, lang, onJobComplete]);
+  }, [queue, isProcessing, apiKey, lang, llmConfig, onJobComplete]);
 
   // Watch queue and trigger processing
   useEffect(() => {
@@ -77,7 +83,7 @@ export const useScanQueue = (apiKey: string, lang: Language, onJobComplete: (vca
   };
 
   const clearCompleted = () => {
-      setQueue(prev => prev.filter(j => j.status !== 'completed'));
+    setQueue(prev => prev.filter(j => j.status !== 'completed'));
   };
 
   return {
