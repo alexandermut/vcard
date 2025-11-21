@@ -328,7 +328,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const corrected = await correctVCard(inputToSend, 'gemini', keyToUse, lang);
+      const corrected = await correctVCard(inputToSend, 'google', keyToUse, lang);
 
       const check = parseVCardString(corrected);
       const hasContent = check.data.fn || check.data.org;

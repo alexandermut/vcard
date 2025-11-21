@@ -27,7 +27,7 @@ export interface ParsedVCard {
   isValid: boolean;
 }
 
-export type AIProvider = 'gemini';
+export type AIProvider = 'google' | 'custom';
 
 export type Language = 'de' | 'en';
 

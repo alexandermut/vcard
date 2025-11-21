@@ -56,7 +56,7 @@ export const useScanQueue = (
         rawImages.push(job.backImage);
       }
 
-      const vcard = await scanBusinessCard(images, 'gemini', apiKey, lang, llmConfig);
+      const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig);
 
       onJobComplete(vcard, rawImages);
 
