@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact } from 'lucide-react';
+import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload } from 'lucide-react';
 import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { SettingsModal } from './components/SettingsModal';
 import { ScanModal } from './components/ScanModal';
+import { BatchUploadModal } from './components/BatchUploadModal';
 import { QRCodeModal } from './components/QRCodeModal';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SocialSearchModal } from './components/SocialSearchModal';
@@ -27,6 +28,7 @@ const App: React.FC = () => {
   // Modals & UI State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isScanOpen, setIsScanOpen] = useState(false);
+  const [isBatchUploadOpen, setIsBatchUploadOpen] = useState(false);
   const [isQROpen, setIsQROpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSocialSearchOpen, setIsSocialSearchOpen] = useState(false);
@@ -282,7 +284,7 @@ const App: React.FC = () => {
   }, []);
 
   // --- SCAN QUEUE ---
-  const { queue, addJob } = useScanQueue(getKeyToUse(), lang, llmConfig, (vcard, images) => {
+  const { queue, addJob, removeJob } = useScanQueue(getKeyToUse(), lang, llmConfig, (vcard, images) => {
     // Background job completed
     addToHistory(vcard, undefined, images);
   });
@@ -373,6 +375,30 @@ const App: React.FC = () => {
     }
   };
 
+  const handleOpenBatchUpload = () => {
+    const hasGoogleKey = getKeyToUse() || hasSystemKey;
+    const hasCustomLLM = llmConfig.provider === 'custom' && llmConfig.customBaseUrl && llmConfig.customModel;
+
+    if (hasGoogleKey || hasCustomLLM) {
+      setIsBatchUploadOpen(true);
+    } else {
+      setIsSettingsOpen(true);
+      setError(t.configError);
+    }
+  };
+
+  const handleBatchUploadFiles = async (files: File[]) => {
+    // Convert each file to data URL and add to queue
+    for (const file of files) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        addJob(dataUrl, null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleImageDrop = (file: File) => {
     // Allow scan if Google key OR custom LLM is configured
     const hasGoogleKey = getKeyToUse() || hasSystemKey;
@@ -444,6 +470,15 @@ const App: React.FC = () => {
         customModel={llmConfig.customModel}
         setCustomConfig={setCustomConfig}
         onOllamaDefaults={setOllamaDefaults}
+      />
+
+      <BatchUploadModal
+        isOpen={isBatchUploadOpen}
+        onClose={() => setIsBatchUploadOpen(false)}
+        onAddJobs={handleBatchUploadFiles}
+        queue={queue}
+        onRemoveJob={removeJob}
+        lang={lang}
       />
 
       <ScanModal
@@ -546,6 +581,15 @@ const App: React.FC = () => {
             >
               <Camera size={18} />
               <span className="hidden lg:inline text-sm">{t.scan}</span>
+            </button>
+
+            <button
+              onClick={handleOpenBatchUpload}
+              className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              title={t.batchUpload}
+            >
+              <Upload size={18} />
+              <span className="hidden lg:inline text-sm">{t.batchUpload}</span>
             </button>
 
             {parsedData.isValid ? (
