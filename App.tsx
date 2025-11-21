@@ -8,6 +8,7 @@ import { QRCodeModal } from './components/QRCodeModal';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SocialSearchModal } from './components/SocialSearchModal';
 import { QueueIndicator } from './components/QueueIndicator';
+import { LegalModal } from './components/LegalModal';
 import { DEFAULT_VCARD, parseVCardString, downloadVCard, generateVCardFromData, generateContactFilename } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { HistoryItem, Language, VCardData } from './types';
@@ -29,6 +30,8 @@ const App: React.FC = () => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSocialSearchOpen, setIsSocialSearchOpen] = useState(false);
   const [searchPlatform, setSearchPlatform] = useState<string>('LINKEDIN');
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'imprint' | 'privacy'>('imprint');
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   // Current Images State (to show in preview)
@@ -461,6 +464,12 @@ const App: React.FC = () => {
         lang={lang}
       />
 
+      <LegalModal
+        isOpen={isLegalOpen}
+        onClose={() => setIsLegalOpen(false)}
+        initialTab={legalTab}
+      />
+
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -498,8 +507,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setIsSettingsOpen(true)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all border ${isAIReady
-                  ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                  : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
+                ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
                 }`}
             >
               {isAIReady ? <UserCircle size={18} className="text-green-600 dark:text-green-500" /> : <Settings size={18} />}
@@ -601,9 +610,9 @@ const App: React.FC = () => {
             &copy; {new Date().getFullYear()} {t.appTitle}
           </div>
           <div className="flex gap-4 sm:gap-6">
-            <a href="impressum.html" target="_blank" rel="noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</a>
+            <button onClick={() => { setLegalTab('imprint'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</button>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <a href="datenschutz.html" target="_blank" rel="noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</a>
+            <button onClick={() => { setLegalTab('privacy'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</button>
           </div>
         </div>
       </footer>
