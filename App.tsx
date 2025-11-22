@@ -653,7 +653,7 @@ const App: React.FC = () => {
       <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 py-4 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
           <div>
-            &copy; {new Date().getFullYear()} {t.appTitle}
+            &copy; {__APP_VERSION__} {t.appTitle}
           </div>
           <div className="flex gap-4 sm:gap-6">
             <button onClick={() => { setLegalTab('imprint'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</button>

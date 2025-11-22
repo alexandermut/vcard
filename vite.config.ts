@@ -18,4 +18,7 @@ export default defineConfig({
       },
     },
   },
+  define: {
+    __APP_VERSION__: JSON.stringify(new Date().toISOString().replace(/T/, '-').replace(/\..+/, '').replace(/:/g, '')),
+  },
 });
