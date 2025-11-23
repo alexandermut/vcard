@@ -19,6 +19,7 @@ export interface VCardData {
   photo?: string;
   note?: string;
   bday?: string;
+  uid?: string;
 }
 
 export interface ParsedVCard {

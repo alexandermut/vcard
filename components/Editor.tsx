@@ -12,12 +12,13 @@ interface EditorProps {
   canUndo: boolean;
   onReset: () => void;
   onImageDrop: (file: File) => void;
+  onClearImages: () => void;
   isOptimizing: boolean;
   lang: Language;
 }
 
 export const Editor: React.FC<EditorProps> = ({
-  value, onChange, onOptimize, onUndo, canUndo, onReset, onImageDrop, isOptimizing, lang
+  value, onChange, onOptimize, onUndo, canUndo, onReset, onImageDrop, onClearImages, isOptimizing, lang
 }) => {
   const [activeTab, setActiveTab] = useState<'text' | 'code'>('text');
   const [rawText, setRawText] = useState('');
@@ -27,6 +28,7 @@ export const Editor: React.FC<EditorProps> = ({
   const handleRawTextChange = (text: string) => {
     setRawText(text);
     if (text.trim()) {
+      onClearImages();
       const generatedVCard = parseImpressumToVCard(text);
       onChange(generatedVCard);
     }
@@ -92,8 +94,8 @@ export const Editor: React.FC<EditorProps> = ({
           <button
             onClick={() => setActiveTab('text')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'text'
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
           >
             <FileText size={14} />
@@ -102,8 +104,8 @@ export const Editor: React.FC<EditorProps> = ({
           <button
             onClick={() => setActiveTab('code')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'code'
-                ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
           >
             <Code size={14} />
@@ -139,8 +141,8 @@ export const Editor: React.FC<EditorProps> = ({
             onClick={handleOptimizeClick}
             disabled={isOptimizing}
             className={`text-xs flex items-center gap-1 px-3 py-1.5 rounded-md text-white font-medium transition-all shadow-sm ${isOptimizing
-                ? 'bg-purple-400 cursor-not-allowed opacity-70'
-                : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500'
+              ? 'bg-purple-400 cursor-not-allowed opacity-70'
+              : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500'
               }`}
           >
             <Sparkles size={14} className={isOptimizing ? "animate-spin" : ""} />

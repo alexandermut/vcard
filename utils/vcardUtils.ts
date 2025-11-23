@@ -135,6 +135,9 @@ export const parseVCardString = (vcard: string): ParsedVCard => {
       case 'BDAY':
         data.bday = value;
         break;
+      case 'UID':
+        data.uid = value;
+        break;
     }
   });
 
@@ -150,6 +153,13 @@ export const generateVCardFromData = (data: VCardData): string => {
 
   // Always add a fresh revision timestamp
   lines.push(`REV:${new Date().toISOString()}`);
+
+  // UID Handling: Use existing or generate new
+  if (data.uid) {
+    lines.push(`UID:${data.uid}`);
+  } else {
+    lines.push(`UID:urn:uuid:${crypto.randomUUID()}`);
+  }
 
   // Name handling
   if (data.n) {

@@ -630,6 +630,7 @@ const App: React.FC = () => {
               onReset={handleReset}
               isOptimizing={isOptimizing}
               onImageDrop={handleImageDrop}
+              onClearImages={() => setCurrentImages(undefined)}
               lang={lang}
             />
           </div>
