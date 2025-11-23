@@ -117,7 +117,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                             <h1 className="text-2xl font-bold border-b border-slate-100 dark:border-slate-800 pb-2">Datenschutzerklärung</h1>
 
                             <div className="bg-slate-100 dark:bg-slate-800 p-3 rounded text-sm">
-                                <strong>Stand:</strong> {new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long' })}
+                                <strong>Stand:</strong> November 2025
                             </div>
 
                             <section>
@@ -135,16 +135,23 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
 
                             <section>
                                 <h2 className="text-lg font-semibold mb-2">2. Grundsätzliche Funktionsweise ("Local-First"-Architektur)</h2>
-                                <p className="mb-2">Diese Anwendung ("vCards") unterscheidet sich grundlegend von klassischen Cloud-Diensten.</p>
+                                <p className="mb-2">Diese Anwendung ("vCards") verfolgt einen "Local-First"-Ansatz. Das bedeutet:</p>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
-                                    <li><strong>Lokale Speicherung:</strong> Alle von Ihnen eingegebenen Daten (Texte, Visitenkarten-Scans, Historie, Einstellungen) werden <strong>ausschließlich lokal im Browser Ihres Endgeräts</strong> (Local Storage / IndexedDB) gespeichert.</li>
-                                    <li><strong>Kein Backend-Zugriff:</strong> Der Betreiber dieser Webseite hat technisch <strong>keinen Zugriff</strong> auf Ihre gespeicherten Inhalte. Es findet keine automatische Synchronisation oder Speicherung Ihrer Inhaltsdaten auf unseren Servern statt.</li>
+                                    <li><strong>Lokale Speicherung:</strong> Ihre Inhaltsdaten (Texte, Visitenkarten-Scans, Historie, API-Keys) werden primär und dauerhaft lokal im Browser Ihres Endgeräts (Local Storage / IndexedDB) gespeichert.</li>
+                                    <li><strong>Kein Backend-Zugriff auf Inhalte:</strong> Wir als Webseitenbetreiber haben technisch keinen Zugriff auf Ihre lokal gespeicherten Inhalte.</li>
+                                    <li>
+                                        <strong>⚠️ Ausnahmen (Datenübertragung):</strong> Daten verlassen Ihr Gerät bzw. Ihren Browser nur in zwei konkreten Fällen, die durch Ihre aktive Handlung ausgelöst werden:
+                                        <ol className="list-decimal pl-5 mt-1 space-y-1">
+                                            <li><strong>Zahlung:</strong> Sie klicken auf einen Zahlungslink und werden zu Stripe weitergeleitet.</li>
+                                            <li><strong>KI-Analyse:</strong> Sie nutzen eine Cloud-KI-Funktion und senden Text/Bild zur Analyse an die API des gewählten Anbieters (Google oder OpenAI).</li>
+                                        </ol>
+                                    </li>
                                 </ul>
                             </section>
 
                             <section>
                                 <h2 className="text-lg font-semibold mb-2">3. Bereitstellung der Webseite (Hosting)</h2>
-                                <p className="mb-2">Um die Applikation in Ihrem Browser auszuführen, müssen die Programmdateien (HTML, CSS, JavaScript) von einem Server geladen werden.</p>
+                                <p className="mb-2">Um die Applikation in Ihrem Browser auszuführen, müssen die Programmdateien von einem Server geladen werden.</p>
 
                                 <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">3.1. Hosting-Provider</h3>
                                 <p className="text-sm">
@@ -153,13 +160,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
 
                                 <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">3.2. Server-Logfiles</h3>
                                 <p className="text-sm mb-2">
-                                    Bei jedem Aufruf der Webseite erfasst der Provider automatisch Informationen, die Ihr Browser übermittelt (Art. 6 Abs. 1 lit. f DSGVO – Berechtigtes Interesse zur Sicherheit und Auslieferung). Erfasste Daten:
+                                    Bei jedem Aufruf der Webseite erfasst der Provider automatisch Informationen (Art. 6 Abs. 1 lit. f DSGVO – Berechtigtes Interesse zur Sicherheit und Auslieferung):
                                 </p>
                                 <ul className="list-disc pl-5 space-y-1 text-sm">
                                     <li>IP-Adresse (wird vom Provider i.d.R. anonymisiert oder nach kurzer Zeit gelöscht)</li>
                                     <li>Datum und Uhrzeit des Zugriffs</li>
                                     <li>Verwendeter Browser und Betriebssystem</li>
-                                    <li>Referrer URL (die zuvor besuchte Seite)</li>
+                                    <li>Referrer URL</li>
                                 </ul>
                                 <p className="text-sm mt-2">
                                     Weitere Informationen finden Sie in der <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Datenschutzerklärung von GitHub</a>.
@@ -167,76 +174,99 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                             </section>
 
                             <section>
-                                <h2 className="text-lg font-semibold mb-2">4. Optionale KI-Funktionen (Schnittstelle zu Google Gemini & Lokale LLMs)</h2>
-                                <p className="mb-2">Die App bietet Funktionen zur Textoptimierung und Bildanalyse (OCR) an. Diese Funktionen basieren auf Künstlicher Intelligenz. Sie können wählen zwischen Google Gemini (Cloud) oder einem lokalen LLM.</p>
+                                <h2 className="text-lg font-semibold mb-2">4. Zahlungsabwicklung (Stripe)</h2>
+                                <p className="mb-2">Sofern Sie kostenpflichtige Funktionen oder Lizenzen erwerben, nutzen wir dafür "Stripe Payment Links".</p>
 
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.1. Google Gemini (Cloud - "Bring Your Own Key")</h3>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.1. Funktionsweise & Weiterleitung</h3>
                                 <p className="text-sm mb-2">
-                                    Die KI-Verarbeitung findet nicht auf unseren Servern statt. Die App "vCards" dient lediglich als technisches Interface, das eine <strong>direkte Verbindung von Ihrem Browser zur API von Google</strong> herstellt.
+                                    Für den Bezahlvorgang werden Sie von unserer Webseite direkt auf eine sichere, von Stripe gehostete Zahlungsseite weitergeleitet. Die Eingabe Ihrer Zahlungs- und Vertragsdaten erfolgt <strong>ausschließlich auf den Systemen von Stripe</strong>. Wir als Webseitenbetreiber haben zu keinem Zeitpunkt Zugriff auf Ihre Kreditkartendaten oder Bankverbindungen.
                                 </p>
-                                <ul className="list-disc pl-5 space-y-1 text-sm">
-                                    <li><strong>Voraussetzung:</strong> Sie müssen Ihren eigenen API-Schlüssel (API Key) in den Einstellungen hinterlegen.</li>
-                                    <li><strong>Datenfluss:</strong> Wenn Sie einen Button (z.B. "Analysieren") klicken, werden der Text oder das Bild direkt an Google gesendet. Wir als App-Betreiber erhalten <strong>keine Kenntnis</strong> vom Inhalt oder Ihrem Key.</li>
-                                </ul>
 
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.2. Rechtsgrundlage</h3>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.2. Dienstleister</h3>
                                 <p className="text-sm">
-                                    Die Übermittlung erfolgt auf Basis Ihrer <strong>freiwilligen, aktiven Handlung</strong> (Art. 6 Abs. 1 lit. a DSGVO). Ohne Ihren API-Key und Ihren Klick findet keine Übertragung statt.
+                                    Stripe Payments Europe, Ltd., 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, Irland.
                                 </p>
 
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.3. Hinweis zu Drittlandtransfers (USA)</h3>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.3. Datenfluss</h3>
                                 <p className="text-sm">
-                                    Daten werden an Google LLC (USA) übermittelt. Google ist unter dem <strong>EU-US Data Privacy Framework (DPF)</strong> zertifiziert (angemessenes Datenschutzniveau).
+                                    Durch das Aufrufen des Zahlungslinks erhält Stripe Kenntnis über Ihre IP-Adresse und Browserdaten (technisch notwendig zum Aufbau der Seite). Wir erhalten von Stripe nach Abschluss der Zahlung lediglich eine Bestätigung über die erfolgreiche Transaktion.
                                 </p>
 
-                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-lg mt-4">
-                                    <strong className="text-amber-800 dark:text-amber-200 block mb-2">⚠️ ACHTUNG BEI KOSTENLOSEN KEYS & SENSIBLEN DATEN</strong>
-                                    <ol className="list-decimal pl-5 space-y-1 text-sm text-amber-900 dark:text-amber-100">
-                                        <li><strong>Nutzungsbedingungen:</strong> Es gelten die Bedingungen, die Sie direkt mit Google (z.B. via AI Studio) vereinbart haben.</li>
-                                        <li><strong>KI-Training:</strong> Google behält sich bei kostenlosen Kontingenten ("Free Tier") oft vor, Eingaben zum <strong>Training der KI-Modelle</strong> zu nutzen.</li>
-                                        <li><strong>Keine sensiblen Daten:</strong> Senden Sie keine Gesundheitsdaten, Passwörter oder Geschäftsgeheimnisse an die KI, wenn Sie nicht über einen entsprechenden kostenpflichtigen Vertrag ("Paid Tier") sichergestellt haben, dass keine Nutzung zu Trainingszwecken erfolgt.</li>
-                                    </ol>
-                                </div>
-
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.4. Lokale LLMs (Bring Your Own Model)</h3>
-                                <p className="text-sm mb-2">
-                                    Wenn Sie ein lokales LLM (z.B. Ollama) konfigurieren, werden Ihre Daten (Texte, Bilder) <strong>nicht</strong> an externe Server gesendet.
-                                    Die Verarbeitung erfolgt ausschließlich innerhalb Ihres eigenen Netzwerks (z.B. auf Ihrem Computer unter <code>localhost</code>).
-                                </p>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">4.4. Rechtsgrundlage</h3>
                                 <p className="text-sm">
-                                    <strong>Hinweis:</strong> Sie sind selbst dafür verantwortlich, dass Ihr lokaler LLM-Server sicher konfiguriert ist und keine Daten ungewollt nach außen sendet.
+                                    Die Weiterleitung und Abwicklung erfolgt zur Erfüllung des Vertrages (Art. 6 Abs. 1 lit. b DSGVO). Weitere Informationen finden Sie in der <a href="https://stripe.com/de/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Datenschutzerklärung von Stripe</a>.
                                 </p>
                             </section>
 
                             <section>
-                                <h2 className="text-lg font-semibold mb-2">5. Einbindung von Diensten und Bibliotheken</h2>
-                                <p className="mb-2">Um die Datensicherheit zu maximieren und Tracking durch Dritte zu verhindern, haben wir externe Ressourcen eliminiert:</p>
+                                <h2 className="text-lg font-semibold mb-2">5. Optionale KI-Funktionen (Google, OpenAI & Lokale LLMs)</h2>
+                                <p className="mb-2">Die App bietet Funktionen zur Textoptimierung und Bildanalyse an. Sie können wählen zwischen Cloud-Anbietern oder lokalen Modellen.</p>
+
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">5.1. Cloud-KI (Google Gemini & OpenAI)</h3>
+                                <p className="text-sm mb-2">
+                                    Die App dient als technisches Interface ("Bring Your Own Key"), das eine direkte Verbindung von Ihrem Browser zur API des gewählten Anbieters herstellt.
+                                </p>
+                                <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Voraussetzung:</strong> Sie hinterlegen Ihren eigenen API-Schlüssel (API Key).</li>
+                                    <li><strong>Datenfluss:</strong> Wenn Sie die Analyse starten, werden Text oder Bild direkt an den gewählten Anbieter gesendet. Wir als App-Betreiber sehen diese Daten nicht.</li>
+                                    <li><strong>Rechtsgrundlage:</strong> Ihre freiwillige, aktive Handlung (Art. 6 Abs. 1 lit. a DSGVO).</li>
+                                </ul>
+
+                                <p className="text-sm mt-3 font-semibold">Die Anbieter:</p>
+                                <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Google Gemini:</strong> Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA.</li>
+                                    <li><strong>OpenAI:</strong> OpenAI, L.L.C., 3180 18th Street, San Francisco, CA 94110, USA.</li>
+                                </ul>
+
+                                <p className="text-sm mt-3 font-semibold">Drittlandtransfers & Sicherheit:</p>
+                                <p className="text-sm">
+                                    Beide Anbieter sitzen in den USA. Beide sind unter dem <strong>EU-US Data Privacy Framework (DPF)</strong> zertifiziert, was ein angemessenes Datenschutzniveau gewährleistet.
+                                </p>
+
+                                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 p-4 rounded-lg mt-4">
+                                    <strong className="text-amber-800 dark:text-amber-200 block mb-2">⚠️ ACHTUNG BEI KOSTENLOSEN KEYS & TRAINING</strong>
+                                    <p className="text-sm text-amber-900 dark:text-amber-100 mb-2">
+                                        Bitte beachten Sie die Nutzungsbedingungen der Anbieter. Insbesondere bei kostenlosen Kontingenten ("Free Tier") können Eingaben unter Umständen zum <strong>Training der KI-Modelle</strong> genutzt werden.
+                                    </p>
+                                    <ul className="list-disc pl-5 space-y-1 text-sm text-amber-900 dark:text-amber-100">
+                                        <li>Senden Sie keine sensiblen Daten (Gesundheitsdaten, Passwörter, Geschäftsgeheimnisse) an die Cloud-API.</li>
+                                        <li>Für maximale Vertraulichkeit nutzen Sie bitte ein lokales LLM (siehe 5.2).</li>
+                                    </ul>
+                                </div>
+
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">5.2. Lokale LLMs (Bring Your Own Model)</h3>
+                                <p className="text-sm">
+                                    Wenn Sie ein lokales LLM (z.B. via Ollama) konfigurieren, werden Ihre Daten nicht an externe Server gesendet. Die Verarbeitung erfolgt ausschließlich innerhalb Ihres Netzwerks (localhost). Sie sind selbst für die sichere Konfiguration Ihres lokalen Servers verantwortlich.
+                                </p>
+                            </section>
+
+                            <section>
+                                <h2 className="text-lg font-semibold mb-2">6. Einbindung von Diensten und Bibliotheken</h2>
+                                <p className="mb-2">Um die Datensicherheit zu maximieren:</p>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
-                                    <li><strong>Google Fonts:</strong> Schriftarten sind lokal auf unserem Webspace gespeichert. Es wird keine Verbindung zu Google-Servern aufgebaut, um Schriften zu laden.</li>
+                                    <li><strong>Google Fonts:</strong> Schriftarten sind lokal gespeichert. Keine Verbindung zu Google-Servern.</li>
                                     <li><strong>Keine Tracker:</strong> Wir setzen keine Analyse-Tools (wie Google Analytics) oder Werbe-Tracker ein.</li>
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-lg font-semibold mb-2">6. Ihre Rechte</h2>
+                                <h2 className="text-lg font-semibold mb-2">7. Ihre Rechte</h2>
                                 <p className="mb-2">Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung.</p>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
-                                    <li><strong>Besonderheit bei Auskunft:</strong> Da wir keine Benutzerdaten auf unseren Servern speichern (siehe Punkt 2), können wir keine Auskunft über Ihre lokal gespeicherten Daten geben.</li>
-                                    <li><strong>Datenlöschung:</strong> Sie können Ihre Daten jederzeit löschen, indem Sie in der App "Alle Daten löschen" wählen oder Ihren Browser-Cache leeren.</li>
-                                    <li><strong>Widerruf:</strong> Entfernen Sie Ihren API-Key aus den Einstellungen, um die Nutzung der KI-Schnittstelle technisch zu unterbinden.</li>
+                                    <li><strong>Besonderheit bei Auskunft:</strong> Da wir keine Benutzer- oder Inhaltsdaten auf unseren Servern speichern (siehe Punkt 2), können wir keine Auskunft über Ihre lokal im Browser gespeicherten Daten geben.</li>
+                                    <li><strong>Datenlöschung:</strong> Sie können Ihre lokalen Daten jederzeit löschen, indem Sie in der App "Alle Daten löschen" wählen oder Ihren Browser-Cache leeren.</li>
+                                    <li><strong>Widerruf:</strong> Entfernen Sie Ihren API-Key aus den Einstellungen, um die Nutzung der KI-Schnittstellen technisch zu unterbinden.</li>
                                 </ul>
                             </section>
 
                             <section>
-                                <h2 className="text-lg font-semibold mb-2">7. Haftungsausschluss & Eigenverantwortung</h2>
+                                <h2 className="text-lg font-semibold mb-2">8. Haftungsausschluss & Eigenverantwortung</h2>
                                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg text-blue-900 dark:text-blue-100">
-                                    <strong className="block mb-2">ℹ️ Frontend-Only Architektur</strong>
-                                    <p className="text-sm mb-2">Diese Anwendung ist eine reine <strong>Frontend-Applikation</strong>. Das bedeutet:</p>
-                                    <ol className="list-decimal pl-5 space-y-1 text-sm">
-                                        <li>Der Betreiber dieser Webseite betreibt <strong>keinen Backend-Server</strong>, der Ihre Daten speichert oder verarbeitet.</li>
-                                        <li>Die gesamte Datenverarbeitung findet <strong>in Ihrem Browser</strong> oder auf den von Ihnen konfigurierten APIs (Google oder Lokal) statt.</li>
-                                        <li><strong>Sie tragen die volle Verantwortung</strong> für die Sicherheit Ihrer API-Schlüssel, die Konfiguration Ihrer lokalen Modelle und die Einhaltung geltender Datenschutzgesetze bei der Verarbeitung von Daten Dritter (z.B. Visitenkarten anderer Personen).</li>
-                                    </ol>
+                                    <p className="mb-2">Diese Anwendung ist eine reine Frontend-Applikation.</p>
+                                    <ul className="list-disc pl-5 space-y-2 text-sm">
+                                        <li><strong>Datenverlust:</strong> Es findet keine automatische Cloud-Synchronisation statt. Sie sind allein verantwortlich für Backups Ihrer Daten (z.B. über die Export-Funktion). Bei Geräteverlust oder Löschen des Browser-Caches sind die Daten unwiderruflich verloren.</li>
+                                        <li><strong>Sicherheit:</strong> Sie tragen die volle Verantwortung für die Sicherheit Ihrer API-Schlüssel und die Geheimhaltung Ihrer generierten Lizenzschlüssel.</li>
+                                    </ul>
                                 </div>
                             </section>
                         </div>

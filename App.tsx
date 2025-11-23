@@ -653,24 +653,26 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 py-4 transition-colors duration-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-          <div>
-            &copy; {__APP_VERSION__} {t.appTitle}
-          </div>
-          <div className="flex gap-4 sm:gap-6">
+      <footer className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 py-3 transition-colors duration-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center gap-2">
+
+          {/* Top Row: Version & Links */}
+          <div className="flex flex-wrap justify-center items-center gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            <span>&copy; {__APP_VERSION__} {t.appTitle}</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
             <button onClick={() => { setLegalTab('imprint'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</button>
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <button onClick={() => { setLegalTab('privacy'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</button>
           </div>
 
+          {/* Bottom Row: Support Button */}
           <a
             href="https://buy.stripe.com/28E9ATf3n6pl7Wfcmt24000"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5851E1] text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all ml-4 sm:ml-0"
+            className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5851E1] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
-            <Heart size={14} fill="currentColor" />
+            <Heart size={12} fill="currentColor" />
             {t.support}
           </a>
         </div>
