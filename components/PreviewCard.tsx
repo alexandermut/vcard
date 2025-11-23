@@ -206,9 +206,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({ parsed, onShowQR, onSo
           <div className="grid gap-3">
             {localData.email?.map((e, i) => (
               <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <a href={`mailto:${e.value}`} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer" title={t.email}>
                   <Mail size={16} />
-                </div>
+                </a>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{e.type}</p>
                   <input
@@ -222,9 +222,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({ parsed, onShowQR, onSo
 
             {localData.tel?.map((t, i) => (
               <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-                <div className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0">
+                <a href={`tel:${t.value}`} className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer" title={t.call}>
                   <Phone size={16} />
-                </div>
+                </a>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{t.type}</p>
                   <input
@@ -256,9 +256,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({ parsed, onShowQR, onSo
               const Icon = style.icon;
               return (
                 <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${style.colorBg} ${style.colorText}`}>
+                  <a href={u.value} target="_blank" rel="noopener noreferrer" className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${style.colorBg} ${style.colorText} hover:opacity-80 cursor-pointer`}>
                     <Icon size={16} />
-                  </div>
+                  </a>
                   <div className="flex-1 overflow-hidden">
                     <div className="flex justify-between items-center">
                       <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{style.label}</p>
@@ -308,9 +308,15 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({ parsed, onShowQR, onSo
 
             {localData.adr?.map((a, i) => (
               <div key={i} className="flex items-start gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-                <div className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0 mt-1">
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.value.street}, ${a.value.zip} ${a.value.city}, ${a.value.country}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0 mt-1 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors cursor-pointer"
+                  title="Google Maps"
+                >
                   <MapPin size={16} />
-                </div>
+                </a>
                 <div className="flex-1 overflow-hidden space-y-1">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{a.type}</p>
 
