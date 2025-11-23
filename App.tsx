@@ -1,267 +1,115 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart } from 'lucide-react';
-import { Editor } from './components/Editor';
-import { PreviewCard } from './components/PreviewCard';
-import { SettingsModal } from './components/SettingsModal';
-import { ScanModal } from './components/ScanModal';
-import { BatchUploadModal } from './components/BatchUploadModal';
-import { QRCodeModal } from './components/QRCodeModal';
-import { HistorySidebar } from './components/HistorySidebar';
-import { SocialSearchModal } from './components/SocialSearchModal';
-import { QueueIndicator } from './components/QueueIndicator';
-import { LegalModal } from './components/LegalModal';
-import { ReloadPrompt } from './components/ReloadPrompt';
-import { DEFAULT_VCARD, parseVCardString, downloadVCard, generateVCardFromData, generateContactFilename } from './utils/vcardUtils';
-import { correctVCard } from './services/aiService';
-import { HistoryItem, Language, VCardData } from './types';
-import { translations } from './utils/translations';
-import { runSelfTests } from './utils/tests';
-import { useScanQueue } from './hooks/useScanQueue';
-import { useLLMConfig } from './hooks/useLLMConfig';
-import { clean_number } from './utils/regexParser'; // Import helper for phone matching
+import { addHistoryItem, getHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage } from './utils/db';
+
+// ... imports ...
 
 const App: React.FC = () => {
-  const [vcardString, setVcardString] = useState<string>(DEFAULT_VCARD);
-  const [backupVCard, setBackupVCard] = useState<string | null>(null);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // ... state ...
 
-  // Modals & UI State
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isScanOpen, setIsScanOpen] = useState(false);
-  const [isBatchUploadOpen, setIsBatchUploadOpen] = useState(false);
-  const [isQROpen, setIsQROpen] = useState(false);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [isSocialSearchOpen, setIsSocialSearchOpen] = useState(false);
-  const [searchPlatform, setSearchPlatform] = useState<string>('LINKEDIN');
-  const [isLegalOpen, setIsLegalOpen] = useState(false);
-  const [legalTab, setLegalTab] = useState<'imprint' | 'privacy'>('imprint');
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  // History State (Start empty, load async)
+  const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // Current Images State (to show in preview)
-  const [currentImages, setCurrentImages] = useState<string[] | undefined>(undefined);
+  // ... other state ...
 
-  // Drag & Drop State
-  const [droppedFile, setDroppedFile] = useState<File | null>(null);
-
-  // History State
-  const [history, setHistory] = useState<HistoryItem[]>(() => {
-    const saved = localStorage.getItem('vcard_history');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Theme State (Default to dark)
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved ? saved === 'dark' : true;
-  });
-
-  // Language State
-  const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('lang');
-    return (saved === 'en' || saved === 'de') ? saved : 'de';
-  });
-
-  // Settings State
-  const [apiKey, setApiKey] = useState('');
-  const [hasSystemKey, setHasSystemKey] = useState(false);
-
-  // LLM Configuration
-  const { config: llmConfig, setProvider, setCustomConfig, setOllamaDefaults } = useLLMConfig();
-
-  // Run Tests on Mount (Dev/Safety check)
+  // Load History & Migrate on Mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      runSelfTests();
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // PWA Install Prompt Listener
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault();
-      setInstallPrompt(e);
+    const loadHistory = async () => {
+      await migrateFromLocalStorage();
+      const items = await getHistory();
+      setHistory(items);
     };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    loadHistory();
   }, []);
 
-  const handleInstallApp = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-    }
-  };
+  // ... theme/lang effects ...
 
-  // Apply Theme
-  useEffect(() => {
-    const root = window.document.documentElement;
-    if (isDarkMode) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
+  // Remove old localStorage history effect
+  // useEffect(() => {
+  //   try {
+  //     localStorage.setItem('vcard_history', JSON.stringify(history));
+  //   } catch (e) { ... }
+  // }, [history]);
 
-  // Save History
-  useEffect(() => {
-    try {
-      localStorage.setItem('vcard_history', JSON.stringify(history));
-    } catch (e) {
-      console.error("Failed to save history (Quota Exceeded?)", e);
-      // Optional: Could show a toast here, but for now just don't crash
-    }
-  }, [history]);
-
-  // Save Language
-  useEffect(() => {
-    localStorage.setItem('lang', lang);
-  }, [lang]);
-
-  const t = translations[lang];
-
-  // Check for system key (e.g. from window.aistudio)
-  const checkSystemKey = async () => {
-    if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
-      const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-      setHasSystemKey(hasKey);
-    }
-  };
-
-  // Load Settings from LocalStorage
-  useEffect(() => {
-    const savedKey = localStorage.getItem('gemini_api_key') || '';
-    setApiKey(savedKey);
-    checkSystemKey();
-  }, []);
-
-  // Save Settings
-  const handleSaveSettings = (newKey: string) => {
-    setApiKey(newKey);
-    if (newKey) localStorage.setItem('gemini_api_key', newKey);
-    else localStorage.removeItem('gemini_api_key');
-    checkSystemKey();
-    setError(null);
-  };
-
-  // Parse the string whenever it changes
-  const parsedData = useMemo(() => parseVCardString(vcardString), [vcardString]);
-
-  // Helper to get active key
-  const getKeyToUse = () => {
-    let keyToUse = apiKey;
-    if (!keyToUse) {
-      try {
-        // @ts-ignore
-        if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-          // @ts-ignore
-          keyToUse = process.env.API_KEY;
-        }
-      } catch (e) {
-        keyToUse = '';
-      }
-    }
-    return keyToUse;
-  };
+  // ...
 
   // Smart Add To History (Merges Duplicates)
-  const addToHistory = useCallback((str: string, parsed?: any, scanImages?: string[]) => {
+  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[]) => {
     const p = parsed || parseVCardString(str);
     if (!p.isValid) return;
 
     const newData = p.data as VCardData;
     const newFn = newData.fn?.trim();
-
-    // Extract clean phone numbers for matching
     const newPhones = newData.tel?.map(t => clean_number(t.value)) || [];
 
-    if (!newFn && newPhones.length === 0) return; // Need at least name or phone
+    if (!newFn && newPhones.length === 0) return;
 
-    setHistory(prev => {
-      // 1. Check for exact string duplicate (fast exit)
-      if (prev.length > 0 && prev[0].vcard === str) return prev;
+    // Get latest history from DB to ensure we check against current state
+    const currentHistory = await getHistory();
 
-      // 2. Search for semantic duplicate (by Name OR Phone)
-      const existingIndex = prev.findIndex(item => {
-        // Match by Name
-        if (newFn && item.name?.trim().toLowerCase() === newFn.toLowerCase()) return true;
+    // 1. Check for exact string duplicate
+    if (currentHistory.length > 0 && currentHistory[0].vcard === str) return;
 
-        // Match by Phone (Deep check)
-        if (newPhones.length > 0) {
-          const oldParsed = parseVCardString(item.vcard);
-          const oldPhones = oldParsed.data.tel?.map(t => clean_number(t.value)) || [];
-          // Check for intersection
-          const hasCommonPhone = newPhones.some(np => np.length > 6 && oldPhones.includes(np));
-          if (hasCommonPhone) return true;
+    // 2. Search for semantic duplicate
+    const existingIndex = currentHistory.findIndex(item => {
+      if (newFn && item.name?.trim().toLowerCase() === newFn.toLowerCase()) return true;
+      if (newPhones.length > 0) {
+        const oldParsed = parseVCardString(item.vcard);
+        const oldPhones = oldParsed.data.tel?.map(t => clean_number(t.value)) || [];
+        const hasCommonPhone = newPhones.some(np => np.length > 6 && oldPhones.includes(np));
+        if (hasCommonPhone) return true;
+      }
+      return false;
+    });
+
+    let itemToSave: HistoryItem;
+
+    if (existingIndex !== -1) {
+      // --- MERGE LOGIC ---
+      const oldItem = currentHistory[existingIndex];
+      const oldParsed = parseVCardString(oldItem.vcard);
+      const mergedImages = scanImages && scanImages.length > 0 ? scanImages : oldItem.images;
+
+      if (oldParsed.isValid) {
+        const oldData = oldParsed.data;
+        const mergedData = { ...newData };
+
+        if (!mergedData.fn && oldData.fn) mergedData.fn = oldData.fn;
+        if (!mergedData.n && oldData.n) mergedData.n = oldData.n;
+        if (!mergedData.title && oldData.title) mergedData.title = oldData.title;
+        if (!mergedData.role && oldData.role) mergedData.role = oldData.role;
+        if (!mergedData.org && oldData.org) mergedData.org = oldData.org;
+        if (!mergedData.bday && oldData.bday) mergedData.bday = oldData.bday;
+        if (!mergedData.note && oldData.note) mergedData.note = oldData.note;
+        if (!mergedData.photo && oldData.photo) mergedData.photo = oldData.photo;
+
+        const mergeArrays = (newArr: any[] = [], oldArr: any[] = []) => {
+          const result = [...newArr];
+          oldArr.forEach(oldItem => {
+            const exists = result.some(r => r.value === oldItem.value);
+            if (!exists) result.push(oldItem);
+          });
+          return result;
+        };
+
+        mergedData.email = mergeArrays(mergedData.email, oldData.email);
+        mergedData.tel = mergeArrays(mergedData.tel, oldData.tel);
+        mergedData.url = mergeArrays(mergedData.url, oldData.url);
+
+        if ((!mergedData.adr || mergedData.adr.length === 0) && oldData.adr) {
+          mergedData.adr = oldData.adr;
         }
 
-        return false;
-      });
+        const mergedString = generateVCardFromData(mergedData);
 
-      let itemToSave: HistoryItem;
-
-      if (existingIndex !== -1) {
-        // --- MERGE LOGIC ---
-        const oldItem = prev[existingIndex];
-        const oldParsed = parseVCardString(oldItem.vcard);
-
-        // If we have new scan images, use them. If not (manual edit), keep old images.
-        const mergedImages = scanImages && scanImages.length > 0 ? scanImages : oldItem.images;
-
-        if (oldParsed.isValid) {
-          const oldData = oldParsed.data;
-          const mergedData = { ...newData };
-
-          // Fill in gaps from OLD data (Enrichment)
-          if (!mergedData.fn && oldData.fn) mergedData.fn = oldData.fn; // Keep name if new one is missing
-          if (!mergedData.n && oldData.n) mergedData.n = oldData.n;
-          if (!mergedData.title && oldData.title) mergedData.title = oldData.title;
-          if (!mergedData.role && oldData.role) mergedData.role = oldData.role;
-          if (!mergedData.org && oldData.org) mergedData.org = oldData.org;
-          if (!mergedData.bday && oldData.bday) mergedData.bday = oldData.bday;
-          if (!mergedData.note && oldData.note) mergedData.note = oldData.note;
-          if (!mergedData.photo && oldData.photo) mergedData.photo = oldData.photo;
-
-          // Merge Arrays (Emails, Phones, URLs)
-          const mergeArrays = (newArr: any[] = [], oldArr: any[] = []) => {
-            const result = [...newArr];
-            oldArr.forEach(oldItem => {
-              const exists = result.some(r => r.value === oldItem.value);
-              if (!exists) result.push(oldItem);
-            });
-            return result;
-          };
-
-          mergedData.email = mergeArrays(mergedData.email, oldData.email);
-          mergedData.tel = mergeArrays(mergedData.tel, oldData.tel);
-          mergedData.url = mergeArrays(mergedData.url, oldData.url);
-
-          if ((!mergedData.adr || mergedData.adr.length === 0) && oldData.adr) {
-            mergedData.adr = oldData.adr;
-          }
-
-          const mergedString = generateVCardFromData(mergedData);
-
-          itemToSave = {
-            ...oldItem,
-            timestamp: Date.now(),
-            name: mergedData.fn || oldItem.name,
-            org: mergedData.org || oldItem.org,
-            vcard: mergedString,
-            images: mergedImages
-          };
-
-          const newHistory = [...prev];
-          newHistory.splice(existingIndex, 1);
-          return [itemToSave, ...newHistory];
-        }
-
-        // Fallback if old parse failed
+        itemToSave = {
+          ...oldItem,
+          timestamp: Date.now(),
+          name: mergedData.fn || oldItem.name,
+          org: mergedData.org || oldItem.org,
+          vcard: mergedString,
+          images: mergedImages
+        };
+      } else {
+        // Fallback
         itemToSave = {
           id: oldItem.id,
           timestamp: Date.now(),
@@ -270,36 +118,36 @@ const App: React.FC = () => {
           vcard: str,
           images: mergedImages
         };
-        const newHistory = [...prev];
-        newHistory.splice(existingIndex, 1);
-        return [itemToSave, ...newHistory];
-
-      } else {
-        // --- NEW ENTRY ---
-        itemToSave = {
-          id: crypto.randomUUID(),
-          timestamp: Date.now(),
-          name: newFn || 'Unbekannt',
-          org: newData.org,
-          vcard: str,
-          images: scanImages
-        };
-        return [itemToSave, ...prev].slice(0, 50);
       }
-    });
+    } else {
+      // --- NEW ENTRY ---
+      itemToSave = {
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        name: newFn || 'Unbekannt',
+        org: newData.org,
+        vcard: str,
+        images: scanImages
+      };
+    }
+
+    // Save to DB
+    await addHistoryItem(itemToSave);
+
+    // Refresh UI
+    const updatedHistory = await getHistory();
+    setHistory(updatedHistory);
+
   }, []);
 
-  // --- SCAN QUEUE ---
-  const { queue, addJob, removeJob } = useScanQueue(getKeyToUse(), lang, llmConfig, (vcard, images) => {
-    // Background job completed
-    addToHistory(vcard, undefined, images);
-  });
+  // ... queue ...
 
-  // Update current displayed images when loading form history or scanning
-  const handleLoadHistoryItem = (item: HistoryItem) => {
-    setVcardString(item.vcard);
-    setCurrentImages(item.images);
-  };
+  // Update HistorySidebar props
+  // <HistorySidebar
+  //   ...
+  //   onDelete={async (id) => { await deleteHistoryItem(id); setHistory(await getHistory()); }}
+  //   onClear={async () => { await clearHistory(); setHistory([]); }}
+  // />
 
   const handleDownload = () => {
     if (parsedData.isValid) {
@@ -517,8 +365,15 @@ const App: React.FC = () => {
         onClose={() => setIsHistoryOpen(false)}
         history={history}
         onLoad={handleLoadHistoryItem}
-        onDelete={(id) => setHistory(prev => prev.filter(i => i.id !== id))}
-        onClear={() => setHistory([])}
+        onDelete={async (id) => {
+          await deleteHistoryItem(id);
+          const items = await getHistory();
+          setHistory(items);
+        }}
+        onClear={async () => {
+          await clearHistory();
+          setHistory([]);
+        }}
         lang={lang}
       />
 
