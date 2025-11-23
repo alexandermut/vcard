@@ -10,6 +10,7 @@ import { HistorySidebar } from './components/HistorySidebar';
 import { SocialSearchModal } from './components/SocialSearchModal';
 import { QueueIndicator } from './components/QueueIndicator';
 import { LegalModal } from './components/LegalModal';
+import { ReloadPrompt } from './components/ReloadPrompt';
 import { DEFAULT_VCARD, parseVCardString, downloadVCard, generateVCardFromData, generateContactFilename } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { HistoryItem, Language, VCardData } from './types';
@@ -677,6 +678,7 @@ const App: React.FC = () => {
           </a>
         </div>
       </footer>
+      <ReloadPrompt />
     </div>
   );
 };
