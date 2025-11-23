@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload } from 'lucide-react';
+import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart } from 'lucide-react';
 import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { SettingsModal } from './components/SettingsModal';
@@ -663,6 +663,16 @@ const App: React.FC = () => {
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <button onClick={() => { setLegalTab('privacy'); setIsLegalOpen(true); }} className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</button>
           </div>
+
+          <a
+            href="https://buy.stripe.com/28E9ATf3n6pl7Wfcmt24000"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5851E1] text-white px-4 py-2 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all ml-4 sm:ml-0"
+          >
+            <Heart size={14} fill="currentColor" />
+            {t.support}
+          </a>
         </div>
       </footer>
     </div>

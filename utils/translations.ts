@@ -117,6 +117,7 @@ export const translations = {
     // Footer
     impressum: "Impressum",
     privacy: "Datenschutz",
+    support: "vCard unterstützen",
 
     // Errors & Prompts
     missingKey: "API Key fehlt. Bitte in den Einstellungen hinterlegen.",
@@ -239,6 +240,7 @@ export const translations = {
     // Footer
     impressum: "Imprint",
     privacy: "Privacy",
+    support: "Support vCard",
 
     // Errors & Prompts
     missingKey: "API Key missing. Please configure in settings.",
