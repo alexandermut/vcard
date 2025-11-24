@@ -1,6 +1,7 @@
 import { addHistoryItem, getHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage } from './utils/db';
-
+import { ChatModal } from './components/ChatModal';
 // ... imports ...
+import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare } from 'lucide-react';
 
 const App: React.FC = () => {
   // ... state ...
@@ -9,6 +10,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   // ... other state ...
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Load History & Migrate on Mount
   useEffect(() => {
@@ -383,6 +385,15 @@ const App: React.FC = () => {
         initialTab={legalTab}
       />
 
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        history={history}
+        apiKey={getKeyToUse()}
+        llmConfig={llmConfig}
+        lang={lang}
+      />
+
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -416,6 +427,14 @@ const App: React.FC = () => {
                 <AppWindow size={18} />
               </button>
             )}
+
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              title="AI Chat"
+            >
+              <MessageSquare size={18} />
+            </button>
 
             <button
               onClick={() => setIsSettingsOpen(true)}
