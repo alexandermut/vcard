@@ -4,6 +4,8 @@ import { correctVCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
 import { useScanQueue } from './hooks/useScanQueue';
 import { translations } from './utils/translations';
+import { generateCSV, downloadCSV } from './utils/csvUtils';
+import { generateJSON, downloadJSON, restoreJSON } from './utils/jsonUtils';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { BatchUploadModal } from './components/BatchUploadModal';
@@ -183,6 +185,23 @@ const App: React.FC = () => {
     const results = await searchHistory(query);
     setHistory(results);
     setHasMoreHistory(false); // Search results are not paginated for now
+  };
+
+  const handleRestoreBackup = async (file: File) => {
+    try {
+      const text = await file.text();
+      const count = await restoreJSON(text);
+
+      // Reload history
+      const items = await getHistoryPaged(HISTORY_LIMIT);
+      setHistory(items);
+      setHasMoreHistory(items.length >= HISTORY_LIMIT);
+
+      alert(translations[lang].qrScanSuccess.replace('vCard', `${count} Items`)); // Reuse success message or add new one
+    } catch (e) {
+      console.error(e);
+      alert("Restore failed: " + (e as Error).message);
+    }
   };
 
   // ... theme/lang effects ...
@@ -544,6 +563,7 @@ const App: React.FC = () => {
         onLoadMore={handleLoadMoreHistory}
         hasMore={hasMoreHistory}
         onSearch={handleSearchHistory}
+        onRestore={handleRestoreBackup}
         lang={lang}
       />
 

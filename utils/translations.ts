@@ -17,6 +17,8 @@ export const translations = {
     qrScanSuccess: "vCard erfolgreich gescannt!",
     loadMore: "Mehr laden",
     searchPlaceholder: "Verlauf durchsuchen...",
+    restoreBackup: "Backup wiederherstellen",
+
 
 
     // Editor
@@ -148,6 +150,8 @@ export const translations = {
     qrScanSuccess: "vCard scanned successfully!",
     loadMore: "Load More",
     searchPlaceholder: "Search history...",
+    restoreBackup: "Restore Backup",
+
 
 
     // Editor
