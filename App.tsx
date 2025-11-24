@@ -586,9 +586,8 @@ const App: React.FC = () => {
         onScan={(data) => {
           setVcardString(data);
           setIsQRScannerOpen(false);
-          // Optional: Add to history immediately?
-          // addToHistory(data); 
-          // Better: Let user review in editor first.
+          // Add to history immediately
+          addToHistory(data);
         }}
         lang={lang}
       />
