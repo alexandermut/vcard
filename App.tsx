@@ -581,15 +581,41 @@ const App: React.FC = () => {
       <QRScannerModal
         isOpen={isQRScannerOpen}
         onClose={() => setIsQRScannerOpen(false)}
-        onScan={(data) => {
+        onScan={async (data) => {
           setVcardString(data);
           setIsQRScannerOpen(false);
-          // Add to history if valid vCard
-          const parsed = parseVCardString(data);
-          if (parsed.isValid) {
-            addToHistory(data);
+
+          // Check if it's a URL to a vCard
+          const isUrl = data.trim().match(/^https?:\/\//i);
+
+          if (isUrl) {
+            try {
+              // Fetch vCard from URL
+              const response = await fetch(data);
+              if (!response.ok) throw new Error('Failed to fetch vCard');
+              const vcardContent = await response.text();
+
+              // Validate it's a vCard
+              const parsed = parseVCardString(vcardContent);
+              if (parsed.isValid) {
+                setVcardString(vcardContent);
+                addToHistory(vcardContent);
+              } else {
+                console.warn('URL returned invalid vCard format');
+                alert('Der Link enthält keine gültige vCard.');
+              }
+            } catch (e) {
+              console.error('Failed to fetch vCard from URL:', e);
+              alert('Fehler beim Laden der vCard: ' + (e as Error).message);
+            }
           } else {
-            console.warn('QR Code scanned but invalid vCard format');
+            // Direct vCard content
+            const parsed = parseVCardString(data);
+            if (parsed.isValid) {
+              addToHistory(data);
+            } else {
+              console.warn('QR Code scanned but invalid vCard format');
+            }
           }
         }}
         lang={lang}
