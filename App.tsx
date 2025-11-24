@@ -660,7 +660,7 @@ const App: React.FC = () => {
                 : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
                 }`}
             >
-              {isAIReady ? <UserCircle size={18} className="text-green-600 dark:text-green-500" /> : <Settings size={18} />}
+              {isAIReady ? <Settings size={18} /> : <Settings size={18} />}
               <span className="text-xs font-medium hidden md:inline">
                 {t.settings}
               </span>
