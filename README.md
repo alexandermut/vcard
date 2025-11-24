@@ -102,3 +102,5 @@ Ein großes Dankeschön an alle Maintainer und Contributor dieser Projekte!
 ## 📝 Lizenz
 
 MIT License - Alexander Mut
+
+> **Note:** While not strictly required by the license, I kindly ask you to keep the link to the original project in the footer or credits if you use this code publicly. It helps the project grow! ❤️
