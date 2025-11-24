@@ -10,6 +10,8 @@ export const translations = {
     invalid: "Ungültig",
     saveHistory: "In Verlauf speichern",
     showQR: "QR Code anzeigen",
+    share: "Teilen",
+    shareError: "Teilen nicht unterstützt",
 
     // Editor
     textTab: "Kontaktdaten Text",
@@ -133,6 +135,8 @@ export const translations = {
     invalid: "Invalid",
     saveHistory: "Save to History",
     showQR: "Show QR Code",
+    share: "Share",
+    shareError: "Sharing not supported",
 
     // Editor
     textTab: "Enter Text",
