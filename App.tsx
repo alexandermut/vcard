@@ -582,39 +582,29 @@ const App: React.FC = () => {
         isOpen={isQRScannerOpen}
         onClose={() => setIsQRScannerOpen(false)}
         onScan={async (data) => {
-          setVcardString(data);
           setIsQRScannerOpen(false);
 
           // Check if it's a URL to a vCard
           const isUrl = data.trim().match(/^https?:\/\//i);
 
           if (isUrl) {
-            try {
-              // Fetch vCard from URL
-              const response = await fetch(data);
-              if (!response.ok) throw new Error('Failed to fetch vCard');
-              const vcardContent = await response.text();
+            // Open URL in new tab (avoids CORS issues)
+            const userChoice = window.confirm(
+              'Der QR-Code enthält einen Link:\n\n' + data + '\n\nMöchtest du diesen Link in einem neuen Tab öffnen? (Die vCard kannst du dann herunterladen und hier hochladen.)'
+            );
 
-              // Validate it's a vCard
-              const parsed = parseVCardString(vcardContent);
-              if (parsed.isValid) {
-                setVcardString(vcardContent);
-                addToHistory(vcardContent);
-              } else {
-                console.warn('URL returned invalid vCard format');
-                alert('Der Link enthält keine gültige vCard.');
-              }
-            } catch (e) {
-              console.error('Failed to fetch vCard from URL:', e);
-              alert('Fehler beim Laden der vCard: ' + (e as Error).message);
+            if (userChoice) {
+              window.open(data, '_blank', 'noopener,noreferrer');
             }
           } else {
             // Direct vCard content
             const parsed = parseVCardString(data);
             if (parsed.isValid) {
+              setVcardString(data);
               addToHistory(data);
             } else {
               console.warn('QR Code scanned but invalid vCard format');
+              alert('Der QR-Code enthält keine gültige vCard.');
             }
           }
         }}
