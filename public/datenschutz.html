@@ -125,6 +125,8 @@
             <li><strong>Lokale Speicherung:</strong> Ihre Inhaltsdaten (Texte, Visitenkarten-Scans, Historie, API-Keys)
                 werden primär und dauerhaft lokal im Browser Ihres Endgeräts (Local Storage / IndexedDB) gespeichert.
             </li>
+            <li><strong>Lokale Verarbeitung:</strong> Funktionen wie der QR-Code-Scanner laufen vollständig in Ihrem
+                Browser (via `jsqr`). Es werden keine Videostreams an Server gesendet.</li>
             <li><strong>Kein Backend-Zugriff auf Inhalte:</strong> Wir als Webseitenbetreiber haben technisch keinen
                 Zugriff auf Ihre lokal gespeicherten Inhalte.</li>
             <li>
@@ -281,8 +283,9 @@
             <p>Diese Anwendung ist eine reine Frontend-Applikation.</p>
             <ul>
                 <li><strong>Datenverlust:</strong> Es findet keine automatische Cloud-Synchronisation statt. Sie sind
-                    allein verantwortlich für Backups Ihrer Daten (z.B. über die Export-Funktion). Bei Geräteverlust
-                    oder Löschen des Browser-Caches sind die Daten unwiderruflich verloren.</li>
+                    allein verantwortlich für Backups Ihrer Daten (nutzen Sie hierfür die "Backup & Restore" Funktion in
+                    der Historie). Bei Geräteverlust oder Löschen des Browser-Caches sind die Daten unwiderruflich
+                    verloren.</li>
                 <li><strong>Sicherheit:</strong> Sie tragen die volle Verantwortung für die Sicherheit Ihrer
                     API-Schlüssel und die Geheimhaltung Ihrer generierten Lizenzschlüssel.</li>
             </ul>

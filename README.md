@@ -12,11 +12,14 @@ Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmä�
     *   *Offline:* Blitzschnelle Erkennung von Signaturen durch komplexe Regex-Muster (optimiert für DACH-Adressen).
     *   *Online (KI):* Google Gemini 3 Pro für "forensische" Datenextraktion, Korrektur und Anreicherung.
 *   **Smart Scan:** Visitenkarten einfach fotografieren (Vorder- & Rückseite). Die KI extrahiert alle Daten.
+*   **QR Code Scanner:** Integrierter Scanner für vCard QR-Codes. Funktioniert komplett lokal im Browser.
 *   **Stapel-Verarbeitung (Batch Queue):** Mehrere Karten nacheinander scannen – die Verarbeitung läuft asynchron im Hintergrund.
-*   **Smart Merge:** Erkennt Dubletten (Name oder Telefonnummer) und führt neue Daten mit bestehenden Einträgen zusammen (Enrichment), statt sie zu überschreiben.
-*   **Social Media Intelligence:** Automatische Suche nach LinkedIn/Xing Profilen und direkte Integration.
-*   **Daten-Anreicherung:** "Enrich"-Modus, um bestehende Kontakte per KI-Befehl zu aktualisieren (z.B. "Füge private Nummer 0170... hinzu").
-*   **Vollständiger Verlauf:** Alle Scans werden lokal gespeichert, inkl. Originalbildern.
+*   **Smart Merge:** Erkennt Dubletten (Name oder Telefonnummer) und führt neue Daten mit bestehenden Einträgen zusammen (Enrichment).
+*   **Intelligente Suche:** Datenbank-basierte Volltextsuche (IndexedDB) über alle Felder (Name, Firma, E-Mail, Telefon, Adresse, Notizen) mit Highlighting.
+*   **Backup & Restore:** Vollständiges Backup der Historie inkl. Bilder als JSON-Datei. Einfache Wiederherstellung auf jedem Gerät.
+*   **Social Media Intelligence:** Automatische Suche nach LinkedIn/Xing Profilen.
+*   **Daten-Anreicherung:** "Enrich"-Modus, um bestehende Kontakte per KI-Befehl zu aktualisieren.
+*   **Vollständiger Verlauf:** Alle Scans werden lokal gespeichert (IndexedDB mit Blob-Optimierung).
 *   **Export:** vCard (.vcf), CSV (Excel-kompatibel) und Bilder-Download (ZIP).
 *   **Cross-Platform:** Funktioniert als installierbare PWA auf Desktop, iOS und Android.
 
@@ -27,7 +30,7 @@ Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmä�
 *   **Frontend:** React 18, TypeScript, Vite
 *   **Styling:** Tailwind CSS
 *   **AI Engine:** Google Gemini API (`gemini-3-pro-preview`) via `@google/genai` SDK
-*   **Utilities:** `jszip` (Export), `qrcode` (Sharing), `lucide-react` (Icons)
+*   **Utilities:** `jszip` (Export), `qrcode` (Gen), `jsqr` (Scan), `lucide-react` (Icons)
 *   **Hosting:** GitHub Pages (Static Site)
 
 ---

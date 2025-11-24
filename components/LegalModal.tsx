@@ -138,6 +138,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                                 <p className="mb-2">Diese Anwendung ("vCards") verfolgt einen "Local-First"-Ansatz. Das bedeutet:</p>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     <li><strong>Lokale Speicherung:</strong> Ihre Inhaltsdaten (Texte, Visitenkarten-Scans, Historie, API-Keys) werden primär und dauerhaft lokal im Browser Ihres Endgeräts (Local Storage / IndexedDB) gespeichert.</li>
+                                    <li><strong>Lokale Verarbeitung:</strong> Funktionen wie der QR-Code-Scanner laufen vollständig in Ihrem Browser (via `jsqr`). Es werden keine Videostreams an Server gesendet.</li>
                                     <li><strong>Kein Backend-Zugriff auf Inhalte:</strong> Wir als Webseitenbetreiber haben technisch keinen Zugriff auf Ihre lokal gespeicherten Inhalte.</li>
                                     <li>
                                         <strong>⚠️ Ausnahmen (Datenübertragung):</strong> Daten verlassen Ihr Gerät bzw. Ihren Browser nur in zwei konkreten Fällen, die durch Ihre aktive Handlung ausgelöst werden:
@@ -264,7 +265,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg text-blue-900 dark:text-blue-100">
                                     <p className="mb-2">Diese Anwendung ist eine reine Frontend-Applikation.</p>
                                     <ul className="list-disc pl-5 space-y-2 text-sm">
-                                        <li><strong>Datenverlust:</strong> Es findet keine automatische Cloud-Synchronisation statt. Sie sind allein verantwortlich für Backups Ihrer Daten (z.B. über die Export-Funktion). Bei Geräteverlust oder Löschen des Browser-Caches sind die Daten unwiderruflich verloren.</li>
+                                        <li><strong>Datenverlust:</strong> Es findet keine automatische Cloud-Synchronisation statt. Sie sind allein verantwortlich für Backups Ihrer Daten (nutzen Sie hierfür die "Backup & Restore" Funktion in der Historie). Bei Geräteverlust oder Löschen des Browser-Caches sind die Daten unwiderruflich verloren.</li>
                                         <li><strong>Sicherheit:</strong> Sie tragen die volle Verantwortung für die Sicherheit Ihrer API-Schlüssel und die Geheimhaltung Ihrer generierten Lizenzschlüssel.</li>
                                     </ul>
                                 </div>
