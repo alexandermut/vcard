@@ -49,7 +49,7 @@ const App: React.FC = () => {
 
   // Config State
   const [lang, setLang] = useState<Language>('de');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
 
   // PWA State
   const [installPrompt, setInstallPrompt] = useState<any>(null);
