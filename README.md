@@ -77,6 +77,25 @@ Der Output landet im `dist/` Ordner und kann auf jedem statischen Webserver geho
 
 ---
 
+## 👏 Credits / Open Source Licenses
+
+Dieses Projekt steht auf den Schultern von Giganten. Wir nutzen und lieben folgende Open-Source-Bibliotheken:
+
+*   **[React](https://react.dev/)** (MIT) - UI Library
+*   **[Vite](https://vitejs.dev/)** (MIT) - Build Tool
+*   **[Tailwind CSS](https://tailwindcss.com/)** (MIT) - Utility-first CSS framework
+*   **[Google GenAI SDK](https://www.npmjs.com/package/@google/genai)** (Apache 2.0) - AI Integration
+*   **[idb](https://github.com/jakearchibald/idb)** (ISC) - IndexedDB Promise Wrapper
+*   **[jsQR](https://github.com/cozmo/jsQR)** (Apache 2.0) - QR Code Scanning
+*   **[qrcode](https://github.com/soldair/node-qrcode)** (MIT) - QR Code Generation
+*   **[JSZip](https://stuk.github.io/jszip/)** (MIT) - ZIP File Creation
+*   **[Lucide React](https://lucide.dev/)** (ISC) - Beautiful Icons
+*   **[Vite Plugin PWA](https://vite-pwa-org.netlify.app/)** (MIT) - PWA Capabilities
+
+Ein großes Dankeschön an alle Maintainer und Contributor dieser Projekte!
+
+---
+
 ## 📝 Lizenz
 
 MIT License - Alexander Mut

@@ -261,3 +261,7 @@ export const downloadVCard = (content: string, filename: string = 'contact.vcf')
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+export const clean_number = (str: string): string => {
+  return str.replace(/[^0-9+]/g, '');
+};

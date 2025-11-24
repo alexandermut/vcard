@@ -340,3 +340,28 @@ const cleanResponse = (text: string): string => {
 
   return cleaned;
 };
+
+export const generateContent = async (
+  apiKey: string,
+  prompt: string,
+  image?: ImageInput,
+  llmConfig?: LLMConfig
+): Promise<string> => {
+  // Route to OpenAI
+  if (llmConfig?.provider === 'openai') {
+    return callOpenAI(prompt, llmConfig.openaiApiKey, 'text', 'en', llmConfig.openaiModel || 'gpt-5.1');
+  }
+
+  // Route to Custom LLM (not fully implemented for generic chat yet, fallback to Gemini or throw?)
+  // For now, let's assume if custom is selected, we might want to use it too.
+  // But since we don't have a generic custom chat function yet, let's default to Gemini if key is present, or throw.
+
+  // Default to Gemini
+  if (!apiKey) throw new Error("MISSING_KEY");
+
+  const ai = new GoogleGenAI({ apiKey });
+  const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Flash for chat speed
+
+  const result = await model.generateContent(prompt);
+  return result.response.text();
+};

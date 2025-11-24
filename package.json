@@ -12,6 +12,7 @@
     "@fontsource/inter": "^5.2.8",
     "@google/genai": "^1.0.0",
     "idb": "^8.0.3",
+    "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "lucide-react": "^0.294.0",
     "qrcode": "^1.5.3",

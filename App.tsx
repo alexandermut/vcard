@@ -1,16 +1,155 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard } from './utils/vcardUtils';
+import { correctVCard } from './services/aiService';
+import { useLLMConfig } from './hooks/useLLMConfig';
+import { useScanQueue } from './hooks/useScanQueue';
+import { translations } from './utils/translations';
+import { HistorySidebar } from './components/HistorySidebar';
+import { SettingsModal } from './components/SettingsModal';
+import { BatchUploadModal } from './components/BatchUploadModal';
+import { ScanModal } from './components/ScanModal';
+import { QueueIndicator } from './components/QueueIndicator';
+import { QRCodeModal } from './components/QRCodeModal';
+import { SocialSearchModal } from './components/SocialSearchModal';
+import { LegalModal } from './components/LegalModal';
+import { Editor } from './components/Editor';
+import { PreviewCard } from './components/PreviewCard';
+import { ReloadPrompt } from './components/ReloadPrompt';
+import { HistoryItem, VCardData, Language } from './types';
 import { addHistoryItem, getHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage } from './utils/db';
 import { ChatModal } from './components/ChatModal';
-// ... imports ...
+import { QRScannerModal } from './components/QRScannerModal';
 import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare } from 'lucide-react';
 
+const DEFAULT_VCARD = `BEGIN:VCARD
+VERSION:3.0
+N:Mustermann;Max;;;
+FN:Max Mustermann
+ORG:Musterfirma GmbH
+TITLE:Geschäftsführer
+TEL;TYPE=WORK,VOICE:+49 30 12345678
+EMAIL;TYPE=WORK:max@musterfirma.de
+URL;TYPE=WORK:https://www.musterfirma.de
+ADR;TYPE=WORK:;;Musterstraße 123;Berlin;;10115;Germany
+END:VCARD`;
+
 const App: React.FC = () => {
-  // ... state ...
+  // --- STATE ---
+  const [vcardString, setVcardString] = useState<string>(DEFAULT_VCARD);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentImages, setCurrentImages] = useState<string[] | undefined>(undefined);
+  const [backupVCard, setBackupVCard] = useState<string | null>(null);
+
+  // UI State
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [isScanOpen, setIsScanOpen] = useState(false);
+  const [isBatchUploadOpen, setIsBatchUploadOpen] = useState(false);
+  const [isQROpen, setIsQROpen] = useState(false);
+  const [isSocialSearchOpen, setIsSocialSearchOpen] = useState(false);
+  const [isLegalOpen, setIsLegalOpen] = useState(false);
+  const [legalTab, setLegalTab] = useState<'imprint' | 'privacy'>('imprint');
+  const [searchPlatform, setSearchPlatform] = useState<string>('LINKEDIN');
+  const [droppedFile, setDroppedFile] = useState<File | null>(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+
+  // Config State
+  const [lang, setLang] = useState<Language>('de');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // PWA State
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  // Hooks
+  const {
+    apiKey,
+    llmConfig,
+    setProvider,
+    setCustomConfig,
+    setOllamaDefaults,
+    getKeyToUse,
+    hasSystemKey
+  } = useLLMConfig();
+
+  const { queue, addJob, removeJob } = useScanQueue(
+    getKeyToUse() || '',
+    lang,
+    llmConfig,
+    (vcard, images) => {
+      setVcardString(vcard);
+      setCurrentImages(images);
+      // Auto-save to history on successful scan
+      addToHistory(vcard, undefined, images);
+    }
+  );
+
+  const handleLoadHistoryItem = (item: HistoryItem) => {
+    setVcardString(item.vcard);
+    setCurrentImages(item.images);
+    setIsHistoryOpen(false);
+  };
+
+  const t = translations[lang];
+
+  // Derived State
+  const parsedData = useMemo(() => parseVCardString(vcardString), [vcardString]);
 
   // History State (Start empty, load async)
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
-  // ... other state ...
-  const [isChatOpen, setIsChatOpen] = useState(false);
+  // PWA Install Prompt Listener
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
+
+  // Dark Mode Effect
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  // Load Settings from LocalStorage
+  useEffect(() => {
+    const savedLang = localStorage.getItem('vcard_lang') as Language;
+    if (savedLang) setLang(savedLang);
+
+    const savedDark = localStorage.getItem('vcard_dark_mode');
+    if (savedDark) setIsDarkMode(JSON.parse(savedDark));
+  }, []);
+
+  // Save Settings
+  const handleSaveSettings = (newKey: string) => {
+    // This function is mainly for the API key input in the modal
+    // But we use useLLMConfig for that now.
+    // We can keep it to update the key if passed manually
+    // But mostly we rely on the modal calling setCustomConfig
+  };
+
+  // Auto-save Lang & Dark Mode
+  useEffect(() => {
+    localStorage.setItem('vcard_lang', lang);
+    localStorage.setItem('vcard_dark_mode', JSON.stringify(isDarkMode));
+  }, [lang, isDarkMode]);
+
 
   // Load History & Migrate on Mount
   useEffect(() => {
@@ -391,6 +530,19 @@ const App: React.FC = () => {
         history={history}
         apiKey={getKeyToUse()}
         llmConfig={llmConfig}
+        lang={lang}
+      />
+
+      <QRScannerModal
+        isOpen={isQRScannerOpen}
+        onClose={() => setIsQRScannerOpen(false)}
+        onScan={(data) => {
+          setVcardString(data);
+          setIsQRScannerOpen(false);
+          // Optional: Add to history immediately?
+          // addToHistory(data); 
+          // Better: Let user review in editor first.
+        }}
         lang={lang}
       />
 

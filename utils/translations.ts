@@ -12,6 +12,9 @@ export const translations = {
     showQR: "QR Code anzeigen",
     share: "Teilen",
     shareError: "Teilen nicht unterstützt",
+    qrScannerTitle: "QR Code scannen",
+    cameraPermissionError: "Kamera-Zugriff verweigert. Bitte erlauben.",
+    qrScanSuccess: "vCard erfolgreich gescannt!",
 
     // Editor
     textTab: "Kontaktdaten Text",
@@ -137,6 +140,9 @@ export const translations = {
     showQR: "Show QR Code",
     share: "Share",
     shareError: "Sharing not supported",
+    qrScannerTitle: "Scan QR Code",
+    cameraPermissionError: "Camera access denied. Please allow.",
+    qrScanSuccess: "vCard scanned successfully!",
 
     // Editor
     textTab: "Enter Text",

@@ -68,11 +68,33 @@ export const useLLMConfig = () => {
         }));
     };
 
+    const getKeyToUse = () => {
+        if (config.provider === 'openai') return config.openaiApiKey;
+        if (config.provider === 'custom') return config.customApiKey;
+        // Default to Google (user key or system key handled by caller)
+        return '';
+    };
+
+    // Check for system key (AI Studio)
+    const [hasSystemKey, setHasSystemKey] = useState(false);
+    useEffect(() => {
+        const checkSystemKey = async () => {
+            if ((window as any).aistudio && typeof (window as any).aistudio.hasSelectedApiKey === 'function') {
+                const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+                setHasSystemKey(hasKey);
+            }
+        };
+        checkSystemKey();
+    }, []);
+
     return {
-        config,
+        llmConfig: config,
+        apiKey: getKeyToUse(), // Current active key
         setProvider,
         setCustomConfig,
         resetToGoogle,
         setOllamaDefaults,
+        getKeyToUse,
+        hasSystemKey
     };
 };
