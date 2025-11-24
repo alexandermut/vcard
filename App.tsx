@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard } from './utils/vcardUtils';
+import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
 import { useScanQueue } from './hooks/useScanQueue';
@@ -16,22 +16,12 @@ import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, getHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage } from './utils/db';
+import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare } from 'lucide-react';
 
-const DEFAULT_VCARD = `BEGIN:VCARD
-VERSION:3.0
-N:Mustermann;Max;;;
-FN:Max Mustermann
-ORG:Musterfirma GmbH
-TITLE:Geschäftsführer
-TEL;TYPE=WORK,VOICE:+49 30 12345678
-EMAIL;TYPE=WORK:max@musterfirma.de
-URL;TYPE=WORK:https://www.musterfirma.de
-ADR;TYPE=WORK:;;Musterstraße 123;Berlin;;10115;Germany
-END:VCARD`;
+
 
 const App: React.FC = () => {
   // --- STATE ---
@@ -98,6 +88,8 @@ const App: React.FC = () => {
 
   // History State (Start empty, load async)
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const HISTORY_LIMIT = 20;
 
   // PWA Install Prompt Listener
   useEffect(() => {
@@ -155,11 +147,43 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadHistory = async () => {
       await migrateFromLocalStorage();
-      const items = await getHistory();
+      await migrateBase64ToBlob(); // Optimize storage
+      await migrateKeywords(); // Add search index
+      const items = await getHistoryPaged(HISTORY_LIMIT);
       setHistory(items);
+      setHasMoreHistory(items.length >= HISTORY_LIMIT);
     };
     loadHistory();
   }, []);
+
+  const handleLoadMoreHistory = async () => {
+    if (!history.length) return;
+    const lastItem = history[history.length - 1];
+    const newItems = await getHistoryPaged(HISTORY_LIMIT, lastItem.timestamp);
+
+    if (newItems.length > 0) {
+      setHistory(prev => [...prev, ...newItems]);
+      if (newItems.length < HISTORY_LIMIT) {
+        setHasMoreHistory(false);
+      }
+    } else {
+      setHasMoreHistory(false);
+    }
+  };
+
+  const handleSearchHistory = async (query: string) => {
+    if (!query.trim()) {
+      // Reset to normal paged view
+      const items = await getHistoryPaged(HISTORY_LIMIT);
+      setHistory(items);
+      setHasMoreHistory(items.length >= HISTORY_LIMIT);
+      return;
+    }
+
+    const results = await searchHistory(query);
+    setHistory(results);
+    setHasMoreHistory(false); // Search results are not paginated for now
+  };
 
   // ... theme/lang effects ...
 
@@ -508,13 +532,18 @@ const App: React.FC = () => {
         onLoad={handleLoadHistoryItem}
         onDelete={async (id) => {
           await deleteHistoryItem(id);
-          const items = await getHistory();
+          // Reload first page to keep consistent
+          const items = await getHistoryPaged(history.length); // Reload current count
           setHistory(items);
         }}
         onClear={async () => {
           await clearHistory();
           setHistory([]);
+          setHasMoreHistory(false);
         }}
+        onLoadMore={handleLoadMoreHistory}
+        hasMore={hasMoreHistory}
+        onSearch={handleSearchHistory}
         lang={lang}
       />
 

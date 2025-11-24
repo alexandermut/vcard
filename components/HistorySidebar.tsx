@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Trash2, Upload, FileText, Download, History, Contact, Image as ImageIcon, LayoutGrid, List } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Trash2, Upload, FileText, Download, History, Contact, Image as ImageIcon, LayoutGrid, List, Search } from 'lucide-react';
 import { HistoryItem, Language } from '../types';
 import { generateCSV, downloadCSV } from '../utils/csvUtils';
 import { generateJSON, downloadJSON } from '../utils/jsonUtils';
@@ -15,14 +15,25 @@ interface HistorySidebarProps {
   onLoad: (item: HistoryItem) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
+  onLoadMore: () => void;
+  hasMore: boolean;
+  onSearch: (query: string) => void;
   lang: Language;
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
-  isOpen, onClose, history, onLoad, onDelete, onClear, lang
+  isOpen, onClose, history, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, lang
 }) => {
   const t = translations[lang];
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, onSearch]);
 
   const handleExportCSV = () => {
     const csv = generateCSV(history);
@@ -129,6 +140,20 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
               <X size={20} />
             </button>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="p-4 pb-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder={t.searchPlaceholder || "Search..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+            />
           </div>
         </div>
 
@@ -267,6 +292,15 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               {t.clearHistory}
             </button>
           </div>
+        )}
+
+        {hasMore && (
+          <button
+            onClick={onLoadMore}
+            className="w-full mt-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
+          >
+            {t.loadMore || 'Load More'}
+          </button>
         )}
       </div>
     </>

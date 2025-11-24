@@ -15,6 +15,9 @@ export const translations = {
     qrScannerTitle: "QR Code scannen",
     cameraPermissionError: "Kamera-Zugriff verweigert. Bitte erlauben.",
     qrScanSuccess: "vCard erfolgreich gescannt!",
+    loadMore: "Mehr laden",
+    searchPlaceholder: "Verlauf durchsuchen...",
+
 
     // Editor
     textTab: "Kontaktdaten Text",
@@ -143,6 +146,9 @@ export const translations = {
     qrScannerTitle: "Scan QR Code",
     cameraPermissionError: "Camera access denied. Please allow.",
     qrScanSuccess: "vCard scanned successfully!",
+    loadMore: "Load More",
+    searchPlaceholder: "Search history...",
+
 
     // Editor
     textTab: "Enter Text",

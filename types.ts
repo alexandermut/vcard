@@ -39,6 +39,7 @@ export interface HistoryItem {
   org?: string;
   vcard: string;
   images?: string[]; // Array of Base64 strings (Front/Back)
+  keywords?: string[]; // For search indexing
 }
 
 export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';

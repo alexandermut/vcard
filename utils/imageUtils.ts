@@ -31,12 +31,12 @@ export const resizeImage = (file: File, maxDimension: number = 1024, quality: nu
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
-            reject(new Error("Could not get canvas context"));
-            return;
+          reject(new Error("Could not get canvas context"));
+          return;
         }
-        
+
         ctx.drawImage(img, 0, 0, width, height);
-        
+
         // Convert to JPEG Base64
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);
@@ -52,54 +52,70 @@ export const resizeImage = (file: File, maxDimension: number = 1024, quality: nu
  * Useful for exporting front/back scans as a single file.
  */
 export const combineImages = (frontBase64: string, backBase64: string | undefined | null): Promise<Blob> => {
-    return new Promise((resolve, reject) => {
-        const frontImg = new Image();
-        
-        frontImg.onload = () => {
-            if (!backBase64) {
-                // Only front image
-                fetch(frontBase64).then(res => res.blob()).then(resolve).catch(reject);
-                return;
-            }
+  return new Promise((resolve, reject) => {
+    const frontImg = new Image();
 
-            const backImg = new Image();
-            backImg.onload = () => {
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                if (!ctx) {
-                    reject(new Error("Canvas context not available"));
-                    return;
-                }
+    frontImg.onload = () => {
+      if (!backBase64) {
+        // Only front image
+        fetch(frontBase64).then(res => res.blob()).then(resolve).catch(reject);
+        return;
+      }
 
-                // Determine dimensions (max width wins)
-                const width = Math.max(frontImg.width, backImg.width);
-                const height = frontImg.height + backImg.height + 20; // 20px spacing
+      const backImg = new Image();
+      backImg.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
 
-                canvas.width = width;
-                canvas.height = height;
+        if (!ctx) {
+          reject(new Error("Canvas context not available"));
+          return;
+        }
 
-                // Fill white background
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, width, height);
+        // Determine dimensions (max width wins)
+        const width = Math.max(frontImg.width, backImg.width);
+        const height = frontImg.height + backImg.height + 20; // 20px spacing
 
-                // Draw Front (Centered horizontally)
-                const frontX = (width - frontImg.width) / 2;
-                ctx.drawImage(frontImg, frontX, 0);
+        canvas.width = width;
+        canvas.height = height;
 
-                // Draw Back (Centered horizontally)
-                const backX = (width - backImg.width) / 2;
-                ctx.drawImage(backImg, backX, frontImg.height + 20);
+        // Fill white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, width, height);
 
-                canvas.toBlob((blob) => {
-                    if (blob) resolve(blob);
-                    else reject(new Error("Canvas to Blob failed"));
-                }, 'image/jpeg', 0.9);
-            };
-            backImg.onerror = reject;
-            backImg.src = backBase64;
-        };
-        frontImg.onerror = reject;
-        frontImg.src = frontBase64;
-    });
+        // Draw Front (Centered horizontally)
+        const frontX = (width - frontImg.width) / 2;
+        ctx.drawImage(frontImg, frontX, 0);
+
+        // Draw Back (Centered horizontally)
+        const backX = (width - backImg.width) / 2;
+        ctx.drawImage(backImg, backX, frontImg.height + 20);
+
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("Canvas to Blob failed"));
+        }, 'image/jpeg', 0.9);
+      };
+      backImg.onerror = reject;
+      backImg.src = backBase64;
+    };
+    frontImg.onerror = reject;
+  });
+};
+
+/**
+ * Converts a Base64 string to a Blob.
+ */
+export const base64ToBlob = (base64: string): Blob => {
+  const parts = base64.split(';base64,');
+  const contentType = parts[0].split(':')[1];
+  const raw = window.atob(parts[1]);
+  const rawLength = raw.length;
+  const uInt8Array = new Uint8Array(rawLength);
+
+  for (let i = 0; i < rawLength; ++i) {
+    uInt8Array[i] = raw.charCodeAt(i);
+  }
+
+  return new Blob([uInt8Array], { type: contentType });
 };
