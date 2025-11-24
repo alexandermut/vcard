@@ -12,7 +12,7 @@ Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmä�
     *   *Offline:* Blitzschnelle Erkennung von Signaturen durch komplexe Regex-Muster (optimiert für DACH-Adressen).
     *   *Online (KI):* Google Gemini 3 Pro für "forensische" Datenextraktion, Korrektur und Anreicherung.
 *   **Smart Scan:** Visitenkarten einfach fotografieren (Vorder- & Rückseite). Die KI extrahiert alle Daten.
-*   **QR Code Scanner:** Integrierter Scanner für vCard QR-Codes. Funktioniert komplett lokal im Browser.
+*   **QR Code Scanner:** Integrierter Scanner für vCard QR-Codes. Unterstützt direkte vCard-Daten sowie Download-Links (CORS-Safe).
 *   **Stapel-Verarbeitung (Batch Queue):** Mehrere Karten nacheinander scannen – die Verarbeitung läuft asynchron im Hintergrund.
 *   **Smart Merge:** Erkennt Dubletten (Name oder Telefonnummer) und führt neue Daten mit bestehenden Einträgen zusammen (Enrichment).
 *   **Intelligente Suche:** Datenbank-basierte Volltextsuche (IndexedDB) über alle Felder (Name, Firma, E-Mail, Telefon, Adresse, Notizen) mit Highlighting.
@@ -22,6 +22,7 @@ Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmä�
 *   **Vollständiger Verlauf:** Alle Scans werden lokal gespeichert (IndexedDB mit Blob-Optimierung).
 *   **Export:** vCard (.vcf), CSV (Excel-kompatibel) und Bilder-Download (ZIP).
 *   **Cross-Platform:** Funktioniert als installierbare PWA auf Desktop, iOS und Android.
+*   **UI/UX:** Dark Mode (Standard), Responsive Design, Standalone-Seiten für Impressum & Datenschutz.
 
 ---
 
