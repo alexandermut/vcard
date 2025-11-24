@@ -222,8 +222,6 @@ const App: React.FC = () => {
     const newFn = newData.fn?.trim();
     const newPhones = newData.tel?.map(t => clean_number(t.value)) || [];
 
-    if (!newFn && newPhones.length === 0) return;
-
     // Get latest history from DB to ensure we check against current state
     const currentHistory = await getHistory();
 
@@ -586,12 +584,12 @@ const App: React.FC = () => {
         onScan={(data) => {
           setVcardString(data);
           setIsQRScannerOpen(false);
-          // Add to history immediately with validation
+          // Add to history if valid vCard
           const parsed = parseVCardString(data);
-          if (parsed.isValid && (parsed.data.fn || parsed.data.tel?.length)) {
+          if (parsed.isValid) {
             addToHistory(data);
           } else {
-            console.warn('QR Code scanned but not added to history:', { valid: parsed.isValid, hasName: !!parsed.data.fn, hasPhone: !!parsed.data.tel?.length });
+            console.warn('QR Code scanned but invalid vCard format');
           }
         }}
         lang={lang}
