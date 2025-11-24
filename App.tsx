@@ -761,9 +761,9 @@ const App: React.FC = () => {
           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400 order-2 md:order-1">
             <span>&copy; {__APP_VERSION__} {t.appTitle}</span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <a href="/impressum.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</a>
+            <a href="impressum.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</a>
             <span className="text-slate-300 dark:text-slate-700">|</span>
-            <a href="/datenschutz.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</a>
+            <a href="datenschutz.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</a>
           </div>
 
           {/* Bottom Row: Support Button */}
