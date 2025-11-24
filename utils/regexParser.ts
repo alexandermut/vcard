@@ -1,4 +1,6 @@
 import { CITIES_PATTERN } from './cities';
+import { VCardData } from '../types';
+import { parseGermanAddress } from './addressParser';
 
 // --- Types ---
 
@@ -9,7 +11,7 @@ interface Line {
   type?: 'EMAIL' | 'PHONE' | 'URL' | 'ADDRESS' | 'JOB' | 'META' | 'ORG' | 'NAME' | null;
 }
 
-interface VCardData {
+interface ParserData {
   fn: string;
   n: string;
   org: string;
@@ -71,7 +73,7 @@ const consumeMeta = (lines: Line[]) => {
   });
 };
 
-const consumeEmails = (lines: Line[], data: VCardData) => {
+const consumeEmails = (lines: Line[], data: ParserData) => {
   const re_email = /([a-zA-Z0-9_.+-]+)@([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/gi;
   const genericProviders = [
     'gmail.com', 'googlemail.com', 'gmx.de', 'gmx.net', 'web.de',
@@ -103,7 +105,7 @@ const consumeEmails = (lines: Line[], data: VCardData) => {
   });
 };
 
-const consumeUrls = (lines: Line[], data: VCardData) => {
+const consumeUrls = (lines: Line[], data: ParserData) => {
   // Relaxed regex to capture github.com, youtube.com etc. without www
   // We rely on the fact that emails are already consumed.
   const re_www = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?:\/[^\s]*)?/gi;
@@ -142,7 +144,7 @@ const consumeUrls = (lines: Line[], data: VCardData) => {
   });
 };
 
-const consumePhones = (lines: Line[], data: VCardData) => {
+const consumePhones = (lines: Line[], data: ParserData) => {
   // Regex for finding numbers that look like phones
   // Must contain at least 6 digits, maybe spaces, +, (0)
   const re_phone_loose = /(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?|\+?\d[\d\s\-\(\)\/]{6,}\d/g;
@@ -199,7 +201,7 @@ const consumePhones = (lines: Line[], data: VCardData) => {
   });
 };
 
-const consumeAddress = (lines: Line[], data: VCardData) => {
+const consumeAddress = (lines: Line[], data: ParserData) => {
   // Strategy: Find ZIP CITY anchor
   const re_anchor_address = new RegExp(`\\b([0-9]{5})\\s+(${CITIES_PATTERN})\\b`, 'i');
 
@@ -260,11 +262,22 @@ const consumeAddress = (lines: Line[], data: VCardData) => {
       // If we haven't found the street yet, look at the line ABOVE
       if (!street && i > 0) {
         const prevLine = lines[i - 1];
-        // Only if not consumed and looks like a street (has number at end or starts with letter)
-        if (!prevLine.isConsumed && /\d+$/.test(prevLine.clean)) {
-          street = prevLine.clean;
-          prevLine.isConsumed = true;
-          prevLine.type = 'ADDRESS';
+        // Only if not consumed and looks like a street
+        if (!prevLine.isConsumed) {
+          // Try to parse with our new robust parser
+          const addressResult = parseGermanAddress(prevLine.clean);
+
+          if (addressResult.isValid) {
+            street = prevLine.clean; // Keep original full string for vCard (Street + Number)
+            prevLine.isConsumed = true;
+            prevLine.type = 'ADDRESS';
+          }
+          // Fallback: Old heuristic (ends with digit) if parser was too strict but it looks okayish
+          else if (/\d+$/.test(prevLine.clean) && prevLine.clean.length > 5) {
+            street = prevLine.clean;
+            prevLine.isConsumed = true;
+            prevLine.type = 'ADDRESS';
+          }
         }
       }
 
@@ -279,7 +292,7 @@ const consumeAddress = (lines: Line[], data: VCardData) => {
   }
 };
 
-const consumeJobAndTax = (lines: Line[], data: VCardData) => {
+const consumeJobAndTax = (lines: Line[], data: ParserData) => {
   const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|(Inh.)|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer/i;
   const re_ustid = /((Ust|Umsatz)\S+(\s|:))(DE(\s)?.*\d{1,9})/i;
   const re_stnr = /(?:Steuer+[-\s|:.A-Za-z]*)\D(.*\d{1,9})/i;
@@ -322,7 +335,7 @@ const consumeJobAndTax = (lines: Line[], data: VCardData) => {
   });
 };
 
-const consumeCompany = (lines: Line[], data: VCardData) => {
+const consumeCompany = (lines: Line[], data: ParserData) => {
   const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited)(?:$|\s|[.,])/i;
 
   lines.forEach(line => {
@@ -336,7 +349,7 @@ const consumeCompany = (lines: Line[], data: VCardData) => {
   });
 };
 
-const consumeName = (lines: Line[], data: VCardData) => {
+const consumeName = (lines: Line[], data: ParserData) => {
   // 1. Contextual (GF: Name)
   const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director)(?:\s*:\s*|\s+)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i;
 
@@ -387,7 +400,7 @@ const consumeName = (lines: Line[], data: VCardData) => {
   }
 };
 
-const consumeNameHeuristic = (lines: Line[], data: VCardData) => {
+const consumeNameHeuristic = (lines: Line[], data: ParserData) => {
   // Only run if we haven't found a name yet
   if (data.fn) return;
 
@@ -416,7 +429,7 @@ const consumeNameHeuristic = (lines: Line[], data: VCardData) => {
   }
 };
 
-const consumeLeftovers = (lines: Line[], data: VCardData) => {
+const consumeLeftovers = (lines: Line[], data: ParserData) => {
   // If we still have no Company, take the first unconsumed line
   if (!data.org) {
     const firstUnconsumed = lines.find(l => !l.isConsumed && l.clean.length > 2);
@@ -453,7 +466,8 @@ export const parseImpressumToVCard = (text: string): string => {
     .filter(l => l.clean.length > 0);
 
   // 2. Initialize Data
-  const data: VCardData = {
+  // 2. Initialize Data
+  const data: ParserData = {
     fn: "", n: "", org: "", title: "",
     tel: [], email: [], url: [], adr: [], note: []
   };
