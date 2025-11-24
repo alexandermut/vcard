@@ -1,6 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
 import { HistoryItem } from '../types';
 import { base64ToBlob } from './imageUtils';
+import { parseVCardString } from './vcardUtils';
 
 interface VCardDB extends DBSchema {
     history: {
@@ -43,7 +44,31 @@ export const initDB = () => {
 };
 
 const generateKeywords = (item: HistoryItem): string[] => {
-    const text = `${item.name} ${item.org || ''}`.toLowerCase();
+    const parts: string[] = [item.name, item.org || ''];
+
+    // Parse vCard to get hidden fields
+    if (item.vcard) {
+        const parsed = parseVCardString(item.vcard);
+        const d = parsed.data;
+
+        if (d.title) parts.push(d.title);
+        if (d.role) parts.push(d.role);
+        if (d.note) parts.push(d.note);
+
+        d.email?.forEach(e => parts.push(e.value));
+        d.tel?.forEach(t => parts.push(t.value));
+        d.url?.forEach(u => parts.push(u.value));
+
+        d.adr?.forEach(a => {
+            parts.push(a.value.street);
+            parts.push(a.value.city);
+            parts.push(a.value.zip);
+            parts.push(a.value.region);
+            parts.push(a.value.country);
+        });
+    }
+
+    const text = parts.join(' ').toLowerCase();
     // Split by space, remove empty, remove short words (<2 chars)
     return [...new Set(text.split(/[\s,.-]+/).filter(w => w.length > 1))];
 };
@@ -289,8 +314,12 @@ export const migrateKeywords = async () => {
 
     while (cursor) {
         const item = cursor.value;
-        if (!item.keywords) {
-            item.keywords = generateKeywords(item);
+        // Always regenerate keywords to ensure new fields are indexed
+        const newKeywords = generateKeywords(item);
+
+        // Only update if changed (simple length check or deep compare could be better, but overwriting is safe)
+        if (JSON.stringify(item.keywords) !== JSON.stringify(newKeywords)) {
+            item.keywords = newKeywords;
             await cursor.update(item);
             count++;
         }

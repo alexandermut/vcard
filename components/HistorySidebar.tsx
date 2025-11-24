@@ -117,6 +117,25 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       .toUpperCase();
   };
 
+  // Helper for highlighting search terms
+  const HighlightText = ({ text, query }: { text: string | undefined, query: string }) => {
+    if (!text) return null;
+    if (!query.trim()) return <>{text}</>;
+
+    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    return (
+      <>
+        {parts.map((part, i) =>
+          part.toLowerCase() === query.toLowerCase() ? (
+            <span key={i} className="bg-yellow-200 dark:bg-yellow-900/50 text-slate-900 dark:text-slate-100 rounded px-0.5">{part}</span>
+          ) : (
+            part
+          )
+        )}
+      </>
+    );
+  };
+
   return (
     <>
       {isOpen && (
@@ -214,8 +233,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         </div>
                       </div>
                       <div className="p-2 flex-1 flex flex-col justify-center">
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100 text-xs truncate" title={item.name}>{item.name || 'Unbekannt'}</h4>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate" title={item.org}>{item.org}</p>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100 text-xs truncate" title={item.name}>
+                          <HighlightText text={item.name || 'Unbekannt'} query={searchQuery} />
+                        </h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate" title={item.org}>
+                          <HighlightText text={item.org} query={searchQuery} />
+                        </p>
                       </div>
                     </>
                   ) : (
@@ -223,8 +246,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     <>
                       <div className="flex justify-between items-start mb-2">
                         <div className="overflow-hidden mr-2">
-                          <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate">{item.name || 'Unbekannt'}</h4>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">{item.org}</p>
+                          <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate">
+                            <HighlightText text={item.name || 'Unbekannt'} query={searchQuery} />
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            <HighlightText text={item.org} query={searchQuery} />
+                          </p>
                         </div>
                         <div className="flex gap-1 shrink-0">
                           {item.images && item.images.length > 0 && (
