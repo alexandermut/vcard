@@ -132,10 +132,8 @@ const App: React.FC = () => {
 
   // Save Settings
   const handleSaveSettings = (newKey: string) => {
-    // This function is mainly for the API key input in the modal
-    // But we use useLLMConfig for that now.
-    // We can keep it to update the key if passed manually
-    // But mostly we rely on the modal calling setCustomConfig
+    // Save Google API key when manually entered
+    setCustomConfig({ googleApiKey: newKey });
   };
 
   // Auto-save Lang & Dark Mode
@@ -490,7 +488,7 @@ const App: React.FC = () => {
         isOpen={isSettingsOpen}
         onClose={() => { setIsSettingsOpen(false); setError(null); }}
         onSave={handleSaveSettings}
-        apiKey={apiKey}
+        apiKey={llmConfig.googleApiKey}
         lang={lang}
         setLang={setLang}
         isDarkMode={isDarkMode}

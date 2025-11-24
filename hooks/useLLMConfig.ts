@@ -4,6 +4,7 @@ export type LLMProvider = 'google' | 'openai' | 'custom';
 
 export interface LLMConfig {
     provider: LLMProvider;
+    googleApiKey: string;
     openaiApiKey: string;
     openaiModel: string;
     customBaseUrl: string;
@@ -13,6 +14,7 @@ export interface LLMConfig {
 
 const DEFAULT_CONFIG: LLMConfig = {
     provider: 'google',
+    googleApiKey: '',
     openaiApiKey: '',
     openaiModel: '',
     customBaseUrl: '/ollama/v1',
@@ -71,8 +73,8 @@ export const useLLMConfig = () => {
     const getKeyToUse = () => {
         if (config.provider === 'openai') return config.openaiApiKey;
         if (config.provider === 'custom') return config.customApiKey;
-        // Default to Google (user key or system key handled by caller)
-        return '';
+        // Default to Google
+        return config.googleApiKey;
     };
 
     // Check for system key (AI Studio)
