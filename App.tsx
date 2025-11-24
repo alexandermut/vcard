@@ -586,8 +586,13 @@ const App: React.FC = () => {
         onScan={(data) => {
           setVcardString(data);
           setIsQRScannerOpen(false);
-          // Add to history immediately
-          addToHistory(data);
+          // Add to history immediately with validation
+          const parsed = parseVCardString(data);
+          if (parsed.isValid && (parsed.data.fn || parsed.data.tel?.length)) {
+            addToHistory(data);
+          } else {
+            console.warn('QR Code scanned but not added to history:', { valid: parsed.isValid, hasName: !!parsed.data.fn, hasPhone: !!parsed.data.tel?.length });
+          }
         }}
         lang={lang}
       />
