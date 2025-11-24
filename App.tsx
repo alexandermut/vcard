@@ -660,6 +660,15 @@ const App: React.FC = () => {
             </button>
 
             <button
+              onClick={() => setIsQRScannerOpen(true)}
+              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              title="QR Code scannen"
+            >
+              <QrCode size={18} />
+              <span className="hidden lg:inline text-sm">QR Scan</span>
+            </button>
+
+            <button
               onClick={handleOpenBatchUpload}
               className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
               title={t.batchUpload}
