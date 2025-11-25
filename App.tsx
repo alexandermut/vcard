@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePWAInstall } from './hooks/usePWAInstall';
 import { InstallPromptModal } from './components/InstallPromptModal';
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD } from './utils/vcardUtils';
