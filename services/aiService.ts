@@ -12,7 +12,18 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision' | 'hybrid', isU
     YOUR GOAL: Extract contact information from unstructured text/images with 100% precision and format it into a valid vCard string.
   `;
 
-  const INPUT_HANDLING = `
+  const INPUT_HANDLING = mode === 'hybrid' ? `
+    INPUT PROCESSING RULES (HYBRID MODE):
+    1. **CARD EXTRACTION**: Extract all structured data (Name, Phone, Email, etc.) from the Business Card.
+    2. **NOTE EXTRACTION**: EVERYTHING else (handwritten text, printed text around the card) is VALUABLE CONTEXT.
+       - **DO NOT IGNORE** text outside the card.
+       - **DO NOT** treat handwritten notes as noise.
+       - Transcribe handwritten notes exactly and put them into the 'NOTE' field.
+       - If the text says "Meeting on...", "Interested in...", etc., capture it!
+    3. **ENTITY RECOGNITION**:
+       - Identify the PRIMARY contact person. If multiple people listed, prioritize the one that looks like the sender or card owner.
+       - If NO person is found, create a corporate vCard (ORG only).
+  ` : `
     INPUT PROCESSING RULES:
     1. **NOISE REMOVAL**: Aggressively IGNORE and DISCARD:
        - Legal disclaimers ("Confidentiality...", "Diese Nachricht ist...").
@@ -94,7 +105,7 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision' | 'hybrid', isU
   const MODE_SPECIFIC = mode === 'vision'
     ? "TASK: OCR & Extraction. The input is an image. Look for logos, small print, and layout cues to distinguish Company from Name."
     : mode === 'hybrid'
-      ? "TASK: HYBRID EXTRACTION (Card + Notes). The input contains a Business Card AND Handwritten Notes. 1. Extract structured data from the card. 2. Extract handwritten text as context and put it into the 'NOTE' field. Merge them intelligently."
+      ? "TASK: HYBRID EXTRACTION (Card + Notes). The input contains a Business Card AND Handwritten/Printed Notes. PRIORITY: Capture the contact details AND the context from the surrounding text."
       : "TASK: Text Extraction. The input is raw text (e.g. email signature, website footer). Parse it robustly.";
 
   return `
