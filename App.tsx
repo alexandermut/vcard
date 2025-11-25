@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { usePWAInstall } from './hooks/usePWAInstall';
+import { InstallPromptModal } from './components/InstallPromptModal';
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
@@ -53,8 +54,17 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
 
-  // PWA State
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  // PWA Hook
+  const { isInstallable, isIOS, installPWA } = usePWAInstall();
+  const [isIOSInstallOpen, setIsIOSInstallOpen] = useState(false);
+
+  const handleInstallClick = () => {
+    if (isIOS) {
+      setIsIOSInstallOpen(true);
+    } else {
+      installPWA();
+    }
+  };
 
   // Hooks
   const {
@@ -107,24 +117,7 @@ const App: React.FC = () => {
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const HISTORY_LIMIT = 20;
 
-  // PWA Install Prompt Listener
-  useEffect(() => {
-    const handler = (e: any) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
-  }, []);
 
-  const handleInstallApp = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-    }
-  };
 
   // Dark Mode Effect
   useEffect(() => {
@@ -671,13 +664,14 @@ const App: React.FC = () => {
               )}
             </button>
 
-            {installPrompt && (
+            {isInstallable && (
               <button
-                onClick={handleInstallApp}
-                className="p-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors animate-pulse"
-                title="App installieren"
+                onClick={handleInstallClick}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors animate-pulse"
+                title={t.installApp}
               >
-                <AppWindow size={18} />
+                <Download size={18} />
+                <span className="hidden lg:inline text-sm">{t.installApp}</span>
               </button>
             )}
 
@@ -836,6 +830,11 @@ const App: React.FC = () => {
         </div>
       </footer>
       <ReloadPrompt />
+      <InstallPromptModal
+        isOpen={isIOSInstallOpen}
+        onClose={() => setIsIOSInstallOpen(false)}
+        lang={lang}
+      />
     </div>
   );
 };

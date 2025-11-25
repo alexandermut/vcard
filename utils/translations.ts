@@ -133,6 +133,7 @@ export const translations = {
     missingKey: "API Key fehlt. Bitte in den Einstellungen hinterlegen.",
     configError: "Bitte verbinden Sie zuerst die AI in den Einstellungen.",
     resetConfirm: "Möchten Sie wirklich auf die Musterkarte zurücksetzen?",
+    installApp: "App installieren",
   },
   en: {
     appTitle: "vCards",
@@ -266,5 +267,6 @@ export const translations = {
     missingKey: "API Key missing. Please configure in settings.",
     configError: "Please connect to AI in settings first.",
     resetConfirm: "Do you really want to reset to the sample card?",
+    installApp: "Install App",
   }
 };
