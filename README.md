@@ -1,32 +1,33 @@
-# vCards - Intelligenter Visitenkarten-Scanner & Editor
+# vCards - Intelligent Business Card Scanner & Editor
 
-**vCards** ist eine moderne Web-Anwendung (PWA), die physische Visitenkarten und digitale Signaturen blitzschnell in perfekt formatierte Kontakte umwandelt. Sie kombiniert die Geschwindigkeit lokaler Regex-Algorithmen mit der Intelligenz von Google Gemini AI (GPT-4 Level), um maximale Datenqualität zu gewährleisten.
+**vCards** is a modern Web Application (PWA) that instantly converts physical business cards and digital signatures into perfectly formatted contacts. It combines the speed of local regex algorithms with the intelligence of Google Gemini AI (GPT-4 Level) to ensure maximum data quality.
 
-Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmäßig nur im Browser gespeichert. KI-Funktionen sind optional und erfordern eine aktive Einwilligung.
-
----
-
-## 🚀 Hauptfeatures
-
-*   **Hybrider Parser:**
-    *   *Offline:* Blitzschnelle Erkennung von Signaturen durch komplexe Regex-Muster (optimiert für DACH-Adressen).
-    *   *Online (KI):* Google Gemini 3 Pro für "forensische" Datenextraktion, Korrektur und Anreicherung.
-*   **Smart Scan:** Visitenkarten einfach fotografieren (Vorder- & Rückseite). Die KI extrahiert alle Daten.
-*   **QR Code Scanner:** Integrierter Scanner für vCard QR-Codes. Unterstützt direkte vCard-Daten sowie Download-Links (CORS-Safe).
-*   **Stapel-Verarbeitung (Batch Queue):** Mehrere Karten nacheinander scannen – die Verarbeitung läuft asynchron im Hintergrund.
-*   **Smart Merge:** Erkennt Dubletten (Name oder Telefonnummer) und führt neue Daten mit bestehenden Einträgen zusammen (Enrichment).
-*   **Intelligente Suche:** Datenbank-basierte Volltextsuche (IndexedDB) über alle Felder (Name, Firma, E-Mail, Telefon, Adresse, Notizen) mit Highlighting.
-*   **Backup & Restore:** Vollständiges Backup der Historie inkl. Bilder als JSON-Datei. Einfache Wiederherstellung auf jedem Gerät.
-*   **Social Media Intelligence:** Automatische Suche nach LinkedIn/Xing Profilen.
-*   **Daten-Anreicherung:** "Enrich"-Modus, um bestehende Kontakte per KI-Befehl zu aktualisieren.
-*   **Vollständiger Verlauf:** Alle Scans werden lokal gespeichert (IndexedDB mit Blob-Optimierung).
-*   **Export:** vCard (.vcf), CSV (Excel-kompatibel) und Bilder-Download (ZIP).
-*   **Cross-Platform:** Funktioniert als installierbare PWA auf Desktop, iOS und Android.
-*   **UI/UX:** Dark Mode (Standard), Responsive Design, Standalone-Seiten für Impressum & Datenschutz.
+The app operates on a **"Privacy First"** principle: Data is stored only in the browser by default. AI features are optional and require active consent.
 
 ---
 
-## 🛠️ Technologie-Stack
+## 🚀 Key Features
+
+*   **Hybrid Parser:**
+    *   *Offline:* Lightning-fast signature detection via complex regex patterns (optimized for DACH addresses).
+    *   *Online (AI):* Google Gemini 3 Pro for "forensic" data extraction, correction, and enrichment.
+*   **Smart Scan:** Simply photograph business cards (front & back). The AI extracts all data.
+*   **QR Code Scanner:** Integrated scanner for vCard QR codes. Supports direct vCard data and download links (CORS-Safe).
+*   **Batch Queue:** Scan multiple cards in succession – processing runs asynchronously in the background.
+*   **Smart Merge:** Detects duplicates (Name or Phone) and merges new data with existing entries (Enrichment).
+*   **Intelligent Search:** Database-based full-text search (IndexedDB) across all fields (Name, Company, Email, Phone, Address, Notes) with highlighting.
+*   **Offline Street Database:** Includes a 53MB street directory for instant address validation and auto-correction (Fuzzy Matching).
+*   **Backup & Restore:** Full history backup including images as JSON file. Easy restoration on any device.
+*   **Social Media Intelligence:** Automatic search for LinkedIn/Xing profiles.
+*   **Data Enrichment:** "Enrich" mode to update existing contacts via AI command.
+*   **Complete History:** All scans are stored locally (IndexedDB with Blob optimization).
+*   **Export:** vCard (.vcf), CSV (Excel-compatible), and Image Download (ZIP).
+*   **Cross-Platform:** Works as an installable PWA on Desktop, iOS, and Android.
+*   **UI/UX:** Dark Mode (Default), Responsive Design, Standalone pages for Imprint & Privacy.
+
+---
+
+## 🛠️ Tech Stack
 
 *   **Frontend:** React 18, TypeScript, Vite
 *   **Styling:** Tailwind CSS
@@ -36,54 +37,54 @@ Die App arbeitet nach dem **"Privacy First"** Prinzip: Daten werden standardmä�
 
 ---
 
-## 📦 Installation & Entwicklung
+## 📦 Installation & Development
 
-### Voraussetzungen
+### Prerequisites
 *   Node.js (v18+)
-*   Ein Google AI Studio API Key (kostenlos erhältlich)
+*   A Google AI Studio API Key (free to obtain)
 
 ### Setup
-1.  Repository klonen:
+1.  Clone repository:
     ```bash
-    git clone https://github.com/DEIN_USER/vcard.git
+    git clone https://github.com/YOUR_USER/vcard.git
     cd vcard
     ```
-2.  Abhängigkeiten installieren:
+2.  Install dependencies:
     ```bash
     npm install
     ```
-3.  Entwicklungsserver starten:
+3.  Start development server:
     ```bash
     npm run dev
     ```
-4.  App öffnen: `http://localhost:5173`
+4.  Open App: `http://localhost:5173`
 
-### ⚠️ Wichtiger Hinweis zu lokalen LLMs (Ollama)
-Wenn Sie **lokale Modelle (z.B. Ollama)** nutzen möchten, **müssen** Sie die App über `http://localhost:5173` (den Entwicklungsserver) nutzen.
-*   Der Server enthält einen **Proxy**, der Anfragen an `/ollama` automatisch an `http://127.0.0.1:11434` weiterleitet.
-*   Dies umgeht CORS-Probleme und "Mixed Content" Warnungen des Browsers.
-*   Ein direkter Aufruf der `index.html` oder Hosting auf GitHub Pages funktioniert mit lokalen LLMs standardmäßig nicht (wegen Browser-Sicherheitsrichtlinien).
+### ⚠️ Important Note on Local LLMs (Ollama)
+If you want to use **local models (e.g., Ollama)**, you **must** use the app via `http://localhost:5173` (the dev server).
+*   The server includes a **Proxy** that forwards requests to `/ollama` automatically to `http://127.0.0.1:11434`.
+*   This bypasses CORS issues and "Mixed Content" warnings.
+*   Directly opening `index.html` or hosting on GitHub Pages will not work with local LLMs by default (due to browser security policies).
 
-### Build für Produktion
+### Production Build
 ```bash
 npm run build
 ```
-Der Output landet im `dist/` Ordner und kann auf jedem statischen Webserver gehostet werden.
+The output lands in the `dist/` folder and can be hosted on any static web server.
 
 ---
 
-## 🔒 Datenschutz & Sicherheit
+## 🔒 Privacy & Security
 
-*   **Kein Backend:** Die App hat keinen eigenen Server. Alle Logik läuft im Browser des Nutzers.
-*   **Bring Your Own Key (BYOK):** Nutzer verwenden ihren eigenen Google API Key. Es gibt keinen Mittelsmann.
-*   **Lokaler Speicher:** Kontaktdaten und Bilder liegen im `localStorage` des Browsers.
-*   **Transparenz:** Daten verlassen den Browser nur bei aktiver Nutzung der KI-Features (Upload zu Google Gemini).
+*   **No Backend:** The app has no server of its own. All logic runs in the user's browser.
+*   **Bring Your Own Key (BYOK):** Users use their own Google API Key. There is no middleman.
+*   **Local Storage:** Contact data and images reside in the browser's `localStorage` / `IndexedDB`.
+*   **Transparency:** Data leaves the browser only when actively using AI features (Upload to Google Gemini).
 
 ---
 
 ## 👏 Credits / Open Source Licenses
 
-Dieses Projekt steht auf den Schultern von Giganten. Wir nutzen und lieben folgende Open-Source-Bibliotheken:
+This project stands on the shoulders of giants. We use and love the following open-source libraries:
 
 *   **[React](https://react.dev/)** (MIT) - UI Library
 *   **[Vite](https://vitejs.dev/)** (MIT) - Build Tool
@@ -96,11 +97,16 @@ Dieses Projekt steht auf den Schultern von Giganten. Wir nutzen und lieben folge
 *   **[Lucide React](https://lucide.dev/)** (ISC) - Beautiful Icons
 *   **[Vite Plugin PWA](https://vite-pwa-org.netlify.app/)** (MIT) - PWA Capabilities
 
-Ein großes Dankeschön an alle Maintainer und Contributor dieser Projekte!
+### Data Sources
+*   **Street Directory:** The offline street database is derived from **[OpenPLZ API](https://www.openplzapi.org/)**.
+    *   Source: [GitHub Repository](https://github.com/openpotato/openplzapi)
+    *   License: [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/)
+
+A big thank you to all maintainers and contributors of these projects!
 
 ---
 
-## 📝 Lizenz
+## 📝 License
 
 MIT License - Alexander Mut
 

@@ -17,11 +17,11 @@ export function parseGermanAddress(input: string): AddressResult {
         warnings: [],
     };
 
-    // Regex Erklärung:
-    // ^(?<street>.+?)      -> Start: Nimm alles (non-greedy) in Gruppe 'street'
-    // [,\s]+               -> Trenner: Komma oder Leerzeichen (fängt "Str., 12" ab)
-    // (?<number>\d+.*)$    -> Zahl: Muss mit Ziffer beginnen, darf Suffixe haben.
-    // flag 'i'             -> Groß/Kleinschreibung egal
+    // Regex explanation:
+    // ^(?<street>.+?)      -> Start: Capture everything (non-greedy) into group 'street'
+    // [,\s]+               -> Separator: Comma or space (handles "Str., 12")
+    // (?<number>\d+.*)$    -> Number: Must start with a digit, may have suffixes.
+    // flag 'i'             -> Case-insensitive
     const regex = /^(?<street>.+?)[,\s]+(?<number>\d+(?:[\s\-\/\.]*[a-z0-9]+)*)$/i;
 
     const match = cleanInput.match(regex);
@@ -31,14 +31,13 @@ export function parseGermanAddress(input: string): AddressResult {
         result.houseNumber = match.groups.number.trim();
         result.isValid = true;
     } else {
-        // Fallback: Wenn keine Nummer gefunden, ist es vielleicht eine Adresse ohne Nummer (z.B. "Am Wasserturm")
-        // Wir markieren es als "technisch valide" aber geben eine Warnung, damit der Caller entscheiden kann.
-        // Für dieses Projekt wollen wir aber eher strikt sein, um False Positives zu vermeiden.
-        result.warnings.push("Keine Hausnummer-Struktur erkannt (Ziffer am Ende fehlt).");
+        // Fallback: If no number is found, it might be an address without a number (e.g., "Am Wasserturm")
+        // We mark it as "technically valid" but issue a warning so the caller can decide.
+        // For this project, however, we want to be stricter to avoid false positives.
+        result.warnings.push("No house number structure recognized (missing digit at the end).");
         return result;
     }
 
-    // --- Validierung (Plausibilitäts-Prüfung) ---
 
     // Warnung 1: Straße extrem kurz (z.B. "A 1") - selten, aber möglich (Quadrate Mannheim), meist Fehler
     if (result.street.length < 2) {
