@@ -500,7 +500,7 @@ const App: React.FC = () => {
   const isAIReady = !!apiKey || hasSystemKey;
 
   return (
-    <div className="min-h-screen lg:h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => { setIsSettingsOpen(false); setError(null); }}
@@ -721,7 +721,7 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 lg:overflow-hidden flex flex-col">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex flex-col">
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-start sm:items-center gap-3 animate-in slide-in-from-top-2 shadow-sm shrink-0">
             <AlertTriangle size={20} className="shrink-0 mt-0.5 sm:mt-0" />
@@ -732,7 +732,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-full min-h-[600px] lg:min-h-0 flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-180px)] lg:min-h-[500px] min-h-[600px] flex-1">
           <div className="h-full flex flex-col gap-4">
             <Editor
               value={vcardString}
