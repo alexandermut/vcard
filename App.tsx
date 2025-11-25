@@ -21,7 +21,9 @@ import { HistoryItem, VCardData, Language } from './types';
 import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { QRScannerModal } from './components/QRScannerModal';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare } from 'lucide-react';
+import { ingestStreets } from './utils/streetIngestion';
+import { enrichAddress } from './utils/addressEnricher';
+import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare, Database } from 'lucide-react';
 
 
 
@@ -69,11 +71,23 @@ const App: React.FC = () => {
     getKeyToUse() || '',
     lang,
     llmConfig,
-    (vcard, images) => {
-      setVcardString(vcard);
+    async (vcard, images) => {
+      // 1. Enrich Address (if Street DB is ready)
+      let finalVCard = vcard;
+      if (streetDbStatus === 'ready') {
+        try {
+          const parsed = parseVCardString(vcard);
+          const enrichedData = await enrichAddress(parsed.data);
+          finalVCard = generateVCardFromData(enrichedData);
+        } catch (e) {
+          console.warn("Address enrichment failed", e);
+        }
+      }
+
+      setVcardString(finalVCard);
       setCurrentImages(images);
       // Auto-save to history on successful scan
-      addToHistory(vcard, undefined, images);
+      addToHistory(finalVCard, undefined, images);
     }
   );
 
@@ -142,6 +156,28 @@ const App: React.FC = () => {
     localStorage.setItem('vcard_dark_mode', JSON.stringify(isDarkMode));
   }, [lang, isDarkMode]);
 
+
+  // Street DB State
+  const [streetDbStatus, setStreetDbStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [streetDbProgress, setStreetDbProgress] = useState(0);
+
+  // Load Street DB
+  useEffect(() => {
+    const loadStreets = async () => {
+      try {
+        setStreetDbStatus('loading');
+        await ingestStreets((progress, msg) => {
+          setStreetDbProgress(progress);
+          if (progress === 100) setStreetDbStatus('ready');
+        });
+      } catch (e) {
+        console.error("Street DB load failed", e);
+        setStreetDbStatus('error');
+      }
+    };
+    // Delay slightly to not block initial render
+    setTimeout(loadStreets, 2000);
+  }, []);
 
   // Load History & Migrate on Mount
   useEffect(() => {
@@ -760,6 +796,27 @@ const App: React.FC = () => {
           {/* Top Row: Version & Links */}
           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400 order-2 md:order-1">
             <span>&copy; {__APP_VERSION__} {t.appTitle}</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+
+            {/* Street DB Status */}
+            {streetDbStatus === 'loading' && (
+              <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400" title="Lade Straßendatenbank...">
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                <span className="hidden sm:inline">{streetDbProgress}%</span>
+              </div>
+            )}
+            {streetDbStatus === 'ready' && (
+              <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400" title="Straßendatenbank bereit">
+                <Database size={14} />
+                <span className="hidden sm:inline text-[10px] uppercase tracking-wider font-bold">DB Ready</span>
+              </div>
+            )}
+            {streetDbStatus === 'error' && (
+              <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400" title="Fehler beim Laden der Straßendatenbank">
+                <AlertTriangle size={14} />
+              </div>
+            )}
+
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <a href="impressum.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.impressum}</a>
             <span className="text-slate-300 dark:text-slate-700">|</span>

@@ -3,6 +3,13 @@ import { HistoryItem } from '../types';
 import { base64ToBlob } from './imageUtils';
 import { parseVCardString } from './vcardUtils';
 
+interface Street {
+    id?: number;
+    name: string;
+    zip: string;
+    city: string;
+}
+
 interface VCardDB extends DBSchema {
     history: {
         key: string;
@@ -12,11 +19,20 @@ interface VCardDB extends DBSchema {
             'keywords': string[];
         };
     };
+    streets: {
+        key: number;
+        value: Street;
+        indexes: {
+            'zip': string;
+            'name': string;
+        };
+    };
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'history';
+const STREETS_STORE = 'streets';
 
 let dbPromise: Promise<IDBPDatabase<VCardDB>>;
 
@@ -36,6 +52,13 @@ export const initDB = () => {
                     if (!store.indexNames.contains('keywords')) {
                         store.createIndex('keywords', 'keywords', { multiEntry: true });
                     }
+                }
+
+                // Version 3: Add streets store
+                if (oldVersion < 3) {
+                    const store = db.createObjectStore(STREETS_STORE, { keyPath: 'id', autoIncrement: true });
+                    store.createIndex('zip', 'zip');
+                    store.createIndex('name', 'name');
                 }
             },
         });
@@ -329,4 +352,29 @@ export const migrateKeywords = async () => {
     if (count > 0) {
         console.log(`Added search keywords to ${count} items.`);
     }
+};
+
+export const countStreets = async (): Promise<number> => {
+    const db = await initDB();
+    return db.count(STREETS_STORE);
+};
+
+export const addStreets = async (streets: Omit<Street, 'id'>[]) => {
+    const db = await initDB();
+    const tx = db.transaction(STREETS_STORE, 'readwrite');
+    const store = tx.objectStore(STREETS_STORE);
+
+    // Use Promise.all for parallel adds? Or just loop.
+    // Loop is safer for transaction.
+    for (const street of streets) {
+        store.put(street);
+    }
+    return tx.done;
+};
+
+export const getStreetsByZip = async (zip: string): Promise<string[]> => {
+    const db = await initDB();
+    const index = db.transaction(STREETS_STORE).store.index('zip');
+    const streets = await index.getAll(zip);
+    return streets.map(s => s.name);
 };
