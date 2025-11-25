@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { usePWAInstall } from './hooks/usePWAInstall';
-import { InstallPromptModal } from './components/InstallPromptModal';
+
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
@@ -55,17 +54,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
 
-  // PWA Hook
-  const { isInstallable, isIOS, installPWA } = usePWAInstall();
-  const [isIOSInstallOpen, setIsIOSInstallOpen] = useState(false);
 
-  const handleInstallClick = () => {
-    if (isIOS) {
-      setIsIOSInstallOpen(true);
-    } else {
-      installPWA();
-    }
-  };
 
   // Hooks
   const {
@@ -531,8 +520,7 @@ const App: React.FC = () => {
         openaiModel={llmConfig.openaiModel}
         setCustomConfig={setCustomConfig}
         onOllamaDefaults={setOllamaDefaults}
-        isInstallable={isInstallable}
-        onInstall={handleInstallClick}
+
         streetDbStatus={streetDbStatus}
         streetDbProgress={streetDbProgress}
       />
@@ -810,11 +798,7 @@ const App: React.FC = () => {
         </div>
       </footer>
       <ReloadPrompt />
-      <InstallPromptModal
-        isOpen={isIOSInstallOpen}
-        onClose={() => setIsIOSInstallOpen(false)}
-        lang={lang}
-      />
+
     </div>
   );
 };

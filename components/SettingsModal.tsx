@@ -109,15 +109,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
 
-              {isInstallable && onInstall && (
-                <button
-                  onClick={onInstall}
-                  className="w-full mt-3 flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-medium shadow-sm animate-pulse"
-                >
-                  <Download size={16} />
-                  {t.installApp}
-                </button>
-              )}
+
             </div>
 
             {/* Database Settings */}
