@@ -744,7 +744,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-180px)] min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-180px)] min-h-[600px]">
           <div className="h-full flex flex-col gap-4">
             <Editor
               value={vcardString}
