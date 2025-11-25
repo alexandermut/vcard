@@ -51,4 +51,5 @@ export interface ScanJob {
   backImage?: string | File | null;
   status: ScanStatus;
   error?: string;
+  mode?: 'vision' | 'hybrid';
 }

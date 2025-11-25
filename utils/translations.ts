@@ -65,7 +65,11 @@ export const translations = {
     batchMode: "Stapel",
     addToQueue: "Scan & Weiter",
     batchHint: "Scannen Sie Karten nacheinander. Sie werden im Hintergrund verarbeitet.",
-    pasteHint: "oder Bild einfügen (Strg+V)",
+    pasteHint: 'oder Bild einfügen (Strg+V)',
+    scanMode: 'Scan-Modus',
+    modeStandard: 'Standard (Nur Karte)',
+    modeHybrid: 'Hybrid (Karte + Notizen)',
+    hybridHint: 'Karte neben Notizen legen. KI erfasst beides.',
     paste: "Einfügen",
 
     // Queue
@@ -202,6 +206,10 @@ export const translations = {
     addToQueue: "Scan & Next",
     batchHint: "Scan cards one by one. They are processed in the background.",
     pasteHint: "or paste image (Ctrl+V)",
+    scanMode: 'Scan Mode',
+    modeStandard: 'Standard (Card only)',
+    modeHybrid: 'Hybrid (Card + Notes)',
+    hybridHint: 'Place card next to handwritten notes. AI will extract both.',
     paste: "Paste",
 
     // Queue

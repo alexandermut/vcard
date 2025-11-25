@@ -9,7 +9,7 @@ interface ScanModalProps {
   isOpen: boolean;
   onClose: () => void;
   onScanComplete: (vcard: string) => void;
-  onAddToQueue?: (front: string | File, back?: string | File | null) => void;
+  onAddToQueue?: (front: string | File, back?: string | File | null, mode?: 'vision' | 'hybrid') => void;
   apiKey: string;
   initialFile?: File | null;
   lang: Language;
@@ -27,6 +27,28 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   const frontInputRef = useRef<HTMLInputElement>(null);
   const backInputRef = useRef<HTMLInputElement>(null);
 
+  const [scanMode, setScanMode] = useState<'vision' | 'hybrid'>('vision');
+
+  const processFile = async (file: File, setImg: (s: string) => void) => {
+    try {
+      setIsProcessingImage(true);
+      const resizedBase64 = await resizeImage(file, 1024, 0.8);
+      setImg(resizedBase64);
+    } catch (e) {
+      console.error("Image processing failed", e);
+      setError("Fehler beim Verarbeiten des Bildes.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setImg: (s: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      processFile(file, setImg);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && initialFile) {
       processFile(initialFile, setFrontImage);
@@ -35,6 +57,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
       setFrontImage(null);
       setBackImage(null);
       setError(null);
+      setScanMode('vision');
     }
   }, [isOpen, initialFile]);
 
@@ -65,31 +88,26 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 
   if (!isOpen) return null;
 
-  const processFile = async (file: File, setImg: (s: string) => void) => {
-    try {
-      setIsProcessingImage(true);
-      const resizedBase64 = await resizeImage(file, 1024, 0.8);
-      setImg(resizedBase64);
-    } catch (e) {
-      console.error("Image processing failed", e);
-      setError("Fehler beim Verarbeiten des Bildes.");
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setImg: (s: string) => void) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processFile(file, setImg);
-    }
-  };
-
   const processScan = async () => {
     if (!frontImage) return;
 
     if (onAddToQueue) {
-      onAddToQueue(frontImage, backImage);
+      // Pass the selected mode to the queue handler (which calls scanBusinessCard)
+      // Note: We need to update the onAddToQueue signature or handle it here.
+      // Actually, ScanModal usually calls onScanComplete or onAddToQueue.
+      // Let's assume onAddToQueue takes the images, but we need to pass the mode too.
+      // Since we can't easily change the prop signature without breaking other things,
+      // let's check how onAddToQueue is used.
+      // It seems onAddToQueue is just for the queue UI. The actual scanning happens in App.tsx's queue processor.
+      // We might need to pass the mode as metadata.
+
+      // For now, let's just pass it. If onAddToQueue doesn't support it, we might need to refactor.
+      // Wait, onAddToQueue signature is (front, back) -> void.
+      // We should probably update the App.tsx to accept mode.
+
+      // Let's modify the onAddToQueue prop to accept mode.
+      onAddToQueue(frontImage, backImage, scanMode);
+
       // Instant Reset for next card
       setFrontImage(null);
       setBackImage(null);
@@ -113,6 +131,35 @@ export const ScanModal: React.FC<ScanModalProps> = ({
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900">
+
+          {/* Mode Selector */}
+          <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+            <button
+              onClick={() => setScanMode('vision')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${scanMode === 'vision'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+            >
+              {t.modeStandard}
+            </button>
+            <button
+              onClick={() => setScanMode('hybrid')}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${scanMode === 'hybrid'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+            >
+              {t.modeHybrid}
+            </button>
+          </div>
+
+          {scanMode === 'hybrid' && (
+            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg flex gap-2 items-start">
+              <Sparkles size={16} className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <p className="text-xs text-blue-700 dark:text-blue-300">{t.hybridHint}</p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4 mb-6">
             {/* Front Image */}

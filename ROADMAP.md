@@ -81,4 +81,5 @@ This file tracks the current development status and planned features.
 - [ ] **LDAP / Active Directory:** Enterprise address book connection.
 - [ ] **Webhooks:** API endpoint to automatically create cards from other apps (e.g., Typeform).
 - [ ] **Accessibility:** Automatic generation of phonetic fields for screen readers.
-- [ ] **Social Photo Link:** Link profile picture directly from LinkedIn/Xing/Gravatar (without upload).
+- [- ] **Social Photo Link:** Link profile picture directly from LinkedIn/Xing/Gravatar (without upload).
+- [ ] **AI Meeting & Hybrid Scan:** Photo of Business Card + Handwritten Notes -> AI extracts contact AND structured context/notes.

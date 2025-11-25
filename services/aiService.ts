@@ -4,7 +4,7 @@ import { scanCardWithCustomLLM, chatWithCustomLLM } from "./customLlmService";
 import type { LLMConfig } from "../hooks/useLLMConfig";
 
 // Helper to generate dynamic prompts based on language and context
-const getSystemPrompt = (lang: Language, mode: 'text' | 'vision', isUpdate = false): string => {
+const getSystemPrompt = (lang: Language, mode: 'text' | 'vision' | 'hybrid', isUpdate = false): string => {
   const isGerman = lang === 'de';
 
   const ROLE_DEFINITION = `
@@ -93,7 +93,9 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision', isUpdate = fal
 
   const MODE_SPECIFIC = mode === 'vision'
     ? "TASK: OCR & Extraction. The input is an image. Look for logos, small print, and layout cues to distinguish Company from Name."
-    : "TASK: Text Extraction. The input is raw text (e.g. email signature, website footer). Parse it robustly.";
+    : mode === 'hybrid'
+      ? "TASK: HYBRID EXTRACTION (Card + Notes). The input contains a Business Card AND Handwritten Notes. 1. Extract structured data from the card. 2. Extract handwritten text as context and put it into the 'NOTE' field. Merge them intelligently."
+      : "TASK: Text Extraction. The input is raw text (e.g. email signature, website footer). Parse it robustly.";
 
   return `
     ${ROLE_DEFINITION}
@@ -150,11 +152,12 @@ export const scanBusinessCard = async (
   provider: AIProvider,
   apiKey: string,
   lang: Language,
-  llmConfig?: LLMConfig
+  llmConfig?: LLMConfig,
+  mode: 'vision' | 'hybrid' = 'vision'
 ): Promise<string> => {
   // Route to OpenAI if selected
   if (llmConfig && llmConfig.provider === 'openai') {
-    return callOpenAI(images, llmConfig.openaiApiKey, 'vision', lang, llmConfig.openaiModel || 'gpt-5.1');
+    return callOpenAI(images, llmConfig.openaiApiKey, mode, lang, llmConfig.openaiModel || 'gpt-5.1');
   }
 
   // Route to custom LLM if configured
@@ -169,7 +172,7 @@ export const scanBusinessCard = async (
   // Default to Google Gemini
   if (!apiKey) throw new Error("MISSING_KEY");
   if (images.length === 0) throw new Error("NO_IMAGES");
-  return callGeminiWithRetry(images, apiKey, 'vision', lang);
+  return callGeminiWithRetry(images, apiKey, mode, lang);
 };
 
 // --- OPENAI INTEGRATION ---
@@ -177,7 +180,7 @@ export const scanBusinessCard = async (
 const callOpenAI = async (
   input: string | ImageInput[],
   apiKey: string,
-  mode: 'text' | 'vision',
+  mode: 'text' | 'vision' | 'hybrid',
   lang: Language,
   model: string = 'gpt-5.1',
   retryCount = 0
@@ -249,7 +252,7 @@ const callOpenAI = async (
 const callGeminiWithRetry = async (
   input: string | ImageInput[],
   apiKey: string,
-  mode: 'text' | 'vision',
+  mode: 'text' | 'vision' | 'hybrid',
   lang: Language,
   retryCount = 0,
   isUpdate = false

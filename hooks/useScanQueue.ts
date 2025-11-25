@@ -15,13 +15,14 @@ export const useScanQueue = (
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const addJob = useCallback((frontImage: string | File, backImage?: string | File | null) => {
+  const addJob = useCallback((frontImage: string | File, backImage?: string | File | null, mode: 'vision' | 'hybrid' = 'vision') => {
     const newJob: ScanJob = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       frontImage,
       backImage,
-      status: 'pending'
+      status: 'pending',
+      mode
     };
     setQueue(prev => [...prev, newJob]);
   }, []);
@@ -69,7 +70,7 @@ export const useScanQueue = (
         rawImages.push(backBase64);
       }
 
-      const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig);
+      const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
 
       onJobComplete(vcard, rawImages);
 
