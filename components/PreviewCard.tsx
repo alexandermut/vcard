@@ -341,7 +341,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             <textarea
               value={localData.note || ''}
               onChange={(e) => updateField('note', e.target.value)}
-              className="text-sm text-yellow-900 dark:text-yellow-200 italic w-full bg-transparent border-none p-0 focus:ring-0 resize-none"
+              className="text-sm text-yellow-900 dark:text-yellow-200 w-full bg-transparent border-none p-0 focus:ring-0 resize-none"
               placeholder={t.notes}
               rows={3}
             />
