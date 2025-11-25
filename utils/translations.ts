@@ -127,7 +127,7 @@ export const translations = {
     // Footer
     impressum: "Impressum",
     privacy: "Datenschutz",
-    support: "dieses Projekt unterstützen",
+    support: "Projekt unterstützen",
 
     // Errors & Prompts
     missingKey: "API Key fehlt. Bitte in den Einstellungen hinterlegen.",

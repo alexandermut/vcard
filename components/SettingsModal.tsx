@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, ExternalLink, Sparkles, Settings2, Moon, Sun, Languages } from 'lucide-react';
+import { X, Check, ExternalLink, Sparkles, Settings2, Moon, Sun, Languages, Download, Database, AlertTriangle } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -22,11 +22,16 @@ interface SettingsModalProps {
   openaiModel: string;
   setCustomConfig: (config: { customBaseUrl?: string; customApiKey?: string; customModel?: string; openaiApiKey?: string; openaiModel?: string }) => void;
   onOllamaDefaults: () => void;
+  isInstallable?: boolean;
+  onInstall?: () => void;
+  streetDbStatus: 'idle' | 'loading' | 'ready' | 'error';
+  streetDbProgress: number;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen, onClose, onSave, apiKey, lang, setLang, isDarkMode, setIsDarkMode, errorMessage,
-  llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults
+  llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
+  isInstallable, onInstall, streetDbStatus, streetDbProgress
 }) => {
   const [hasSystemKey, setHasSystemKey] = useState(false);
   const t = translations[lang];
@@ -102,6 +107,50 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
                   {isDarkMode ? 'Dark Mode' : 'Light Mode'}
                 </button>
+              </div>
+
+              {isInstallable && onInstall && (
+                <button
+                  onClick={onInstall}
+                  className="w-full mt-3 flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-medium shadow-sm animate-pulse"
+                >
+                  <Download size={16} />
+                  {t.installApp}
+                </button>
+              )}
+            </div>
+
+            {/* Database Settings */}
+            <div>
+              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Data</h3>
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Database size={16} className="text-slate-500" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-200">Street Directory</span>
+                </div>
+
+                {/* Status Indicator */}
+                {streetDbStatus === 'loading' && (
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400">
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold">{streetDbProgress}%</span>
+                  </div>
+                )}
+                {streetDbStatus === 'ready' && (
+                  <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
+                    <Check size={14} />
+                    <span className="text-xs font-bold uppercase">Ready</span>
+                  </div>
+                )}
+                {streetDbStatus === 'error' && (
+                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
+                    <AlertTriangle size={14} />
+                    <span className="text-xs font-bold uppercase">Error</span>
+                  </div>
+                )}
+                {streetDbStatus === 'idle' && (
+                  <span className="text-xs text-slate-400">Idle</span>
+                )}
               </div>
             </div>
 
