@@ -44,9 +44,10 @@ export const useChat = (history: HistoryItem[], apiKey: string, llmConfig: LLMCo
             );
 
             setMessages([...newMessages, { role: 'assistant', content: response }]);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Chat Error:", error);
-            setMessages([...newMessages, { role: 'assistant', content: "Sorry, I encountered an error processing your request." }]);
+            const errorMessage = error.message || "Unknown error";
+            setMessages([...newMessages, { role: 'assistant', content: `Error: ${errorMessage}` }]);
         } finally {
             setIsLoading(false);
         }

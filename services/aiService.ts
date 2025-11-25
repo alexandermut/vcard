@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIProvider, Language } from "../types";
-import { scanCardWithCustomLLM } from "./customLlmService";
+import { scanCardWithCustomLLM, chatWithCustomLLM } from "./customLlmService";
 import type { LLMConfig } from "../hooks/useLLMConfig";
 
 // Helper to generate dynamic prompts based on language and context
@@ -352,16 +352,24 @@ export const generateContent = async (
     return callOpenAI(prompt, llmConfig.openaiApiKey, 'text', 'en', llmConfig.openaiModel || 'gpt-5.1');
   }
 
-  // Route to Custom LLM (not fully implemented for generic chat yet, fallback to Gemini or throw?)
-  // For now, let's assume if custom is selected, we might want to use it too.
-  // But since we don't have a generic custom chat function yet, let's default to Gemini if key is present, or throw.
+  // Route to Custom LLM
+  if (llmConfig?.provider === 'custom') {
+    return chatWithCustomLLM(prompt, {
+      baseUrl: llmConfig.customBaseUrl,
+      apiKey: llmConfig.customApiKey,
+      model: llmConfig.customModel,
+    });
+  }
 
   // Default to Gemini
   if (!apiKey) throw new Error("MISSING_KEY");
 
   const ai = new GoogleGenAI({ apiKey });
-  const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); // Use Flash for chat speed
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  const response = await ai.models.generateContent({
+    model: "gemini-1.5-flash",
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  });
+
+  return response.text || '';
 };

@@ -600,6 +600,15 @@ const App: React.FC = () => {
         lang={lang}
       />
 
+      <ChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        history={history}
+        apiKey={getKeyToUse() || ''}
+        llmConfig={llmConfig}
+        lang={lang}
+      />
+
       <QRScannerModal
         isOpen={isQRScannerOpen}
         onClose={() => setIsQRScannerOpen(false)}

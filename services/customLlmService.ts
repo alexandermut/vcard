@@ -203,3 +203,60 @@ const convertToVCard = (data: ContactData): string => {
 
     return lines.join('\n');
 };
+
+export const chatWithCustomLLM = async (
+    prompt: string,
+    config: CustomLLMConfig
+): Promise<string> => {
+    if (!config.baseUrl) throw new Error('Custom LLM Base URL is required');
+
+    const messages = [
+        {
+            role: 'system',
+            content: 'You are a helpful assistant for a vCard contact database. Keep answers concise.',
+        },
+        {
+            role: 'user',
+            content: prompt,
+        },
+    ];
+
+    const requestBody = {
+        model: config.model,
+        messages,
+        temperature: 0.7,
+    };
+
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+    };
+
+    if (config.apiKey && config.apiKey.trim() !== '') {
+        headers['Authorization'] = `Bearer ${config.apiKey}`;
+    }
+
+    try {
+        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Custom LLM API error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices?.[0]?.message?.content;
+
+        if (!content) {
+            throw new Error('No response from custom LLM');
+        }
+
+        return content;
+    } catch (error: any) {
+        console.error('Custom LLM Chat Error:', error);
+        throw new Error(`Custom LLM failed: ${error.message}`);
+    }
+};
