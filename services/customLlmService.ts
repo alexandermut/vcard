@@ -235,8 +235,27 @@ export const chatWithCustomLLM = async (
         headers['Authorization'] = `Bearer ${config.apiKey}`;
     }
 
+    // Smart URL construction
+    let url = config.baseUrl.replace(/\/$/, ''); // Remove trailing slash
+
+    // If it looks like a root URL (no /v1), append /v1/chat/completions
+    // Otherwise assume it's already a full base path like .../v1
+    if (!url.endsWith('/v1') && !url.endsWith('/chat/completions')) {
+        // Heuristic: If it's localhost:11434, it's likely Ollama root
+        if (url.includes(':11434')) {
+            url += '/v1/chat/completions';
+        } else {
+            // Default OpenAI style: append /chat/completions
+            url += '/chat/completions';
+        }
+    } else if (url.endsWith('/v1')) {
+        url += '/chat/completions';
+    }
+
+    console.log('[CustomLLM] Calling URL:', url);
+
     try {
-        const response = await fetch(`${config.baseUrl}/chat/completions`, {
+        const response = await fetch(url, {
             method: 'POST',
             headers,
             body: JSON.stringify(requestBody),
