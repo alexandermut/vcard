@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard } from 'lucide-react';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
 import { Language } from '../types';
@@ -37,6 +37,31 @@ export const ScanModal: React.FC<ScanModalProps> = ({
       setError(null);
     }
   }, [isOpen, initialFile]);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!isOpen) return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            // Smart assignment: Front first, then Back
+            if (!frontImage) {
+              processFile(file, setFrontImage);
+            } else if (!backImage) {
+              processFile(file, setBackImage);
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [isOpen, frontImage, backImage]);
 
   if (!isOpen) return null;
 
@@ -105,6 +130,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                   <div className="flex flex-col items-center text-slate-400 dark:text-slate-500">
                     <Camera size={24} className="mb-1" />
                     <span className="text-[10px]">{t.photoUpload}</span>
+                    <span className="text-[9px] opacity-70 mt-0.5">{t.pasteHint}</span>
                   </div>
                 )}
                 <input
@@ -147,6 +173,34 @@ export const ScanModal: React.FC<ScanModalProps> = ({
             </div>
           </div>
 
+          <button
+            onClick={async () => {
+              try {
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                  const imageType = item.types.find(type => type.startsWith('image/'));
+                  if (imageType) {
+                    const blob = await item.getType(imageType);
+                    const file = new File([blob], "pasted-image.png", { type: imageType });
+                    if (!frontImage) {
+                      processFile(file, setFrontImage);
+                    } else if (!backImage) {
+                      processFile(file, setBackImage);
+                    }
+                    return; // Only paste one image at a time
+                  }
+                }
+              } catch (err) {
+                console.error('Failed to read clipboard', err);
+                setError('Clipboard access denied or empty');
+              }
+            }}
+            className="w-full mb-4 py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 transition-colors text-sm"
+          >
+            <Clipboard size={16} />
+            {t.paste}
+          </button>
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
               <X size={16} /> {error}
@@ -157,8 +211,8 @@ export const ScanModal: React.FC<ScanModalProps> = ({
             onClick={processScan}
             disabled={!frontImage || isProcessingImage}
             className={`w-full py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all shadow-sm ${!frontImage || isProcessingImage
-                ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98]'
+              ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-[0.98]'
               }`}
           >
             <Layers size={20} />

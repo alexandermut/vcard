@@ -65,6 +65,8 @@ export const translations = {
     batchMode: "Stapel",
     addToQueue: "Scan & Weiter",
     batchHint: "Scannen Sie Karten nacheinander. Sie werden im Hintergrund verarbeitet.",
+    pasteHint: "oder Bild einfügen (Strg+V)",
+    paste: "Einfügen",
 
     // Queue
     batchQueue: "Verarbeitung",
@@ -199,6 +201,8 @@ export const translations = {
     batchMode: "Batch",
     addToQueue: "Scan & Next",
     batchHint: "Scan cards one by one. They are processed in the background.",
+    pasteHint: "or paste image (Ctrl+V)",
+    paste: "Paste",
 
     // Queue
     batchQueue: "Processing",

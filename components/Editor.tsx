@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, RotateCcw, Code, FileText, UploadCloud, Undo2 } from 'lucide-react';
+import { Sparkles, RotateCcw, Code, FileText, UploadCloud, Undo2, Clipboard } from 'lucide-react';
 import { parseImpressumToVCard } from '../utils/regexParser';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
@@ -134,6 +134,26 @@ export const Editor: React.FC<EditorProps> = ({
             >
               <Undo2 size={14} />
               {t.undo}
+            </button>
+          )}
+
+          {activeTab === 'text' && (
+            <button
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText();
+                  if (text) {
+                    handleRawTextChange(text);
+                  }
+                } catch (err) {
+                  console.error('Failed to read clipboard', err);
+                }
+              }}
+              className="text-xs flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors"
+              title={t.paste}
+            >
+              <Clipboard size={14} />
+              {t.paste}
             </button>
           )}
 
