@@ -100,7 +100,7 @@ This project stands on the shoulders of giants. We use and love the following op
 ### Data Sources
 *   **Street Directory:** The offline street database is derived from **[OpenPLZ API](https://www.openplzapi.org/)**.
     *   Source: [GitHub Repository](https://github.com/openpotato/openplzapi)
-    *   License: [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/)
+    *   License: [Open Data Commons Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/) ([License File](https://github.com/openpotato/openplzapi/blob/develop/LICENSE))
 
 A big thank you to all maintainers and contributors of these projects!
 
