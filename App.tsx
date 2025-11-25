@@ -500,7 +500,7 @@ const App: React.FC = () => {
   const isAIReady = !!apiKey || hasSystemKey;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative">
+    <div className="min-h-screen lg:h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => { setIsSettingsOpen(false); setError(null); }}
@@ -721,9 +721,9 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 lg:overflow-hidden flex flex-col">
         {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-start sm:items-center gap-3 animate-in slide-in-from-top-2 shadow-sm">
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 flex items-start sm:items-center gap-3 animate-in slide-in-from-top-2 shadow-sm shrink-0">
             <AlertTriangle size={20} className="shrink-0 mt-0.5 sm:mt-0" />
             <span className="text-sm font-medium">{error}</span>
             <button onClick={() => setIsSettingsOpen(true)} className="text-sm underline hover:text-red-900 dark:hover:text-red-200 ml-auto font-semibold whitespace-nowrap">
@@ -732,7 +732,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-180px)] min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-full min-h-[600px] lg:min-h-0 flex-1">
           <div className="h-full flex flex-col gap-4">
             <Editor
               value={vcardString}
@@ -766,7 +766,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 py-3 transition-colors duration-200 mt-auto">
+      <footer className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm border-t border-slate-200 dark:border-slate-800 py-3 transition-colors duration-200 mt-auto shrink-0">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-2 md:gap-4">
 
           {/* Top Row: Version & Links */}
