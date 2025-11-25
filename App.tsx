@@ -643,13 +643,11 @@ const App: React.FC = () => {
 
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200 dark:shadow-none">
-              <Contact size={24} />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-md shadow-blue-200 dark:shadow-none shrink-0">
+              <Contact size={18} />
             </div>
-            <div>
-              <h1 className="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">{t.appTitle}</h1>
-            </div>
+            <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{t.appTitle}</h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -665,16 +663,7 @@ const App: React.FC = () => {
               )}
             </button>
 
-            {isInstallable && (
-              <button
-                onClick={handleInstallClick}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors animate-pulse"
-                title={t.installApp}
-              >
-                <Download size={18} />
-                <span className="hidden lg:inline text-sm">{t.installApp}</span>
-              </button>
-            )}
+
 
             <button
               onClick={() => setIsChatOpen(true)}
@@ -818,16 +807,27 @@ const App: React.FC = () => {
             <a href="datenschutz.html" className="hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors">{t.privacy}</a>
           </div>
 
-          {/* Bottom Row: Support Button */}
-          <a
-            href="https://buy.stripe.com/28E9ATf3n6pl7Wfcmt24000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5851E1] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all order-1 md:order-2"
-          >
-            <Heart size={12} fill="currentColor" />
-            {t.support}
-          </a>
+          {/* Bottom Row: Actions */}
+          <div className="flex items-center gap-3 order-1 md:order-2">
+            {isInstallable && (
+              <button
+                onClick={handleInstallClick}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all animate-pulse"
+              >
+                <Download size={12} />
+                {t.installApp}
+              </button>
+            )}
+            <a
+              href="https://buy.stripe.com/28E9ATf3n6pl7Wfcmt24000"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 bg-[#635BFF] hover:bg-[#5851E1] text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            >
+              <Heart size={12} fill="currentColor" />
+              {t.support}
+            </a>
+          </div>
         </div>
       </footer>
       <ReloadPrompt />
