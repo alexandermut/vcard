@@ -27,7 +27,11 @@ import { NotesModal } from './components/NotesModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { ingestStreets } from './utils/streetIngestion';
 import { enrichAddress } from './utils/addressEnricher';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare, Database, StickyNote } from 'lucide-react';
+import {
+  Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
+  MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
+  Heart, UserCircle, AppWindow, Contact, Database
+} from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 
 
@@ -803,53 +807,7 @@ const App: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-3">
 
-            <button
-              onClick={() => setIsHistoryOpen(true)}
-              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
-              title={t.history}
-            >
-              <History size={18} />
-              {history.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setIsNotesOpen(true)}
-              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
-              title="Notizen"
-            >
-              <StickyNote size={18} />
-              {notesCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-yellow-500 rounded-full"></span>
-              )}
-            </button>
-
-
-
-            <button
-              onClick={() => setIsChatOpen(true)}
-              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="AI Chat"
-            >
-              <MessageSquare size={18} />
-            </button>
-
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all border ${isAIReady
-                ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30'
-                }`}
-            >
-              {isAIReady ? <Settings size={18} /> : <Settings size={18} />}
-              <span className="text-xs font-medium hidden md:inline">
-                {t.settings}
-              </span>
-            </button>
-
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
-
+            {/* 1. Scan */}
             <button
               onClick={handleOpenScan}
               className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
@@ -859,15 +817,7 @@ const App: React.FC = () => {
               <span className="hidden lg:inline text-sm">{t.scan}</span>
             </button>
 
-            <button
-              onClick={() => setIsQRScannerOpen(true)}
-              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
-              title="QR Code scannen"
-            >
-              <QrCode size={18} />
-              <span className="hidden lg:inline text-sm">QR Scan</span>
-            </button>
-
+            {/* 2. Batch Upload */}
             <button
               onClick={handleOpenBatchUpload}
               className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
@@ -877,12 +827,79 @@ const App: React.FC = () => {
               <span className="hidden lg:inline text-sm">{t.batchUpload}</span>
             </button>
 
+            {/* 3. QR Scan */}
+            <button
+              onClick={() => setIsQRScannerOpen(true)}
+              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              title="QR Code scannen"
+            >
+              <QrCode size={18} />
+              <span className="hidden lg:inline text-sm">QR Scan</span>
+            </button>
+
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
+
+            {/* 4. History */}
+            <button
+              onClick={() => setIsHistoryOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+              title={t.history}
+            >
+              <History size={20} />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                {t.history}
+              </span>
+            </button>
+
+            {/* 5. Notes */}
+            <button
+              onClick={() => setIsNotesOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+              title={t.notes}
+            >
+              <div className="relative">
+                <StickyNote size={20} />
+                {notesCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[10px] font-bold px-1 min-w-[16px] h-4 rounded-full flex items-center justify-center">
+                    {notesCount}
+                  </span>
+                )}
+              </div>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                {t.notes}
+              </span>
+            </button>
+
+            {/* 6. Chat */}
+            <button
+              onClick={() => setIsChatOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+              title="Chat"
+            >
+              <MessageSquare size={20} />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                Chat
+              </span>
+            </button>
+
+            {/* 7. Settings */}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+              title={t.settings}
+            >
+              <Settings size={20} />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                {t.settings}
+              </span>
+            </button>
+
             {parsedData.isValid ? (
               <div className="flex gap-1">
                 {/* Actions moved to PreviewCard */}
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg text-sm font-medium border border-amber-200 dark:border-amber-800">
+              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-4 py-2 rounded-lg text-sm font-medium border border-amber-200 dark:border-amber-800 ml-2">
                 <AlertTriangle size={16} />
                 <span className="hidden sm:inline">{t.invalid}</span>
               </div>
