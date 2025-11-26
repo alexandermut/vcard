@@ -135,7 +135,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
 
                             <section>
                                 <h2 className="text-lg font-semibold mb-2">2. Grundsätzliche Funktionsweise ("Local-First"-Architektur)</h2>
-                                <p className="mb-2">Diese Anwendung ("vCards") verfolgt einen "Local-First"-Ansatz. Das bedeutet:</p>
+                                <p className="mb-2">Diese Anwendung ("Kontakte.me") verfolgt einen "Local-First"-Ansatz. Das bedeutet:</p>
                                 <ul className="list-disc pl-5 space-y-2 text-sm">
                                     <li><strong>Lokale Speicherung:</strong> Ihre Inhaltsdaten (Texte, Visitenkarten-Scans, Historie, API-Keys) werden primär und dauerhaft lokal im Browser Ihres Endgeräts (Local Storage / IndexedDB) gespeichert.</li>
                                     <li><strong>Lokale Verarbeitung:</strong> Funktionen wie der QR-Code-Scanner laufen vollständig in Ihrem Browser (via `jsqr`). Es werden keine Videostreams an Server gesendet.</li>

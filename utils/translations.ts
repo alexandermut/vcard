@@ -2,7 +2,7 @@ import { Language } from '../types';
 
 export const translations = {
   de: {
-    appTitle: "vCards",
+    appTitle: "Kontakte.me",
     settings: "Einstellungen",
     scan: "Scannen",
     history: "Verlauf",
@@ -142,7 +142,7 @@ export const translations = {
     installApp: "App installieren",
   },
   en: {
-    appTitle: "vCards",
+    appTitle: "Kontakte.me",
     settings: "Settings",
     scan: "Scan",
     history: "History",

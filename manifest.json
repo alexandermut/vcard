@@ -1,6 +1,6 @@
 {
-  "name": "vCards",
-  "short_name": "vCards",
+  "name": "Kontakte.me",
+  "short_name": "Kontakte.me",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",

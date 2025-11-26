@@ -23,7 +23,7 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
         name: 'vCard Editor & Generator',
-        short_name: 'vCards',
+        short_name: 'Kontakte.me',
         description: 'Privacy-first vCard Editor with AI features',
         theme_color: '#ffffff',
         icons: [

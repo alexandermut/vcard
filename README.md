@@ -1,6 +1,6 @@
-# vCards - Intelligent Business Card Scanner & Editor
+# Kontakte.me - Intelligent Business Card Scanner & Editor
 
-**vCards** is a modern Web Application (PWA) that instantly converts physical business cards and digital signatures into perfectly formatted contacts. It combines the speed of local regex algorithms with the intelligence of Google Gemini AI (GPT-4 Level) to ensure maximum data quality.
+**Kontakte.me** is a modern Web Application (PWA) that instantly converts physical business cards and digital signatures into perfectly formatted contacts. It combines the speed of local regex algorithms with the intelligence of Google Gemini AI (GPT-4 Level) to ensure maximum data quality.
 
 The app operates on a **"Privacy First"** principle: Data is stored only in the browser by default. AI features are optional and require active consent.
 
