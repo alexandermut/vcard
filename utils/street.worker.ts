@@ -30,16 +30,18 @@ const initDB = async () => {
 };
 
 self.onmessage = async (e) => {
-    if (e.data === 'start') {
+    const data = e.data;
+    if (data === 'start' || (typeof data === 'object' && data.type === 'start')) {
         try {
-            await startIngestion();
+            const url = (typeof data === 'object' && data.url) ? data.url : '/streets.csv';
+            await startIngestion(url);
         } catch (err: any) {
             self.postMessage({ type: 'error', error: err.message });
         }
     }
 };
 
-async function startIngestion() {
+async function startIngestion(csvUrl: string) {
     const db = await initDB();
 
     // Check if already populated
@@ -52,7 +54,7 @@ async function startIngestion() {
 
     self.postMessage({ type: 'progress', percent: 0, message: 'Downloading street database...' });
 
-    const response = await fetch('/streets.csv');
+    const response = await fetch(csvUrl);
     if (!response.body) throw new Error('ReadableStream not supported');
 
     const reader = response.body.getReader();

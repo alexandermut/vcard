@@ -26,7 +26,13 @@ export const ingestStreets = (
             reject(err);
         };
 
-        // Start the worker
-        worker.postMessage('start');
+        // Calculate correct URL for streets.csv based on current location and base URL
+        const baseUrl = import.meta.env.BASE_URL;
+        // Ensure baseUrl ends with /
+        const normalizedBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
+        const csvUrl = new URL(`${normalizedBase}streets.csv`, window.location.origin).href;
+
+        // Start the worker with the CSV URL
+        worker.postMessage({ type: 'start', url: csvUrl });
     });
 };
