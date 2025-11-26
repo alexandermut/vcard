@@ -1,8 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure worker
-// Use legacy worker for better compatibility
-pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.legacy.min.mjs`;
+// Use local v3 worker for stability
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.v3.min.js`;
 
 export const convertPdfToImages = async (file: File): Promise<string[]> => {
     try {
