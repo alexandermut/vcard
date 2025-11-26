@@ -52,6 +52,7 @@ const App: React.FC = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Config State
   const [lang, setLang] = useState<Language>('de');
@@ -679,14 +680,7 @@ const App: React.FC = () => {
         initialTab={legalTab}
       />
 
-      <ChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        history={history}
-        apiKey={getKeyToUse()}
-        llmConfig={llmConfig}
-        lang={lang}
-      />
+
 
       <ChatModal
         isOpen={isChatOpen}

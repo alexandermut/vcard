@@ -32,7 +32,7 @@ interface VCardDB extends DBSchema {
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_NAME = 'history';
 const STREETS_STORE = 'streets';
 
@@ -66,6 +66,15 @@ export const initDB = () => {
                     }
 
                     // Notes
+                    if (!db.objectStoreNames.contains('notes')) {
+                        const notesStore = db.createObjectStore('notes', { keyPath: 'id' });
+                        notesStore.createIndex('by-date', 'timestamp');
+                        notesStore.createIndex('by-contact', 'contactId');
+                    }
+                }
+
+                // Version 4: Ensure Notes store exists (fix for potential missing store in v3)
+                if (oldVersion < 4) {
                     if (!db.objectStoreNames.contains('notes')) {
                         const notesStore = db.createObjectStore('notes', { keyPath: 'id' });
                         notesStore.createIndex('by-date', 'timestamp');
