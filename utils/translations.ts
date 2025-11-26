@@ -155,7 +155,7 @@ export const translations = {
     resetConfirm: "Möchten Sie wirklich auf die Musterkarte zurücksetzen?",
     installApp: "App installieren",
 
-    installApp: "App installieren",
+
 
     // FAQ / Help
     helpTitle: "Hilfe & Handbuch",
