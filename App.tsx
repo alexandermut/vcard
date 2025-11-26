@@ -436,18 +436,14 @@ const App: React.FC = () => {
     // Save to DB
     await addHistoryItem(itemToSave);
 
-    // --- HYBRID SCAN NOTE EXTRACTION ---
-    // If this was a Hybrid Scan (implied by presence of NOTE field and context),
-    // we extract the note to the separate Notes system.
-    // Since we don't explicitly pass 'mode' here yet, we infer it:
-    // If there is a NOTE field and it's long (>20 chars), we assume it's valuable.
-    // Ideally, we should pass 'mode' to addToHistory, but for now this heuristic works.
-
     // Better: We can check if 'parsed' data has a note.
     const noteContent = newData.note;
 
+    console.log("Checking for Note Extraction:", { mode, hasNote: !!noteContent, noteLength: noteContent?.length });
+
     // If Hybrid Mode OR note is substantial, save it
     if ((mode === 'hybrid' && noteContent) || (noteContent && noteContent.length > 5)) {
+      console.log("Extracting Note...", { content: noteContent });
       // Create a separate note entry
       await addNote({
         id: crypto.randomUUID(),
@@ -457,29 +453,24 @@ const App: React.FC = () => {
         contactName: itemToSave.name,
         location: newData.adr?.[0]?.value.city // Try to grab city as location
       });
+      console.log("Note extracted and saved.");
 
       // Update count
       const notes = await getNotes();
       setNotesCount(notes.length);
-
-      // Optional: We could clear the note from the vCard if we want strict separation,
-      // but user requested "Separate storage", not necessarily "Exclusive storage".
-      // Keeping it in vCard is safer for portability.
     }
-
-
 
     // Refresh UI
     const updatedHistory = await getHistory();
     setHistory(updatedHistory);
 
-    // Notify user
-    // We can use a toast here ideally, but for now console/alert if needed.
-    // Since this happens automatically after scan, a subtle indicator is better.
-    // For now, let's just log.
     console.log("History updated successfully", { id: itemToSave.id, mode });
 
   }, []);
+
+
+
+
 
   // ... queue ...
 
