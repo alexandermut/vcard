@@ -17,6 +17,7 @@ import { QueueIndicator } from './components/QueueIndicator';
 import { QRCodeModal } from './components/QRCodeModal';
 import { SocialSearchModal } from './components/SocialSearchModal';
 import { LegalModal } from './components/LegalModal';
+import { HelpModal } from './components/HelpModal';
 import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
@@ -30,7 +31,7 @@ import { enrichAddress } from './utils/addressEnricher';
 import {
   Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
   MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
-  Heart, UserCircle, AppWindow, Contact, Database
+  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 
@@ -890,12 +891,7 @@ const App: React.FC = () => {
               </span>
             </button>
 
-            import {HelpModal} from './components/HelpModal';
 
-            // ... inside App component ...
-            const [isHelpOpen, setIsHelpOpen] = useState(false);
-
-            // ... inside header buttons ...
             {/* 7. Settings */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -920,12 +916,7 @@ const App: React.FC = () => {
               </span>
             </button>
 
-// ... inside render return, near other modals ...
-            <HelpModal
-              isOpen={isHelpOpen}
-              onClose={() => setIsHelpOpen(false)}
-              lang={lang}
-            />
+
 
 
             {parsedData.isValid ? (
