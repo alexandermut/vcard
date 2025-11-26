@@ -30,7 +30,7 @@ export const translations = {
     working: "Arbeitet...",
     dragDropTitle: "Bild hier ablegen",
     dragDropSubtitle: "um Scan zu starten",
-    textPlaceholder: "Kopieren Sie hier Kontaktdaten als Text rein. Aus einer E-Mail-Signatur oder einem Impressum einer Firma rein. Mit so wenig wie möglich an zusätzlichem Text der nicht zu den Kontaktdaten gehört. Und am besten je Zeile.\n\nBsp:\nAlexander Mut\nabcfinance GmbH\nKamekestrasse 2-8\n50672 Köln\n0171 552 81 87\nalexander.mut@abcfinance.de\nwww.abcfinance.de\n\nDann hat das Offline RegEx-System die besten Chance das vollständig zu erkennen und Sie müssen wenig berichtigen. Alternativ ist der Weg über den AI-Knopf. Dafür wird aber ein API-Key oder eine lokale Künstliche Intelligenz benötigt.",
+    textPlaceholder: "Fügen Sie hier Kontaktdaten als Text ein, z.B. aus einer E-Mail-Signatur oder einem Impressum. Vermeiden Sie dabei unnötigen Text, der nicht zu den Kontaktdaten gehört. Für eine optimale Erkennung platzieren Sie jede Information in eine eigene Zeile.\n\nBeispiel:\nAlexander Mut\nabcfinance GmbH\nKamekestrasse 2-8\n50672 Köln\n0171 552 81 87\nalexander.mut@abcfinance.de\nwww.abcfinance.de\n\nSo kann das Offline-System (RegEx) die Daten am besten erkennen. Alternativ können Sie die KI-Funktion (Zauberstab) nutzen, wofür jedoch ein API-Key oder ein lokales LLM erforderlich ist.",
     chars: "Zeichen",
     lines: "Zeilen",
 
