@@ -46,6 +46,7 @@ const App: React.FC = () => {
 
   // UI State
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isScanOpen, setIsScanOpen] = useState(false);
   const [isBatchUploadOpen, setIsBatchUploadOpen] = useState(false);
@@ -758,7 +759,11 @@ const App: React.FC = () => {
         initialTab={legalTab}
       />
 
-
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        lang={lang}
+      />
 
       <ChatSidebar
         isOpen={isChatOpen}
@@ -885,6 +890,12 @@ const App: React.FC = () => {
               </span>
             </button>
 
+            import {HelpModal} from './components/HelpModal';
+
+            // ... inside App component ...
+            const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+            // ... inside header buttons ...
             {/* 7. Settings */}
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -896,6 +907,26 @@ const App: React.FC = () => {
                 {t.settings}
               </span>
             </button>
+
+            {/* 8. Help */}
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
+              title={t.helpTitle || "Help"}
+            >
+              <HelpCircle size={20} />
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                {t.helpTitle || "Help"}
+              </span>
+            </button>
+
+// ... inside render return, near other modals ...
+            <HelpModal
+              isOpen={isHelpOpen}
+              onClose={() => setIsHelpOpen(false)}
+              lang={lang}
+            />
+
 
             {parsedData.isValid ? (
               <div className="flex gap-1">

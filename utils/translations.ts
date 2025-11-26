@@ -154,6 +154,46 @@ export const translations = {
     configError: "Bitte verbinden Sie zuerst die AI in den Einstellungen.",
     resetConfirm: "Möchten Sie wirklich auf die Musterkarte zurücksetzen?",
     installApp: "App installieren",
+
+    installApp: "App installieren",
+
+    // FAQ / Help
+    helpTitle: "Hilfe & Handbuch",
+
+    // Section: Scanning
+    faqSectionScan: "1. Scannen & Importieren",
+    faqScanTitle: "Wie scanne ich Visitenkarten?",
+    faqScanDesc: "Nutzen Sie den 'Scannen' Button für einzelne Karten oder 'Stapel-Upload' für mehrere auf einmal. Sie können Fotos direkt aufnehmen oder Dateien (Bilder/PDFs) per Drag & Drop in das Fenster ziehen.",
+    faqQrTitle: "QR-Codes scannen",
+    faqQrDesc: "Klicken Sie auf das QR-Icon im Header, um digitale Visitenkarten direkt über die Webcam zu erfassen.",
+
+    // Section: Editing
+    faqSectionEdit: "2. Bearbeiten & KI",
+    faqEditTitle: "Daten korrigieren & optimieren",
+    faqEditDesc: "Tippen Sie direkt in die Vorschau oder nutzen Sie den Text-Editor links. Der 'AI' Button (Zauberstab) nutzt künstliche Intelligenz, um Fehler zu korrigieren und fehlende Daten zu ergänzen.",
+    faqSocialTitle: "Social Media Suche",
+    faqSocialDesc: "Klicken Sie auf 'Recherche starten' in der Vorschau. Die App sucht automatisch nach LinkedIn, Xing oder Firmenwebseiten passend zum Kontakt.",
+
+    // Section: Notes
+    faqSectionNotes: "3. Notizen & Organisation",
+    faqNotesTitle: "Notizen verwalten",
+    faqNotesDesc: "Zu jedem Kontakt können Sie Notizen erfassen (Notiz-Icon). Diese sind durchsuchbar und werden mit dem Kontakt gespeichert. Nutzen Sie das Stift-Icon in der Seitenleiste, um Notizen nachträglich zu ändern.",
+    faqHybridTitle: "Hybrid-Modus",
+    faqHybridDesc: "Aktivieren Sie im Scan-Fenster den 'Hybrid-Modus', wenn Sie eine Visitenkarte zusammen mit handschriftlichen Notizen fotografieren. Die KI trennt und speichert beides korrekt.",
+
+    // Section: Data
+    faqSectionData: "4. Daten & Export",
+    faqHistoryTitle: "Verlauf & Speichern",
+    faqHistoryDesc: "Gespeicherte Kontakte landen im 'Verlauf'. Von dort können Sie sie jederzeit wieder aufrufen, durchsuchen oder als CSV/JSON exportieren.",
+    faqExportTitle: "Export-Formate",
+    faqExportDesc: "Laden Sie Kontakte als VCF (für Outlook/Handy), CSV (für Excel) oder JSON herunter. Auch die Originalbilder können als ZIP gesichert werden.",
+
+    // Section: Privacy
+    faqSectionPrivacy: "5. Datenschutz & Technik",
+    faqPrivacyTitle: "Wo liegen meine Daten?",
+    faqPrivacyDesc: "Ihre Daten (Bilder, Texte, Datenbank) liegen ausschließlich lokal in Ihrem Browser (IndexedDB). Nichts wird auf unseren Servern gespeichert.",
+    faqAiTitle: "KI-Verarbeitung",
+    faqAiDesc: "Für die Texterkennung werden Bilder kurzzeitig an die konfigurierte KI (Google Gemini oder OpenAI) gesendet, analysiert und sofort wieder gelöscht. Bei Nutzung von Ollama (Lokal) verlassen Daten Ihren PC nie.",
   },
   en: {
     appTitle: "Kontakte.me",
@@ -172,6 +212,44 @@ export const translations = {
     loadMore: "Load More",
     searchPlaceholder: "Search history...",
     restoreBackup: "Restore Backup",
+
+    // FAQ / Help
+    helpTitle: "Help & Manual",
+
+    // Section: Scanning
+    faqSectionScan: "1. Scanning & Import",
+    faqScanTitle: "How to scan business cards?",
+    faqScanDesc: "Use the 'Scan' button for single cards or 'Batch Upload' for multiple. You can take photos directly or drag & drop files (Images/PDFs) into the window.",
+    faqQrTitle: "Scanning QR Codes",
+    faqQrDesc: "Click the QR icon in the header to capture digital business cards directly via webcam.",
+
+    // Section: Editing
+    faqSectionEdit: "2. Editing & AI",
+    faqEditTitle: "Correcting & Optimizing Data",
+    faqEditDesc: "Type directly into the preview or use the text editor on the left. The 'AI' button (Magic Wand) uses artificial intelligence to fix errors and complete missing data.",
+    faqSocialTitle: "Social Media Search",
+    faqSocialDesc: "Click 'Start Research' in the preview. The app automatically searches for LinkedIn, Xing, or company websites matching the contact.",
+
+    // Section: Notes
+    faqSectionNotes: "3. Notes & Organization",
+    faqNotesTitle: "Managing Notes",
+    faqNotesDesc: "You can add notes to any contact (Note icon). These are searchable and stored with the contact. Use the pencil icon in the sidebar to edit notes later.",
+    faqHybridTitle: "Hybrid Mode",
+    faqHybridDesc: "Enable 'Hybrid Mode' in the scan window when photographing a business card alongside handwritten notes. The AI separates and saves both correctly.",
+
+    // Section: Data
+    faqSectionData: "4. Data & Export",
+    faqHistoryTitle: "History & Storage",
+    faqHistoryDesc: "Saved contacts go to 'History'. From there, you can recall, search, or export them as CSV/JSON at any time.",
+    faqExportTitle: "Export Formats",
+    faqExportDesc: "Download contacts as VCF (for Outlook/Mobile), CSV (for Excel), or JSON. Original images can also be saved as ZIP.",
+
+    // Section: Privacy
+    faqSectionPrivacy: "5. Privacy & Tech",
+    faqPrivacyTitle: "Where is my data?",
+    faqPrivacyDesc: "Your data (images, text, database) resides exclusively locally in your browser (IndexedDB). Nothing is stored on our servers.",
+    faqAiTitle: "AI Processing",
+    faqAiDesc: "For text recognition, images are briefly sent to the configured AI (Google Gemini or OpenAI), analyzed, and immediately deleted. When using Ollama (Local), data never leaves your PC.",
 
 
 
