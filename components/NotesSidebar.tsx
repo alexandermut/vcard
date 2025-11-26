@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, FileText, Calendar, MapPin, Download, Trash2, StickyNote, UserCircle } from 'lucide-react';
+import { X, Search, FileText, Calendar, MapPin, Download, Trash2, StickyNote, UserCircle, Edit2, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { Note, Language } from '../types';
-import { getNotes, searchNotes, deleteNote } from '../utils/db';
+import { getNotes, searchNotes, deleteNote, addNote } from '../utils/db';
 import { translations } from '../utils/translations';
 
 interface NotesSidebarProps {
@@ -15,6 +15,10 @@ interface NotesSidebarProps {
 export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onSelectContact, lang, filterContactId }) => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState('');
+    const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+
     const t = translations[lang];
 
     useEffect(() => {
@@ -65,6 +69,44 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
                 loadNotes();
             }
         }
+    };
+
+    const handleStartEdit = (note: Note) => {
+        setEditingNoteId(note.id);
+        setEditContent(note.content);
+        setExpandedNoteId(note.id); // Auto-expand when editing
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingNoteId) return;
+
+        const noteToUpdate = notes.find(n => n.id === editingNoteId);
+        if (!noteToUpdate) return;
+
+        const updatedNote: Note = {
+            ...noteToUpdate,
+            content: editContent,
+            timestamp: Date.now() // Update timestamp? Maybe keep original or add updated field. Let's update for now.
+        };
+
+        try {
+            await addNote(updatedNote);
+            setEditingNoteId(null);
+            setEditContent('');
+            loadNotes();
+        } catch (e) {
+            console.error("Failed to update note", e);
+            alert("Failed to save note.");
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingNoteId(null);
+        setEditContent('');
+    };
+
+    const toggleExpand = (id: string) => {
+        setExpandedNoteId(expandedNoteId === id ? null : id);
     };
 
     const handleExport = (note: Note) => {
@@ -162,27 +204,67 @@ ${note.content}
                                         <span className="truncate max-w-[120px]">{note.contactName || "Unknown"}</span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        {note.contactId && (
-                                            <button
-                                                onClick={() => onSelectContact(note.contactId!)}
-                                                className="p-1 text-slate-400 hover:text-green-600 dark:hover:text-green-400 rounded hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
-                                                title={t.viewContact || "View Contact"}
-                                            >
-                                                <UserCircle size={14} />
-                                            </button>
+                                        {editingNoteId === note.id ? (
+                                            <>
+                                                <button onClick={handleSaveEdit} className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded transition-colors" title="Save">
+                                                    <Check size={14} />
+                                                </button>
+                                                <button onClick={handleCancelEdit} className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors" title="Cancel">
+                                                    <X size={14} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <>
+                                                {note.contactId && (
+                                                    <button
+                                                        onClick={() => onSelectContact(note.contactId!)}
+                                                        className="p-1 text-slate-400 hover:text-green-600 dark:hover:text-green-400 rounded hover:bg-green-50 dark:hover:bg-green-900/30 transition-colors"
+                                                        title={t.viewContact || "View Contact"}
+                                                    >
+                                                        <UserCircle size={14} />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleStartEdit(note)} className="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors" title="Edit">
+                                                    <Edit2 size={14} />
+                                                </button>
+                                                <button onClick={() => handleExport(note)} className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors" title="Export">
+                                                    <Download size={14} />
+                                                </button>
+                                                <button onClick={() => handleDelete(note.id)} className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Delete">
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </>
                                         )}
-                                        <button onClick={() => handleExport(note)} className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors" title="Export">
-                                            <Download size={14} />
-                                        </button>
-                                        <button onClick={() => handleDelete(note.id)} className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors" title="Delete">
-                                            <Trash2 size={14} />
-                                        </button>
                                     </div>
                                 </div>
 
-                                <div className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap mb-2 pl-3 border-l-2 border-slate-100 dark:border-slate-800 line-clamp-4">
-                                    {note.content}
-                                </div>
+                                {editingNoteId === note.id ? (
+                                    <textarea
+                                        value={editContent}
+                                        onChange={(e) => setEditContent(e.target.value)}
+                                        className="w-full text-xs text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-2 focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-y"
+                                        autoFocus
+                                    />
+                                ) : (
+                                    <div
+                                        className={`text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap mb-2 pl-3 border-l-2 border-slate-100 dark:border-slate-800 ${expandedNoteId === note.id ? '' : 'line-clamp-4'} cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded transition-colors`}
+                                        onClick={() => toggleExpand(note.id)}
+                                        title="Click to expand/collapse"
+                                    >
+                                        {note.content || <span className="italic opacity-50">{lang === 'de' ? "Leere Notiz" : "Empty note"}</span>}
+                                    </div>
+                                )}
+
+                                {editingNoteId !== note.id && (
+                                    <div className="flex justify-center -mt-1 mb-1">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); toggleExpand(note.id); }}
+                                            className="text-slate-300 hover:text-slate-500 transition-colors"
+                                        >
+                                            {expandedNoteId === note.id ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+                                        </button>
+                                    </div>
+                                )}
 
                                 <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500">
                                     <div className="flex items-center gap-1">
