@@ -77,7 +77,7 @@ const App: React.FC = () => {
     getKeyToUse() || '',
     lang,
     llmConfig,
-    async (vcard, images) => {
+    async (vcard, images, mode) => {
       // 1. Enrich Address (if Street DB is ready)
       let finalVCard = vcard;
       if (streetDbStatus === 'ready') {
@@ -93,7 +93,7 @@ const App: React.FC = () => {
       setVcardString(finalVCard);
       setCurrentImages(images);
       // Auto-save to history on successful scan
-      addToHistory(finalVCard, undefined, images);
+      addToHistory(finalVCard, undefined, images, mode);
     }
   );
 
@@ -227,11 +227,9 @@ const App: React.FC = () => {
       for (const file of files) {
         if (file.type === 'application/pdf') {
           try {
-            const images = await convertPdfToImages(file);
-            for (let i = 0; i < images.length; i++) {
-              const res = await fetch(images[i]);
-              const blob = await res.blob();
-              processedFiles.push(new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
+            const blobs = await convertPdfToImages(file);
+            for (let i = 0; i < blobs.length; i++) {
+              processedFiles.push(new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
             }
           } catch (err) {
             console.error("PDF conversion failed", err);
@@ -267,12 +265,10 @@ const App: React.FC = () => {
         for (const file of files) {
           if (file.type === 'application/pdf') {
             try {
-              const images = await convertPdfToImages(file);
+              const blobs = await convertPdfToImages(file);
               const pdfPages: File[] = [];
-              for (let i = 0; i < images.length; i++) {
-                const res = await fetch(images[i]);
-                const blob = await res.blob();
-                pdfPages.push(new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
+              for (let i = 0; i < blobs.length; i++) {
+                pdfPages.push(new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
               }
               if (pdfPages.length > 0) jobs.push(pdfPages);
             } catch (e) {
@@ -324,9 +320,14 @@ const App: React.FC = () => {
   // ...
 
   // Smart Add To History (Merges Duplicates)
-  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[]) => {
+  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid') => {
+    console.log("addToHistory called", { strLength: str?.length, hasParsed: !!parsed, images: scanImages?.length, mode });
+
     const p = parsed || parseVCardString(str);
-    if (!p.isValid) return;
+    if (!p.isValid) {
+      console.error("addToHistory: Invalid vCard", str);
+      return;
+    }
 
     const newData = p.data as VCardData;
     const newFn = newData.fn?.trim();
@@ -433,7 +434,9 @@ const App: React.FC = () => {
 
     // Better: We can check if 'parsed' data has a note.
     const noteContent = newData.note;
-    if (noteContent && noteContent.length > 5) {
+
+    // If Hybrid Mode OR note is substantial, save it
+    if ((mode === 'hybrid' && noteContent) || (noteContent && noteContent.length > 5)) {
       // Create a separate note entry
       await addNote({
         id: crypto.randomUUID(),
@@ -659,7 +662,10 @@ const App: React.FC = () => {
       <ScanModal
         isOpen={isScanOpen}
         onClose={() => { setIsScanOpen(false); setDroppedFile(null); }}
-        onScanComplete={() => { }}
+        onScanComplete={(vcard) => {
+          setVcardString(vcard);
+          addToHistory(vcard);
+        }}
         onAddToQueue={(front, back, mode) => {
           const images = [front];
           if (back) images.push(back);

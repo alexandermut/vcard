@@ -10,7 +10,7 @@ export const useScanQueue = (
   apiKey: string,
   lang: Language,
   llmConfig: LLMConfig,
-  onJobComplete: (vcard: string, images?: string[]) => void
+  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => void
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -66,9 +66,17 @@ export const useScanQueue = (
         rawImages.push(base64);
       }
 
-      const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+      // 60s Timeout for AI processing
+      const timeoutPromise = new Promise<string>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout: AI processing took too long")), 60000)
+      );
 
-      onJobComplete(vcard, rawImages);
+      const vcard = await Promise.race([
+        scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision'),
+        timeoutPromise
+      ]);
+
+      onJobComplete(vcard, rawImages, job.mode);
 
       setQueue(prev => prev.filter(j => j.id !== job.id));
 

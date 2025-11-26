@@ -6,7 +6,7 @@ declare global {
     }
 }
 
-export const convertPdfToImages = async (file: File): Promise<string[]> => {
+export const convertPdfToImages = async (file: File): Promise<Blob[]> => {
     try {
         const pdfjsLib = window.pdfjsLib;
         if (!pdfjsLib) {
@@ -16,7 +16,7 @@ export const convertPdfToImages = async (file: File): Promise<string[]> => {
         console.log(`PDFJS Version (Global): ${pdfjsLib.version}`);
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const images: string[] = [];
+        const images: Blob[] = [];
 
         console.log(`PDF loaded: ${file.name}, Pages: ${pdf.numPages}`);
 
@@ -35,7 +35,11 @@ export const convertPdfToImages = async (file: File): Promise<string[]> => {
                     viewport: viewport
                 };
                 await page.render(renderContext).promise;
-                images.push(canvas.toDataURL('image/jpeg', 0.8));
+
+                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+                if (blob) {
+                    images.push(blob);
+                }
             }
         }
 

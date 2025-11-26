@@ -49,10 +49,11 @@ export const ScanModal: React.FC<ScanModalProps> = ({
       if (file.type === 'application/pdf') {
         try {
           setIsProcessingImage(true);
-          const images = await convertPdfToImages(file);
-          if (images.length > 0) {
+          const blobs = await convertPdfToImages(file);
+          if (blobs.length > 0) {
             // Use the first page for single scan
-            const resizedBase64 = await resizeImage(images[0], 1024, 0.8);
+            const imageFile = new File([blobs[0]], "page1.jpg", { type: 'image/jpeg' });
+            const resizedBase64 = await resizeImage(imageFile, 1024, 0.8);
             setImg(resizedBase64);
           }
         } catch (err) {

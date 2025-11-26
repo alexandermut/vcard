@@ -99,12 +99,10 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         for (const file of filesArray) {
             if (file.type === 'application/pdf') {
                 try {
-                    const images = await convertPdfToImages(file);
+                    const blobs = await convertPdfToImages(file);
                     const pdfPages: File[] = [];
-                    for (let i = 0; i < images.length; i++) {
-                        const res = await fetch(images[i]);
-                        const blob = await res.blob();
-                        const imageFile = new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' });
+                    for (let i = 0; i < blobs.length; i++) {
+                        const imageFile = new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' });
                         pdfPages.push(imageFile);
                     }
                     if (pdfPages.length > 0) {
