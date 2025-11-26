@@ -1,7 +1,7 @@
 import { openDB, DBSchema, IDBPDatabase } from 'idb';
-import { HistoryItem } from '../types';
-import { base64ToBlob } from './imageUtils';
+import { HistoryItem, Note } from '../types';
 import { parseVCardString } from './vcardUtils';
+import { base64ToBlob } from './imageUtils';
 
 interface Street {
     id?: number;
@@ -14,10 +14,12 @@ interface VCardDB extends DBSchema {
     history: {
         key: string;
         value: HistoryItem;
-        indexes: {
-            'by-date': number;
-            'keywords': string[];
-        };
+        indexes: { 'by-date': number; 'by-name': string; 'keywords': string[] };
+    };
+    notes: {
+        key: string;
+        value: Note;
+        indexes: { 'by-date': number; 'by-contact': string };
     };
     streets: {
         key: number;
@@ -40,13 +42,13 @@ export const initDB = () => {
     if (!dbPromise) {
         dbPromise = openDB<VCardDB>(DB_NAME, DB_VERSION, {
             upgrade(db, oldVersion, newVersion, transaction) {
-                // Version 1: Create store and date index
+                // Version 1: History
                 if (oldVersion < 1) {
                     const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
                     store.createIndex('by-date', 'timestamp');
                 }
 
-                // Version 2: Add keywords index
+                // Version 2: Keywords
                 if (oldVersion < 2) {
                     const store = transaction.objectStore(STORE_NAME);
                     if (!store.indexNames.contains('keywords')) {
@@ -54,17 +56,60 @@ export const initDB = () => {
                     }
                 }
 
-                // Version 3: Add streets store
+                // Version 3: Streets & Notes
                 if (oldVersion < 3) {
-                    const store = db.createObjectStore(STREETS_STORE, { keyPath: 'id', autoIncrement: true });
-                    store.createIndex('zip', 'zip');
-                    store.createIndex('name', 'name');
+                    // Streets
+                    if (!db.objectStoreNames.contains(STREETS_STORE)) {
+                        const streetStore = db.createObjectStore(STREETS_STORE, { keyPath: 'id', autoIncrement: true });
+                        streetStore.createIndex('zip', 'zip');
+                        streetStore.createIndex('name', 'name');
+                    }
+
+                    // Notes
+                    if (!db.objectStoreNames.contains('notes')) {
+                        const notesStore = db.createObjectStore('notes', { keyPath: 'id' });
+                        notesStore.createIndex('by-date', 'timestamp');
+                        notesStore.createIndex('by-contact', 'contactId');
+                    }
                 }
             },
         });
     }
     return dbPromise;
 };
+
+// --- NOTES OPERATIONS ---
+
+export const addNote = async (note: Note) => {
+    const db = await initDB();
+    await db.put('notes', note);
+};
+
+export const getNotes = async (): Promise<Note[]> => {
+    const db = await initDB();
+    return db.getAllFromIndex('notes', 'by-date');
+};
+
+export const deleteNote = async (id: string) => {
+    const db = await initDB();
+    await db.delete('notes', id);
+};
+
+export const searchNotes = async (query: string): Promise<Note[]> => {
+    const db = await initDB();
+    const all = await db.getAllFromIndex('notes', 'by-date');
+
+    const terms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+    if (terms.length === 0) return all.reverse();
+
+    return all.filter(n => {
+        const text = `${n.content} ${n.contactName || ''} ${n.tags?.join(' ') || ''}`.toLowerCase();
+        // All terms must be present (AND logic)
+        return terms.every(term => text.includes(term));
+    }).reverse();
+};
+
+// --- HISTORY OPERATIONS ---
 
 const generateKeywords = (item: HistoryItem): string[] => {
     const parts: string[] = [item.name, item.org || ''];
@@ -158,6 +203,11 @@ export const getHistoryPaged = async (limit: number, lastTimestamp?: number): Pr
     }
 
     return items;
+};
+
+export const getHistoryItem = async (id: string): Promise<HistoryItem | undefined> => {
+    const db = await initDB();
+    return db.get(STORE_NAME, id);
 };
 
 export const deleteHistoryItem = async (id: string) => {
@@ -255,21 +305,6 @@ export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
     //
     // ACTUALLY: For a contact list (< 10k items), scanning ALL items (just the keywords/names) is often fast enough.
     // But we want to use the DB.
-    //
-    // Let's implement a "Filter" approach using a cursor on the 'by-date' index (so we get sorted results)
-    // and filtering manually. This is robust for "contains" search.
-    //
-    // Wait, the user asked for "Database-based Search".
-    // Using `keywords` index is good for exact tags.
-    //
-    // Let's stick to the plan: Use `keywords` index.
-    // But `multiEntry` only matches EXACT keys.
-    // So "Alex" will NOT find "Alexander" if we only indexed "alexander".
-    //
-    // To make it user friendly, let's index prefixes too? No, too much data.
-    //
-    // Let's fallback to a robust SCAN for now, but optimized.
-    // We fetch all, but only the fields we need? No, IDB fetches whole objects.
     //
     // Let's use the `keywords` index for what it's good at: Exact matches.
     // But users type prefixes.

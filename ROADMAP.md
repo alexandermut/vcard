@@ -82,4 +82,12 @@ This file tracks the current development status and planned features.
 - [ ] **Webhooks:** API endpoint to automatically create cards from other apps (e.g., Typeform).
 - [ ] **Accessibility:** Automatic generation of phonetic fields for screen readers.
 - [- ] **Social Photo Link:** Link profile picture directly from LinkedIn/Xing/Gravatar (without upload).
-- [ ] **AI Meeting & Hybrid Scan:** Photo of Business Card + Handwritten Notes -> AI extracts contact AND structured context/notes.
+- [x] **AI Meeting & Hybrid Scan:** Photo of Business Card + Handwritten Notes -> AI extracts contact AND structured context/notes.
+- [x] **Advanced Notes System:**
+    - Separate storage for notes (not just in vCard `NOTE` field).
+    - Notes History: Searchable and exportable text files.
+    - Header Button for quick access to Notes.
+    - Structured Note Format: Location, Date, Contact Data, Content.
+- [x] **Batch Hybrid Scan:** Support for "Card + Notes" mode in batch processing.
+- [x] **PDF Support:** Upload and process PDF files (scans) in all modes.
+- [x] **Note Navigation:** Jump from Note to Contact Preview.

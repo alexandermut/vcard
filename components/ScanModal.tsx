@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText } from 'lucide-react';
+import { convertPdfToImages } from '../utils/pdfUtils';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
 import { Language } from '../types';
@@ -42,10 +43,27 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setImg: (s: string) => void) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, setImg: (s: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
-      processFile(file, setImg);
+      if (file.type === 'application/pdf') {
+        try {
+          setIsProcessingImage(true);
+          const images = await convertPdfToImages(file);
+          if (images.length > 0) {
+            // Use the first page for single scan
+            const resizedBase64 = await resizeImage(images[0], 1024, 0.8);
+            setImg(resizedBase64);
+          }
+        } catch (err) {
+          console.error("PDF processing failed", err);
+          setError("Fehler beim Verarbeiten der PDF-Datei.");
+        } finally {
+          setIsProcessingImage(false);
+        }
+      } else {
+        processFile(file, setImg);
+      }
     }
   };
 
@@ -183,7 +201,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                 <input
                   type="file"
                   ref={frontInputRef}
-                  accept="image/*"
+                  accept="image/*,.pdf"
                   capture="environment"
                   className="hidden"
                   onChange={(e) => handleFileChange(e, setFrontImage)}

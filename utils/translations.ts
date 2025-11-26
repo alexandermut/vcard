@@ -70,6 +70,13 @@ export const translations = {
     modeStandard: 'Standard (Nur Karte)',
     modeHybrid: 'Hybrid (Karte + Notizen)',
     hybridHint: 'Karte neben Notizen legen. KI erfasst beides.',
+
+    // Notes
+    notesTitle: "Notizen",
+    searchNotes: "Notizen durchsuchen...",
+    noNotes: "Keine Notizen gefunden.",
+    deleteConfirm: "Diese Notiz wirklich löschen?",
+    viewContact: "Kontakt anzeigen",
     paste: "Einfügen",
 
     // Queue
@@ -210,6 +217,13 @@ export const translations = {
     modeStandard: 'Standard (Card only)',
     modeHybrid: 'Hybrid (Card + Notes)',
     hybridHint: 'Place card next to handwritten notes. AI will extract both.',
+
+    // Notes
+    notesTitle: "Notes",
+    searchNotes: "Search notes...",
+    noNotes: "No notes found.",
+    deleteConfirm: "Delete this note?",
+    viewContact: "View Contact",
     paste: "Paste",
 
     // Queue

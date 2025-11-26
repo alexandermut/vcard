@@ -53,3 +53,13 @@ export interface ScanJob {
   error?: string;
   mode?: 'vision' | 'hybrid';
 }
+
+export interface Note {
+  id: string;
+  timestamp: number;
+  content: string;
+  contactId?: string; // Link to history item
+  contactName?: string; // Snapshot of contact name
+  location?: string;
+  tags?: string[];
+}

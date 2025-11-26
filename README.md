@@ -82,15 +82,6 @@ The output lands in the `dist/` folder and can be hosted on any static web serve
 
 ---
 
-## 👏 Credits / Open Source Licenses
-
-This project stands on the shoulders of giants. We use and love the following open-source libraries:
-
-*   **[React](https://react.dev/)** (MIT) - UI Library
-*   **[Vite](https://vitejs.dev/)** (MIT) - Build Tool
-*   **[Tailwind CSS](https://tailwindcss.com/)** (MIT) - Utility-first CSS framework
-*   **[Google GenAI SDK](https://www.npmjs.com/package/@google/genai)** (Apache 2.0) - AI Integration
-*   **[idb](https://github.com/jakearchibald/idb)** (ISC) - IndexedDB Promise Wrapper
 *   **[jsQR](https://github.com/cozmo/jsQR)** (Apache 2.0) - QR Code Scanning
 *   **[qrcode](https://github.com/soldair/node-qrcode)** (MIT) - QR Code Generation
 *   **[JSZip](https://stuk.github.io/jszip/)** (MIT) - ZIP File Creation

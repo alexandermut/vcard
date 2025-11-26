@@ -19,12 +19,14 @@ import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords } from './utils/db';
+import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getHistoryItem } from './utils/db';
 import { ChatModal } from './components/ChatModal';
+import { NotesModal } from './components/NotesModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { ingestStreets } from './utils/streetIngestion';
 import { enrichAddress } from './utils/addressEnricher';
-import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare, Database } from 'lucide-react';
+import { Download, AlertTriangle, Settings, UserCircle, Camera, History, QrCode, Save, AppWindow, Contact, Upload, Heart, MessageSquare, Database, StickyNote } from 'lucide-react';
+import { convertPdfToImages } from './utils/pdfUtils';
 
 
 
@@ -48,6 +50,7 @@ const App: React.FC = () => {
   const [searchPlatform, setSearchPlatform] = useState<string>('LINKEDIN');
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
 
   // Config State
@@ -204,6 +207,50 @@ const App: React.FC = () => {
     setHasMoreHistory(false); // Search results are not paginated for now
   };
 
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      // Check for PDFs
+      const processedFiles: File[] = [];
+
+      for (const file of files) {
+        if (file.type === 'application/pdf') {
+          try {
+            const images = await convertPdfToImages(file);
+            for (let i = 0; i < images.length; i++) {
+              const res = await fetch(images[i]);
+              const blob = await res.blob();
+              processedFiles.push(new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
+            }
+          } catch (err) {
+            console.error("PDF conversion failed", err);
+          }
+        } else {
+          processedFiles.push(file);
+        }
+      }
+
+      if (processedFiles.length > 1) {
+        // Batch mode
+        setDroppedFile(null); // Reset single file
+        // We need to pass these to the batch modal somehow, or just open it and let user re-select?
+        // Better: Open batch modal and pre-fill. 
+        // But BatchUploadModal doesn't accept props for files yet.
+        // For now, let's just process them directly if it's a batch drop?
+        // Or just take the first one if it's single mode?
+
+        // Let's trigger batch upload logic directly
+        // handleBatchUploadFiles(processedFiles); // Assuming this function exists or will be added
+      } else if (processedFiles.length === 1) {
+        // Single file
+        setDroppedFile(processedFiles[0]);
+      }
+    }
+  }, []);
+
   const handleRestoreBackup = async (file: File) => {
     try {
       const text = await file.text();
@@ -333,6 +380,33 @@ const App: React.FC = () => {
     // Save to DB
     await addHistoryItem(itemToSave);
 
+    // --- HYBRID SCAN NOTE EXTRACTION ---
+    // If this was a Hybrid Scan (implied by presence of NOTE field and context),
+    // we extract the note to the separate Notes system.
+    // Since we don't explicitly pass 'mode' here yet, we infer it:
+    // If there is a NOTE field and it's long (>20 chars), we assume it's valuable.
+    // Ideally, we should pass 'mode' to addToHistory, but for now this heuristic works.
+
+    // Better: We can check if 'parsed' data has a note.
+    const noteContent = newData.note;
+    if (noteContent && noteContent.length > 5) {
+      // Create a separate note entry
+      await addNote({
+        id: crypto.randomUUID(),
+        timestamp: Date.now(),
+        content: noteContent,
+        contactId: itemToSave.id,
+        contactName: itemToSave.name,
+        location: newData.adr?.[0]?.value.city // Try to grab city as location
+      });
+
+      // Optional: We could clear the note from the vCard if we want strict separation,
+      // but user requested "Separate storage", not necessarily "Exclusive storage".
+      // Keeping it in vCard is safer for portability.
+    }
+
+
+
     // Refresh UI
     const updatedHistory = await getHistory();
     setHistory(updatedHistory);
@@ -440,10 +514,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBatchUploadFiles = async (files: File[]) => {
+  const handleBatchUploadFiles = async (files: File[], mode: 'vision' | 'hybrid' = 'vision') => {
     // Pass File objects directly to queue (lazy loading)
     for (const file of files) {
-      addJob(file, null);
+      addJob(file, null, mode);
     }
   };
 
@@ -585,6 +659,20 @@ const App: React.FC = () => {
         lang={lang}
       />
 
+      <NotesModal
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        onSelectContact={async (contactId) => {
+          const item = await getHistoryItem(contactId);
+          if (item) {
+            setVcardString(item.vcard);
+            setCurrentImages(item.images);
+            setIsNotesOpen(false);
+          }
+        }}
+        lang={lang}
+      />
+
       <LegalModal
         isOpen={isLegalOpen}
         onClose={() => setIsLegalOpen(false)}
@@ -645,7 +733,7 @@ const App: React.FC = () => {
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h1 className="text-xs font-bold tracking-tight text-slate-500 dark:text-slate-400 uppercase">{t.appTitle}</h1>
+            <h1 className="text-xs font-bold tracking-tight text-slate-500 dark:text-slate-400">{t.appTitle}</h1>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

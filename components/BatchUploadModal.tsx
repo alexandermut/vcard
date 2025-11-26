@@ -6,7 +6,7 @@ import { translations } from '../utils/translations';
 interface BatchUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAddJobs: (files: File[]) => void;
+    onAddJobs: (files: File[], mode: 'vision' | 'hybrid') => void;
     queue: ScanJob[];
     onRemoveJob: (id: string) => void;
     lang: Language;
@@ -70,25 +70,52 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
 }) => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [scanMode, setScanMode] = useState<'vision' | 'hybrid'>('vision');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const t = translations[lang];
 
     if (!isOpen) return null;
 
-    const handleFileSelect = (files: FileList | null) => {
+    const processFiles = async (files: FileList | null) => {
         if (!files) return;
 
-        const imageFiles = Array.from(files).filter(file =>
-            file.type.startsWith('image/')
-        );
+        const filesArray = Array.from(files);
+        const processedFiles: File[] = [];
 
-        setSelectedFiles(prev => [...prev, ...imageFiles]);
+        setIsProcessing(true);
+
+        for (const file of filesArray) {
+            if (file.type === 'application/pdf') {
+                try {
+                    const images = await convertPdfToImages(file);
+                    for (let i = 0; i < images.length; i++) {
+                        const res = await fetch(images[i]);
+                        const blob = await res.blob();
+                        const imageFile = new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' });
+                        processedFiles.push(imageFile);
+                    }
+                } catch (err) {
+                    console.error("PDF conversion failed", err);
+                    alert(`Fehler beim Verarbeiten von ${file.name}`);
+                }
+            } else if (file.type.startsWith('image/')) {
+                processedFiles.push(file);
+            }
+        }
+
+        setSelectedFiles(prev => [...prev, ...processedFiles]);
+        setIsProcessing(false);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        processFiles(e.target.files);
     };
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
-        handleFileSelect(e.dataTransfer.files);
+        processFiles(e.dataTransfer.files);
     };
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -102,7 +129,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
 
     const handleStartProcessing = () => {
         if (selectedFiles.length > 0) {
-            onAddJobs(selectedFiles);
+            onAddJobs(selectedFiles, scanMode);
             setSelectedFiles([]);
         }
     };
@@ -158,6 +185,28 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 {/* Content */}
                 <div className="p-6 overflow-y-auto bg-white dark:bg-slate-900 space-y-4">
 
+                    {/* Mode Selector */}
+                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                        <button
+                            onClick={() => setScanMode('vision')}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${scanMode === 'vision'
+                                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            {t.modeStandard}
+                        </button>
+                        <button
+                            onClick={() => setScanMode('hybrid')}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-all ${scanMode === 'hybrid'
+                                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                        >
+                            {t.modeHybrid}
+                        </button>
+                    </div>
+
                     {/* File Upload Area */}
                     <div
                         onDrop={handleDrop}
@@ -171,7 +220,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     >
                         <Upload size={48} className="mx-auto mb-4 text-slate-400 dark:text-slate-500" />
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                            {t.dragDropFiles}
+                            {isProcessing ? "Verarbeite PDF..." : t.dragDropFiles}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-slate-400">
                             {t.uploadMultiple}
@@ -180,11 +229,11 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                             ref={fileInputRef}
                             type="file"
                             multiple
-                            accept="image/*"
-                            onChange={(e) => handleFileSelect(e.target.files)}
+                            accept="image/*,.pdf"
+                            onChange={handleFileChange}
                             className="hidden"
-                        />
-                    </div>
+                            id="batch-file-upload"
+                        /></div>
 
                     {/* Selected Files Preview */}
                     {selectedFiles.length > 0 && (
