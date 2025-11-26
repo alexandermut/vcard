@@ -26,6 +26,13 @@ export const ingestStreets = (
             reject(err);
         };
 
+        // Check for file protocol (local testing without server)
+        if (window.location.protocol === 'file:') {
+            console.warn("[StreetDB] File protocol detected. Worker cannot load CSV via fetch. Skipping.");
+            resolve(); // Resolve immediately to avoid error state
+            return;
+        }
+
         // Calculate correct URL for streets.csv based on document.baseURI
         // This is the most robust way to find sibling files in public/
         const csvUrl = new URL('streets.csv', document.baseURI).href;

@@ -167,8 +167,10 @@ const App: React.FC = () => {
           if (progress === 100) setStreetDbStatus('ready');
         });
       } catch (e) {
-        console.error("Street DB load failed", e);
-        setStreetDbStatus('error');
+        console.error("Street DB load failed (non-critical)", e);
+        // Do not show error state to user, just stay idle or ready-ish
+        // This prevents the red error icon from annoying the user if the feature is just unavailable
+        setStreetDbStatus('idle');
       }
     };
     // Delay slightly to not block initial render
