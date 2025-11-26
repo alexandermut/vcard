@@ -457,6 +457,7 @@ const App: React.FC = () => {
         content: noteContent,
         contactId: itemToSave.id,
         contactName: itemToSave.name,
+        company: itemToSave.org, // Save company name
         location: newData.adr?.[0]?.value.city // Try to grab city as location
       });
       console.log("Note extracted and saved.");

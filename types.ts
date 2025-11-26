@@ -59,6 +59,7 @@ export interface Note {
   content: string;
   contactId?: string; // Link to history item
   contactName?: string; // Snapshot of contact name
+  company?: string; // Snapshot of company name
   location?: string;
   tags?: string[];
 }

@@ -19,6 +19,7 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision' | 'hybrid', isU
        - **DO NOT IGNORE** text outside the card.
        - **DO NOT** treat handwritten notes as noise.
        - Transcribe handwritten notes exactly and put them into the 'NOTE' field.
+       - **STRUCTURE THE NOTES**: Use bullet points, headers (e.g. "Action Items:", "Meeting Details:"), or sections. Do NOT create a single messy line.
        - If the text says "Meeting on...", "Interested in...", etc., capture it!
     3. **ENTITY RECOGNITION**:
        - Identify the PRIMARY contact person. If multiple people listed, prioritize the one that looks like the sender or card owner.
@@ -84,6 +85,7 @@ const getSystemPrompt = (lang: Language, mode: 'text' | 'vision' | 'hybrid', isU
     
     7. **NOTE (Context)**:
        - Put useful info that doesn't fit elsewhere (e.g. opening hours, tax ID) here.
+       - **FORMAT**: Use newlines (\n) to separate distinct topics. Use bullet points (-) for lists.
        - Do NOT put legal disclaimers here.
 
     8. **PHOTO / LOGO**:

@@ -58,10 +58,23 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
     };
 
     const handleExport = (note: Note) => {
-        const filename = `Note_${note.contactName || 'Unknown'}_${new Date(note.timestamp).toISOString().split('T')[0]}.txt`;
+        const dateStr = new Date(note.timestamp).toISOString().split('T')[0];
+
+        // Sanitize strings for filename
+        const safeName = (note.contactName || 'Unknown').replace(/[^a-z0-9]/gi, '_');
+        const safeCompany = (note.company || '').replace(/[^a-z0-9]/gi, '_');
+
+        // Format: Date_Name_Company
+        let filename = `${dateStr}_${safeName}`;
+        if (safeCompany) {
+            filename += `_${safeCompany}`;
+        }
+        filename += '.txt';
+
         const content = `NOTE
 Date: ${new Date(note.timestamp).toLocaleString()}
 Contact: ${note.contactName || 'Unknown'}
+Company: ${note.company || 'Unknown'}
 Location: ${note.location || 'Unknown'}
 ---
 ${note.content}
