@@ -244,17 +244,53 @@ const App: React.FC = () => {
       if (processedFiles.length > 1) {
         // Batch mode
         setDroppedFile(null); // Reset single file
-        // We need to pass these to the batch modal somehow, or just open it and let user re-select?
-        // Better: Open batch modal and pre-fill. 
-        // But BatchUploadModal doesn't accept props for files yet.
-        // For now, let's just process them directly if it's a batch drop?
-        // Or just take the first one if it's single mode?
 
-        // Let's trigger batch upload logic directly
-        // handleBatchUploadFiles(processedFiles); // Assuming this function exists or will be added
+        // Open batch modal and add jobs
+        setIsBatchUploadOpen(true);
+
+        // We need to group them properly. 
+        // If they came from a PDF, they are pages of ONE job.
+        // If they were multiple images, they are MULTIPLE jobs (currently).
+        // But handleDrop logic above flattened everything into processedFiles.
+        // We lost the grouping info!
+
+        // REFACTOR: We should pass the grouping info.
+        // But for now, let's assume if it was a PDF, we want to group them.
+        // The loop above flattened it.
+
+        // Let's change the loop to preserve grouping.
+        // Actually, handleBatchUploadFiles expects File[][].
+
+        const jobs: File[][] = [];
+
+        // Re-process to preserve structure
+        for (const file of files) {
+          if (file.type === 'application/pdf') {
+            try {
+              const images = await convertPdfToImages(file);
+              const pdfPages: File[] = [];
+              for (let i = 0; i < images.length; i++) {
+                const res = await fetch(images[i]);
+                const blob = await res.blob();
+                pdfPages.push(new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
+              }
+              if (pdfPages.length > 0) jobs.push(pdfPages);
+            } catch (e) {
+              console.error(e);
+            }
+          } else {
+            jobs.push([file]);
+          }
+        }
+
+        handleBatchUploadFiles(jobs);
       } else if (processedFiles.length === 1) {
         // Single file
         setDroppedFile(processedFiles[0]);
+        // If it was a single PDF page, processedFiles[0] is it.
+        // But if it was a PDF, we might want to open ScanModal with it?
+        // ScanModal is opened via useEffect on droppedFile.
+        setIsScanOpen(true);
       }
     }
   }, []);
