@@ -13,7 +13,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, vcard
 
   useEffect(() => {
     if (isOpen && vcardString) {
-      QRCode.toDataURL(vcardString, { 
+      QRCode.toDataURL(vcardString, {
         width: 300,
         margin: 2,
         color: {
@@ -21,8 +21,8 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, vcard
           light: '#ffffff'
         }
       })
-      .then(url => setQrDataUrl(url))
-      .catch(err => console.error(err));
+        .then(url => setQrDataUrl(url))
+        .catch(err => console.error(err));
     }
   }, [isOpen, vcardString]);
 
@@ -37,18 +37,29 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, vcard
             <X size={20} className="text-slate-500" />
           </button>
         </div>
-        
+
         <div className="flex flex-col items-center gap-4">
           <div className="bg-white p-2 rounded-lg border border-slate-200">
-             {qrDataUrl ? (
-               <img src={qrDataUrl} alt="vCard QR Code" className="w-64 h-64" />
-             ) : (
-               <div className="w-64 h-64 bg-slate-100 animate-pulse rounded"></div>
-             )}
+            {qrDataUrl ? (
+              <img src={qrDataUrl} alt="vCard QR Code" className="w-64 h-64" />
+            ) : (
+              <div className="w-64 h-64 bg-slate-100 animate-pulse rounded"></div>
+            )}
           </div>
           <p className="text-center text-sm text-slate-500 dark:text-slate-400">
             Scannen Sie diesen Code mit der Handy-Kamera, um den Kontakt sofort zu speichern.
           </p>
+
+          {qrDataUrl && (
+            <a
+              href={qrDataUrl}
+              download="vcard-qr.png"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <Download size={16} />
+              QR-Code herunterladen
+            </a>
+          )}
         </div>
       </div>
     </div>

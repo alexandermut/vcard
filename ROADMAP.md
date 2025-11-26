@@ -59,6 +59,7 @@ This file tracks the current development status and planned features.
 - [ ] **AI Research:** Real web search ("Grounding") to automatically complete missing data.
 - [ ] **Digital Wallet:** Export as `.pkpass` for Apple Wallet & Google Wallet.
 - [ ] **NFC Writer:** Write vCards to NFC tags (via WebNFC API).
+- [ ] **NFC Card Ordering:** Order physical NFC business cards for individual contacts directly from the app.
 - [ ] **Voice-to-Contact:** Dictate business cards ("Create contact for Max Mustermann...").
 - [ ] **LinkedIn PDF Import:** Extract data from LinkedIn Profile PDFs.
 - [ ] **Custom Branding:** Custom logo and colors for QR Code and Web View.
