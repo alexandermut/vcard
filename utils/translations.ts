@@ -30,7 +30,7 @@ export const translations = {
     working: "Arbeitet...",
     dragDropTitle: "Bild hier ablegen",
     dragDropSubtitle: "um Scan zu starten",
-    textPlaceholder: "Kopieren Sie hier Ihre E-Mail Signatur oder ein Impressum hinein. Oder nutzen Sie die Diktierfunktion Ihrer Tastatur. Die Daten werden automatisch erkannt (Offline-Regex).",
+    textPlaceholder: "Kopieren Sie hier Kontaktdaten als Text rein. Aus einer E-Mail-Signatur oder einem Impressum einer Firma rein. Mit so wenig wie möglich an zusätzlichem Text der nicht zu den Kontaktdaten gehört. Und am besten je Zeile.\n\nBsp:\nAlexander Mut\nabcfinance GmbH\nKamekestrasse 2-8\n50672 Köln\n0171 552 81 87\nalexander.mut@abcfinance.de\nwww.abcfinance.de\n\nDann hat das Offline RegEx-System die besten Chance das vollständig zu erkennen und Sie müssen wenig berichtigen. Alternativ ist der Weg über den AI-Knopf. Dafür wird aber ein API-Key oder eine lokale Künstliche Intelligenz benötigt.",
     chars: "Zeichen",
     lines: "Zeilen",
 
