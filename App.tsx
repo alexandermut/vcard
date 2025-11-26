@@ -173,8 +173,8 @@ const App: React.FC = () => {
       setStreetDbError(null);
       await ingestStreets((progress, msg) => {
         setStreetDbProgress(progress);
-        if (progress === 100) setStreetDbStatus('ready');
       });
+      setStreetDbStatus('ready');
     } catch (e) {
       console.error("Street DB load failed", e);
       setStreetDbStatus('error');
