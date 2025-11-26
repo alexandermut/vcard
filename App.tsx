@@ -8,7 +8,7 @@ import { translations } from './utils/translations';
 import { generateCSV, downloadCSV } from './utils/csvUtils';
 import { generateJSON, downloadJSON, restoreJSON } from './utils/jsonUtils';
 import { HistorySidebar } from './components/HistorySidebar';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsSidebar } from './components/SettingsSidebar';
 import { BatchUploadModal } from './components/BatchUploadModal';
 import { NotesSidebar } from './components/NotesSidebar';
 import { ChatSidebar } from './components/ChatSidebar';
@@ -643,11 +643,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
-      <SettingsModal
+      <SettingsSidebar
         isOpen={isSettingsOpen}
-        onClose={() => { setIsSettingsOpen(false); setError(null); }}
+        onClose={() => setIsSettingsOpen(false)}
         onSave={handleSaveSettings}
-        apiKey={llmConfig.googleApiKey}
+        apiKey={apiKey}
         lang={lang}
         setLang={setLang}
         isDarkMode={isDarkMode}
@@ -655,11 +655,11 @@ const App: React.FC = () => {
         errorMessage={error}
         llmProvider={llmConfig.provider}
         setLLMProvider={setProvider}
-        customBaseUrl={llmConfig.customBaseUrl}
-        customApiKey={llmConfig.customApiKey}
-        customModel={llmConfig.customModel}
-        openaiApiKey={llmConfig.openaiApiKey}
-        openaiModel={llmConfig.openaiModel}
+        customBaseUrl={llmConfig.customBaseUrl || ''}
+        customApiKey={llmConfig.customApiKey || ''}
+        customModel={llmConfig.customModel || ''}
+        openaiApiKey={llmConfig.openaiApiKey || ''}
+        openaiModel={llmConfig.openaiModel || ''}
         setCustomConfig={setCustomConfig}
         onOllamaDefaults={setOllamaDefaults}
 
