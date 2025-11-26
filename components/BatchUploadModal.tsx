@@ -2,11 +2,12 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, Trash2, RefreshCw, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 import { Language, ScanJob } from '../types';
 import { translations } from '../utils/translations';
+import { convertPdfToImages } from '../utils/pdfUtils';
 
 interface BatchUploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onAddJobs: (files: File[], mode: 'vision' | 'hybrid') => void;
+    onAddJobs: (jobs: File[][], mode: 'vision' | 'hybrid') => void;
     queue: ScanJob[];
     onRemoveJob: (id: string) => void;
     lang: Language;
@@ -19,31 +20,40 @@ interface QueueItemProps {
 
 const QueueItem: React.FC<QueueItemProps> = ({ job, onRemove, getStatusIcon }) => {
     const [imageUrl, setImageUrl] = useState<string>('');
+    const pageCount = job.images.length;
 
     React.useEffect(() => {
         let url = '';
-        if (job.frontImage instanceof File) {
-            url = URL.createObjectURL(job.frontImage);
+        const firstImage = job.images[0];
+        if (firstImage instanceof File) {
+            url = URL.createObjectURL(firstImage);
             setImageUrl(url);
         } else {
-            setImageUrl(job.frontImage);
+            setImageUrl(firstImage);
         }
 
         return () => {
             if (url) URL.revokeObjectURL(url);
         };
-    }, [job.frontImage]);
+    }, [job.images]);
 
     return (
         <div className="flex items-center gap-3 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
             {getStatusIcon(job.status)}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 relative">
                 {imageUrl && (
-                    <img
-                        src={imageUrl}
-                        alt="Card"
-                        className="h-12 w-auto object-cover rounded border border-slate-200 dark:border-slate-700"
-                    />
+                    <div className="relative inline-block">
+                        <img
+                            src={imageUrl}
+                            alt="Card"
+                            className="h-12 w-auto object-cover rounded border border-slate-200 dark:border-slate-700"
+                        />
+                        {pageCount > 1 && (
+                            <span className="absolute -top-1 -right-1 bg-slate-800 text-white text-[10px] px-1.5 py-0.5 rounded-full border border-white">
+                                {pageCount}
+                            </span>
+                        )}
+                    </div>
                 )}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400">
@@ -68,7 +78,8 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     onRemoveJob,
     lang
 }) => {
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    // Each "Job" is an array of files (e.g. 1 image or N PDF pages)
+    const [selectedJobs, setSelectedJobs] = useState<File[][]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [scanMode, setScanMode] = useState<'vision' | 'hybrid'>('vision');
@@ -81,7 +92,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
         if (!files) return;
 
         const filesArray = Array.from(files);
-        const processedFiles: File[] = [];
+        const newJobs: File[][] = [];
 
         setIsProcessing(true);
 
@@ -89,22 +100,26 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
             if (file.type === 'application/pdf') {
                 try {
                     const images = await convertPdfToImages(file);
+                    const pdfPages: File[] = [];
                     for (let i = 0; i < images.length; i++) {
                         const res = await fetch(images[i]);
                         const blob = await res.blob();
                         const imageFile = new File([blob], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' });
-                        processedFiles.push(imageFile);
+                        pdfPages.push(imageFile);
+                    }
+                    if (pdfPages.length > 0) {
+                        newJobs.push(pdfPages); // All pages = 1 Job
                     }
                 } catch (err) {
                     console.error("PDF conversion failed", err);
                     alert(`Fehler beim Verarbeiten von ${file.name}`);
                 }
             } else if (file.type.startsWith('image/')) {
-                processedFiles.push(file);
+                newJobs.push([file]); // 1 Image = 1 Job
             }
         }
 
-        setSelectedFiles(prev => [...prev, ...processedFiles]);
+        setSelectedJobs(prev => [...prev, ...newJobs]);
         setIsProcessing(false);
     };
 
@@ -128,14 +143,14 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     };
 
     const handleStartProcessing = () => {
-        if (selectedFiles.length > 0) {
-            onAddJobs(selectedFiles, scanMode);
-            setSelectedFiles([]);
+        if (selectedJobs.length > 0) {
+            onAddJobs(selectedJobs, scanMode);
+            setSelectedJobs([]);
         }
     };
 
     const handleRemoveSelected = (index: number) => {
-        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+        setSelectedJobs(prev => prev.filter((_, i) => i !== index));
     };
 
     const getStatusIcon = (status: ScanJob['status']) => {
@@ -236,11 +251,11 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                         /></div>
 
                     {/* Selected Files Preview */}
-                    {selectedFiles.length > 0 && (
+                    {selectedJobs.length > 0 && (
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    {selectedFiles.length} {t.imagesSelected}
+                                    {selectedJobs.length} {t.imagesSelected}
                                 </p>
                                 <button
                                     onClick={handleStartProcessing}
@@ -250,13 +265,18 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                                 </button>
                             </div>
                             <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
-                                {selectedFiles.map((file, index) => (
+                                {selectedJobs.map((jobFiles, index) => (
                                     <div key={index} className="relative group">
                                         <img
-                                            src={URL.createObjectURL(file)}
-                                            alt={file.name}
+                                            src={URL.createObjectURL(jobFiles[0])}
+                                            alt="Preview"
                                             className="w-full h-24 object-cover rounded-lg border border-slate-200 dark:border-slate-700"
                                         />
+                                        {jobFiles.length > 1 && (
+                                            <span className="absolute top-1 left-1 bg-slate-800/80 text-white text-xs px-1.5 py-0.5 rounded">
+                                                {jobFiles.length} Seiten
+                                            </span>
+                                        )}
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -305,7 +325,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                         </div>
                     )}
 
-                    {queue.length === 0 && selectedFiles.length === 0 && (
+                    {queue.length === 0 && selectedJobs.length === 0 && (
                         <div className="text-center py-8 text-slate-400 dark:text-slate-500 text-sm">
                             {t.queueEmpty}
                         </div>

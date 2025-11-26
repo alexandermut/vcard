@@ -47,8 +47,7 @@ export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';
 export interface ScanJob {
   id: string;
   timestamp: number;
-  frontImage: string | File;
-  backImage?: string | File | null;
+  images: (string | File)[]; // Array of images (pages/sides)
   status: ScanStatus;
   error?: string;
   mode?: 'vision' | 'hybrid';

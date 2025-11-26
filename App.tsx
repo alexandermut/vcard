@@ -10,6 +10,8 @@ import { generateJSON, downloadJSON, restoreJSON } from './utils/jsonUtils';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { BatchUploadModal } from './components/BatchUploadModal';
+import { NotesSidebar } from './components/NotesSidebar';
+import { ChatSidebar } from './components/ChatSidebar';
 import { ScanModal } from './components/ScanModal';
 import { QueueIndicator } from './components/QueueIndicator';
 import { QRCodeModal } from './components/QRCodeModal';
@@ -524,10 +526,10 @@ const App: React.FC = () => {
     }
   };
 
-  const handleBatchUploadFiles = async (files: File[], mode: 'vision' | 'hybrid' = 'vision') => {
-    // Pass File objects directly to queue (lazy loading)
-    for (const file of files) {
-      addJob(file, null, mode);
+  const handleBatchUploadFiles = async (jobs: File[][], mode: 'vision' | 'hybrid' = 'vision') => {
+    // Pass File arrays directly to queue (lazy loading)
+    for (const jobFiles of jobs) {
+      addJob(jobFiles, mode);
     }
   };
 
@@ -622,7 +624,11 @@ const App: React.FC = () => {
         isOpen={isScanOpen}
         onClose={() => { setIsScanOpen(false); setDroppedFile(null); }}
         onScanComplete={() => { }}
-        onAddToQueue={addJob}
+        onAddToQueue={(front, back, mode) => {
+          const images = [front];
+          if (back) images.push(back);
+          addJob(images, mode);
+        }}
         apiKey={getKeyToUse()}
         initialFile={droppedFile}
         lang={lang}
@@ -669,15 +675,19 @@ const App: React.FC = () => {
         lang={lang}
       />
 
-      <NotesModal
+      <NotesSidebar
         isOpen={isNotesOpen}
         onClose={() => setIsNotesOpen(false)}
-        onSelectContact={async (contactId) => {
-          const item = await getHistoryItem(contactId);
-          if (item) {
-            setVcardString(item.vcard);
-            setCurrentImages(item.images);
-            setIsNotesOpen(false);
+        onSelectContact={(id) => {
+          setIsNotesOpen(false);
+          // Find contact and open it
+          const contact = history.find(h => h.id === id);
+          if (contact) {
+            // We need a way to open preview for a specific ID.
+            // For now, just load it into editor? Or maybe we need a PreviewSidebar too?
+            // The user didn't ask for PreviewSidebar.
+            // Let's just load it.
+            handleLoadHistoryItem(contact);
           }
         }}
         lang={lang}
@@ -691,11 +701,11 @@ const App: React.FC = () => {
 
 
 
-      <ChatModal
+      <ChatSidebar
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
         history={history}
-        apiKey={getKeyToUse() || ''}
+        apiKey={getKeyToUse()}
         llmConfig={llmConfig}
         lang={lang}
       />

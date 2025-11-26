@@ -15,12 +15,11 @@ export const useScanQueue = (
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const addJob = useCallback((frontImage: string | File, backImage?: string | File | null, mode: 'vision' | 'hybrid' = 'vision') => {
+  const addJob = useCallback((images: (string | File)[], mode: 'vision' | 'hybrid' = 'vision') => {
     const newJob: ScanJob = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
-      frontImage,
-      backImage,
+      images,
       status: 'pending',
       mode
     };
@@ -48,11 +47,8 @@ export const useScanQueue = (
       };
 
       // Load images into memory ONLY NOW
-      const frontBase64 = await getBase64(job.frontImage);
-      const backBase64 = job.backImage ? await getBase64(job.backImage) : null;
-
       const images: ImageInput[] = [];
-      const rawImages: string[] = [frontBase64];
+      const rawImages: string[] = [];
 
       // Helper to strip data url prefix
       const toInput = (dataUrl: string): ImageInput => {
@@ -64,10 +60,10 @@ export const useScanQueue = (
         };
       };
 
-      images.push(toInput(frontBase64));
-      if (backBase64) {
-        images.push(toInput(backBase64));
-        rawImages.push(backBase64);
+      for (const img of job.images) {
+        const base64 = await getBase64(img);
+        images.push(toInput(base64));
+        rawImages.push(base64);
       }
 
       const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');

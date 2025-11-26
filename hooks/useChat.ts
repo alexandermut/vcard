@@ -18,6 +18,10 @@ export const useChat = (history: HistoryItem[], apiKey: string, llmConfig: LLMCo
         setIsLoading(true);
 
         try {
+            // Fetch notes on demand
+            const { getNotes } = await import('../utils/db');
+            const notes = await getNotes();
+
             // Simplify history to save tokens
             const simplifiedHistory = history.map(item => ({
                 name: item.name,
@@ -25,13 +29,22 @@ export const useChat = (history: HistoryItem[], apiKey: string, llmConfig: LLMCo
                 vcard: item.vcard
             }));
 
+            const simplifiedNotes = notes.map(note => ({
+                contact: note.contactName,
+                content: note.content,
+                date: new Date(note.timestamp).toLocaleDateString()
+            }));
+
             const systemPrompt = `
         You are a helpful assistant for a vCard contact database.
         You have access to the following contacts:
         ${JSON.stringify(simplifiedHistory)}
 
+        AND the following notes:
+        ${JSON.stringify(simplifiedNotes)}
+
         Answer the user's question based ONLY on this data.
-        If you find matching contacts, provide their details clearly.
+        If you find matching contacts or notes, provide their details clearly.
         If the answer is not in the data, say so.
         Keep answers concise.
       `;
