@@ -1,11 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure worker
-// Use local worker file to avoid version mismatches and network issues
-pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
+// Use legacy worker for better compatibility
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.legacy.min.mjs`;
 
 export const convertPdfToImages = async (file: File): Promise<string[]> => {
     try {
+        console.log(`PDFJS Version: ${pdfjsLib.version}`);
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const images: string[] = [];

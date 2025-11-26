@@ -1,11 +1,11 @@
+import StreetWorker from './street.worker?worker';
+
 export const ingestStreets = (
     onProgress: (progress: number, message: string) => void
 ): Promise<void> => {
     return new Promise((resolve, reject) => {
-        // Instantiate the worker
-        const worker = new Worker(new URL('./street.worker.ts', import.meta.url), {
-            type: 'module',
-        });
+        // Instantiate the worker using Vite's explicit worker import
+        const worker = new StreetWorker();
 
         worker.onmessage = (e) => {
             const { type, percent, message, error } = e.data;

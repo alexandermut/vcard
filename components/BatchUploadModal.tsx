@@ -110,9 +110,9 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     if (pdfPages.length > 0) {
                         newJobs.push(pdfPages); // All pages = 1 Job
                     }
-                } catch (err) {
+                } catch (err: any) {
                     console.error("PDF conversion failed", err);
-                    alert(`Fehler beim Verarbeiten von ${file.name}`);
+                    alert(`Fehler beim Verarbeiten von ${file.name}: ${err.message}`);
                 }
             } else if (file.type.startsWith('image/')) {
                 newJobs.push([file]); // 1 Image = 1 Job
