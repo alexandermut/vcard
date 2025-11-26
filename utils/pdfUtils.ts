@@ -1,8 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure worker
-// Using unpkg for better version matching with npm package
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Use local worker file to avoid version mismatches and network issues
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs`;
 
 export const convertPdfToImages = async (file: File): Promise<string[]> => {
     try {
@@ -22,7 +22,11 @@ export const convertPdfToImages = async (file: File): Promise<string[]> => {
             canvas.width = viewport.width;
 
             if (context) {
-                await page.render({ canvasContext: context, viewport: viewport }).promise;
+                const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport
+                };
+                await page.render(renderContext).promise;
                 images.push(canvas.toDataURL('image/jpeg', 0.8));
             }
         }

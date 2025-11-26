@@ -79,6 +79,13 @@ export const translations = {
     viewContact: "Kontakt anzeigen",
     paste: "Einfügen",
 
+    // Chat
+    chatWithData: "Chat mit Daten",
+    chatPlaceholder: "Fragen Sie nach Ihren Daten...",
+    chatEmpty: "Stellen Sie Fragen zu Ihren Kontakten und Notizen!",
+    chatExample1: "Wer arbeitet bei Google?",
+    chatExample2: "Was habe ich über das Meeting notiert?",
+
     // Queue
     batchQueue: "Verarbeitung",
     processing: "Verarbeite...",
@@ -225,6 +232,13 @@ export const translations = {
     deleteConfirm: "Delete this note?",
     viewContact: "View Contact",
     paste: "Paste",
+
+    // Chat
+    chatWithData: "Chat with Data",
+    chatPlaceholder: "Ask about your data...",
+    chatEmpty: "Ask questions about your contacts and notes!",
+    chatExample1: "Who works at Google?",
+    chatExample2: "What notes do I have about meetings?",
 
     // Queue
     batchQueue: "Processing",

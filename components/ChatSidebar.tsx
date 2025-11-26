@@ -50,7 +50,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
                 <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
                     <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
                         <Bot size={20} className="text-blue-600 dark:text-blue-400" />
-                        <h3>Chat with Data</h3>
+                        <h3>{t.chatWithData || "Chat with Data"}</h3>
                     </div>
                     <div className="flex items-center gap-2">
                         <button onClick={clearChat} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500" title="Clear Chat">
@@ -67,9 +67,9 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
                     {messages.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center p-8">
                             <Database size={48} className="mb-4 opacity-20" />
-                            <p className="font-medium">Ask questions about your data!</p>
-                            <p className="text-xs mt-2">"Who works at Google?"</p>
-                            <p className="text-xs">"What notes do I have about meetings?"</p>
+                            <p className="font-medium">{t.chatEmpty || "Ask questions about your data!"}</p>
+                            <p className="text-xs mt-2">"{t.chatExample1 || "Who works at Google?"}"</p>
+                            <p className="text-xs">"{t.chatExample2 || "What notes do I have about meetings?"}"</p>
                         </div>
                     )}
 
@@ -102,7 +102,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
                         <input
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            placeholder="Ask a question..."
+                            placeholder={t.chatPlaceholder || "Ask a question..."}
                             className="flex-1 bg-slate-100 dark:bg-slate-800 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 dark:text-white placeholder-slate-400"
                             disabled={isLoading}
                         />
