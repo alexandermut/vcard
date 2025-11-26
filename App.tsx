@@ -19,7 +19,7 @@ import { Editor } from './components/Editor';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getHistoryItem } from './utils/db';
+import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { NotesModal } from './components/NotesModal';
 import { QRScannerModal } from './components/QRScannerModal';
@@ -109,6 +109,7 @@ const App: React.FC = () => {
   // History State (Start empty, load async)
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
+  const [notesCount, setNotesCount] = useState(0);
   const HISTORY_LIMIT = 20;
 
 
@@ -175,6 +176,10 @@ const App: React.FC = () => {
       const items = await getHistoryPaged(HISTORY_LIMIT);
       setHistory(items);
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
+
+      // Load notes count
+      const notes = await getNotes();
+      setNotesCount(notes.length);
     };
     loadHistory();
   }, []);
@@ -400,6 +405,10 @@ const App: React.FC = () => {
         contactName: itemToSave.name,
         location: newData.adr?.[0]?.value.city // Try to grab city as location
       });
+
+      // Update count
+      const notes = await getNotes();
+      setNotesCount(notes.length);
 
       // Optional: We could clear the note from the vCard if we want strict separation,
       // but user requested "Separate storage", not necessarily "Exclusive storage".
@@ -740,6 +749,17 @@ const App: React.FC = () => {
               <History size={18} />
               {history.length > 0 && (
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full"></span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setIsNotesOpen(true)}
+              className="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative"
+              title="Notizen"
+            >
+              <StickyNote size={18} />
+              {notesCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-yellow-500 rounded-full"></span>
               )}
             </button>
 
