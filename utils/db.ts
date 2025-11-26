@@ -160,10 +160,16 @@ export const addHistoryItem = async (item: HistoryItem) => {
     if (item.images && item.images.length > 0) {
         const blobImages = item.images.map(img => {
             if (typeof img === 'string' && img.startsWith('data:image')) {
-                return base64ToBlob(img);
+                try {
+                    return base64ToBlob(img);
+                } catch (e) {
+                    console.error("Failed to convert image to blob", e);
+                    return null; // Skip invalid image
+                }
             }
             return img;
-        });
+        }).filter(img => img !== null); // Remove failed conversions
+
         // We need to cast because HistoryItem type definition might still say string[]
         // In a real app, we should update the type definition to string | Blob
         // For now, IDB handles mixed types fine.

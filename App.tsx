@@ -92,8 +92,14 @@ const App: React.FC = () => {
 
       setVcardString(finalVCard);
       setCurrentImages(images);
+
       // Auto-save to history on successful scan
-      addToHistory(finalVCard, undefined, images, mode);
+      try {
+        await addToHistory(finalVCard, undefined, images, mode);
+      } catch (err) {
+        console.error("Failed to save to history:", err);
+        alert("Fehler beim Speichern im Verlauf: " + (err as Error).message);
+      }
     }
   );
 
@@ -337,7 +343,12 @@ const App: React.FC = () => {
     const currentHistory = await getHistory();
 
     // 1. Check for exact string duplicate
-    if (currentHistory.length > 0 && currentHistory[0].vcard === str) return;
+    if (currentHistory.length > 0 && currentHistory[0].vcard === str) {
+      console.log("Exact duplicate detected - skipping save");
+      // Optional: Notify user?
+      // alert("Kontakt ist bereits der neueste Eintrag.");
+      return;
+    }
 
     // 2. Search for semantic duplicate
     const existingIndex = currentHistory.findIndex(item => {
@@ -461,6 +472,12 @@ const App: React.FC = () => {
     // Refresh UI
     const updatedHistory = await getHistory();
     setHistory(updatedHistory);
+
+    // Notify user
+    // We can use a toast here ideally, but for now console/alert if needed.
+    // Since this happens automatically after scan, a subtle indicator is better.
+    // For now, let's just log.
+    console.log("History updated successfully", { id: itemToSave.id, mode });
 
   }, []);
 
