@@ -26,12 +26,14 @@ interface SettingsModalProps {
   onInstall?: () => void;
   streetDbStatus: 'idle' | 'loading' | 'ready' | 'error';
   streetDbProgress: number;
+  streetDbError?: string | null;
+  onLoadStreetDb: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen, onClose, onSave, apiKey, lang, setLang, isDarkMode, setIsDarkMode, errorMessage,
   llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
-  isInstallable, onInstall, streetDbStatus, streetDbProgress
+  isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb
 }) => {
   const [hasSystemKey, setHasSystemKey] = useState(false);
   const t = translations[lang];
@@ -134,16 +136,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <span className="text-xs font-bold uppercase">Ready</span>
                   </div>
                 )}
+                {streetDbStatus === 'idle' && (
+                  <button
+                    onClick={onLoadStreetDb}
+                    className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                  >
+                    Load Database
+                  </button>
+                )}
                 {streetDbStatus === 'error' && (
-                  <div className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
-                    <AlertTriangle size={14} />
-                    <span className="text-xs font-bold uppercase">Error</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-red-500" title={streetDbError || 'Error'}>Error</span>
+                    <button
+                      onClick={onLoadStreetDb}
+                      className="text-xs bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-1 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
-                {streetDbStatus === 'idle' && (
-                  <span className="text-xs text-slate-400">Idle</span>
-                )}
               </div>
+              {streetDbError && streetDbStatus === 'error' && (
+                <p className="text-[10px] text-red-500 mt-1 px-1">{streetDbError}</p>
+              )}
             </div>
 
             <hr className="border-slate-100 dark:border-slate-800" />

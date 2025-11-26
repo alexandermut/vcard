@@ -165,26 +165,24 @@ const App: React.FC = () => {
   // Street DB State
   const [streetDbStatus, setStreetDbStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [streetDbProgress, setStreetDbProgress] = useState(0);
+  const [streetDbError, setStreetDbError] = useState<string | null>(null);
 
-  // Load Street DB
-  useEffect(() => {
-    const loadStreets = async () => {
-      try {
-        setStreetDbStatus('loading');
-        await ingestStreets((progress, msg) => {
-          setStreetDbProgress(progress);
-          if (progress === 100) setStreetDbStatus('ready');
-        });
-      } catch (e) {
-        console.error("Street DB load failed (non-critical)", e);
-        // Do not show error state to user, just stay idle or ready-ish
-        // This prevents the red error icon from annoying the user if the feature is just unavailable
-        setStreetDbStatus('idle');
-      }
-    };
-    // Delay slightly to not block initial render
-    setTimeout(loadStreets, 2000);
-  }, []);
+  const handleLoadStreetDb = async () => {
+    try {
+      setStreetDbStatus('loading');
+      setStreetDbError(null);
+      await ingestStreets((progress, msg) => {
+        setStreetDbProgress(progress);
+        if (progress === 100) setStreetDbStatus('ready');
+      });
+    } catch (e) {
+      console.error("Street DB load failed", e);
+      setStreetDbStatus('error');
+      setStreetDbError((e as Error).message || "Unbekannter Fehler");
+    }
+  };
+
+
 
   // Load History & Migrate on Mount
   useEffect(() => {
@@ -667,6 +665,8 @@ const App: React.FC = () => {
 
         streetDbStatus={streetDbStatus}
         streetDbProgress={streetDbProgress}
+        streetDbError={streetDbError}
+        onLoadStreetDb={handleLoadStreetDb}
       />
 
       <BatchUploadModal
