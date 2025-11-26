@@ -26,13 +26,13 @@ export const ingestStreets = (
             reject(err);
         };
 
-        // Calculate correct URL for streets.csv based on current location and base URL
-        const baseUrl = import.meta.env.BASE_URL;
-        // Ensure baseUrl ends with /
-        const normalizedBase = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
-        const csvUrl = new URL(`${normalizedBase}streets.csv`, window.location.origin).href;
+        // Calculate correct URL for streets.csv based on document.baseURI
+        // This is the most robust way to find sibling files in public/
+        const csvUrl = new URL('streets.csv', document.baseURI).href;
+        console.log("[StreetDB] Calculated CSV URL:", csvUrl);
 
         // Start the worker with the CSV URL
+        console.log("[StreetDB] Starting worker...");
         worker.postMessage({ type: 'start', url: csvUrl });
     });
 };
