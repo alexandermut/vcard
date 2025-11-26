@@ -1,12 +1,19 @@
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure worker
-// Use local v3 worker for stability
-pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.v3.min.js`;
+// Use global PDF.js loaded via script tag in index.html
+// This avoids bundler/worker issues
+declare global {
+    interface Window {
+        pdfjsLib: any;
+    }
+}
 
 export const convertPdfToImages = async (file: File): Promise<string[]> => {
     try {
-        console.log(`PDFJS Version: ${pdfjsLib.version}`);
+        const pdfjsLib = window.pdfjsLib;
+        if (!pdfjsLib) {
+            throw new Error("PDF.js library not loaded");
+        }
+
+        console.log(`PDFJS Version (Global): ${pdfjsLib.version}`);
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         const images: string[] = [];
