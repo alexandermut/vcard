@@ -9,9 +9,10 @@ interface NotesSidebarProps {
     onClose: () => void;
     onSelectContact: (contactId: string) => void;
     lang: Language;
+    filterContactId?: string | null;
 }
 
-export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onSelectContact, lang }) => {
+export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onSelectContact, lang, filterContactId }) => {
     const [notes, setNotes] = useState<Note[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const t = translations[lang];
@@ -20,13 +21,19 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
         if (isOpen) {
             loadNotes();
         }
-    }, [isOpen]);
+    }, [isOpen, filterContactId]);
 
     const loadNotes = async () => {
         try {
-            const items = await getNotes();
+            let items = await getNotes();
             // Sort by date desc
-            setNotes(items.reverse());
+            items = items.reverse();
+
+            if (filterContactId) {
+                items = items.filter(n => n.contactId === filterContactId);
+            }
+
+            setNotes(items);
         } catch (e) {
             console.error("Failed to load notes", e);
         }
@@ -39,7 +46,10 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
             return;
         }
         try {
-            const results = await searchNotes(query);
+            let results = await searchNotes(query);
+            if (filterContactId) {
+                results = results.filter(n => n.contactId === filterContactId);
+            }
             setNotes(results);
         } catch (e) {
             console.error("Search failed", e);
@@ -111,6 +121,16 @@ ${note.content}
                         <X size={20} />
                     </button>
                 </div>
+
+                {/* Filter Indicator */}
+                {filterContactId && (
+                    <div className="px-4 pt-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 px-3 py-2 rounded-lg text-xs flex justify-between items-center">
+                            <span>Filtered by Contact</span>
+                            {/* We could add a clear filter button here, but the header button does that */}
+                        </div>
+                    </div>
+                )}
 
                 {/* Search */}
                 <div className="p-4 pb-0">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ParsedVCard, VCardData, Language, VCardAddress } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2 } from 'lucide-react';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { translations } from '../utils/translations';
 
@@ -11,12 +11,13 @@ interface PreviewCardProps {
   onUpdate: (vcard: string) => void;
   onSave: () => void;
   onDownload: () => void;
+  onViewNotes?: () => void;
   lang: Language;
   images?: string[];
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, lang, images
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, lang, images
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -93,6 +94,15 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden h-full flex flex-col transition-colors duration-200 relative">
       <div className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 relative shrink-0 flex justify-end items-center px-4 gap-2">
         <div className="flex items-center gap-1">
+          {onViewNotes && (
+            <button
+              onClick={onViewNotes}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+              title={t.notes || "Notes"}
+            >
+              <StickyNote size={18} />
+            </button>
+          )}
           <button
             onClick={onShowQR}
             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"

@@ -110,6 +110,7 @@ const App: React.FC = () => {
   const handleLoadHistoryItem = (item: HistoryItem) => {
     setVcardString(item.vcard);
     setCurrentImages(item.images);
+    setCurrentHistoryId(item.id);
     setIsHistoryOpen(false);
   };
 
@@ -122,6 +123,8 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const [notesCount, setNotesCount] = useState(0);
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null); // Track currently loaded/saved item
+  const [notesFilterId, setNotesFilterId] = useState<string | null>(null); // Filter for NotesSidebar
   const HISTORY_LIMIT = 20;
 
 
@@ -470,6 +473,7 @@ const App: React.FC = () => {
     // Refresh UI
     const updatedHistory = await getHistory();
     setHistory(updatedHistory);
+    setCurrentHistoryId(itemToSave.id);
 
     console.log("History updated successfully", { id: itemToSave.id, mode });
 
@@ -625,17 +629,15 @@ const App: React.FC = () => {
         lines.push(newLine);
       }
     }
-
     setVcardString(lines.join('\n'));
   };
 
   const handleReset = () => {
-    if (window.confirm(t.resetConfirm)) {
-      setVcardString(DEFAULT_VCARD);
-      setCurrentImages(undefined);
-      setBackupVCard(null);
-    }
-  }
+    setVcardString('');
+    setCurrentImages(undefined);
+    setCurrentHistoryId(null);
+    setBackupVCard(null);
+  };
 
   const isAIReady = !!apiKey || hasSystemKey;
 
@@ -854,7 +856,7 @@ const App: React.FC = () => {
 
             {/* 5. Notes */}
             <button
-              onClick={() => setIsNotesOpen(true)}
+              onClick={() => { setNotesFilterId(null); setIsNotesOpen(true); }}
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
               title={t.notes}
             >
@@ -949,6 +951,17 @@ const App: React.FC = () => {
               images={currentImages}
               onSave={handleManualSave}
               onDownload={handleDownload}
+              onViewNotes={() => {
+                if (currentHistoryId) {
+                  setNotesFilterId(currentHistoryId);
+                  setIsNotesOpen(true);
+                } else {
+                  // Fallback if no ID (e.g. unsaved manual entry)
+                  // Maybe just open notes without filter?
+                  setNotesFilterId(null);
+                  setIsNotesOpen(true);
+                }
+              }}
             />
           </div>
         </div>
