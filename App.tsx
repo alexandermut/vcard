@@ -812,7 +812,7 @@ const App: React.FC = () => {
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Logo variant="icon" height={32} className="text-slate-900 dark:text-white" />
+            {/* Logo removed as per user request (space constraints) */}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
