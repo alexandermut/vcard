@@ -19,6 +19,7 @@ import { SocialSearchModal } from './components/SocialSearchModal';
 import { LegalModal } from './components/LegalModal';
 import { HelpModal } from './components/HelpModal';
 import { Editor } from './components/Editor';
+import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
@@ -811,7 +812,7 @@ const App: React.FC = () => {
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {/* Title moved to footer */}
+            <Logo variant="icon" height={32} className="text-slate-900 dark:text-white" />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -994,7 +995,7 @@ const App: React.FC = () => {
 
           {/* Top Row: Version & Links */}
           <div className="flex flex-wrap justify-center md:justify-start items-center gap-4 text-xs sm:text-sm text-slate-500 dark:text-slate-400 order-2 md:order-1">
-            <span className="font-semibold">{t.appTitle}</span>
+            <Logo variant="full" height={24} className="text-slate-900 dark:text-white" />
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <span>&copy; {__APP_VERSION__}</span>
             <span className="text-slate-300 dark:text-slate-700">|</span>
