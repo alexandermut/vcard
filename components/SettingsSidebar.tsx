@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download } from 'lucide-react';
-import { GoogleConnectButton } from './GoogleConnectButton';
-import { ImportGoogleModal } from './ImportGoogleModal';
+import { GoogleContactsModal } from './GoogleContactsModal';
 import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
@@ -40,7 +39,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
     const { isAuthenticated } = useGoogleContactsAuth();
     const t = translations[lang];
 
@@ -72,9 +71,9 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
     return (
         <>
-            <ImportGoogleModal
-                isOpen={isImportModalOpen}
-                onClose={() => setIsImportModalOpen(false)}
+            <GoogleContactsModal
+                isOpen={isGoogleModalOpen}
+                onClose={() => setIsGoogleModalOpen(false)}
                 onImport={onImportGoogleContacts}
             />
 
@@ -124,21 +123,16 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                         </div>
                                         <div>
                                             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Google Contacts</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Sync your contacts</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400">Sync & Manager</p>
                                         </div>
                                     </div>
-                                    <GoogleConnectButton />
-                                </div>
-
-                                {isAuthenticated && (
                                     <button
-                                        onClick={() => setIsImportModalOpen(true)}
-                                        className="w-full flex items-center justify-center gap-2 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                                        onClick={() => setIsGoogleModalOpen(true)}
+                                        className="px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
                                     >
-                                        <Download size={16} />
-                                        Kontakte importieren
+                                        Verwalten
                                     </button>
-                                )}
+                                </div>
                             </div>
                         </div>
 
@@ -249,118 +243,124 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             </div>
                         </div>
 
-                        {llmProvider === 'google' && (
-                            <>
-                                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                        {
+                            llmProvider === 'google' && (
+                                <>
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
 
-                                    <button
-                                        onClick={handleConnectGoogle}
-                                        className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium py-2 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98] text-sm"
-                                    >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
-                                        {hasSystemKey ? t.connected : t.connectGoogle}
-                                    </button>
-                                </div>
+                                        <button
+                                            onClick={handleConnectGoogle}
+                                            className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-300 font-medium py-2 px-4 rounded-lg transition-all shadow-sm active:scale-[0.98] text-sm"
+                                        >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
+                                            {hasSystemKey ? t.connected : t.connectGoogle}
+                                        </button>
+                                    </div>
 
-                                <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 dark:text-slate-500">{t.orManual}</span>
-                                </div>
+                                    <div className="relative flex justify-center text-xs uppercase">
+                                        <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 dark:text-slate-500">{t.orManual}</span>
+                                    </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">
-                                        {t.apiKeyLabel}
-                                    </label>
-                                    <input
-                                        type="password"
-                                        value={apiKey}
-                                        onChange={(e) => onSave(e.target.value)}
-                                        placeholder="AIzaSy..."
-                                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 font-mono"
-                                    />
-                                    <div className="mt-1 flex justify-end">
-                                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
-                                            {t.generateKey} <ExternalLink size={8} />
-                                        </a>
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-900 dark:text-slate-200 mb-1">
+                                            {t.apiKeyLabel}
+                                        </label>
+                                        <input
+                                            type="password"
+                                            value={apiKey}
+                                            onChange={(e) => onSave(e.target.value)}
+                                            placeholder="AIzaSy..."
+                                            className="w-full px-3 py-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 font-mono"
+                                        />
+                                        <div className="mt-1 flex justify-end">
+                                            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                                                {t.generateKey} <ExternalLink size={8} />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </>
+                            )
+                        }
+
+                        {
+                            llmProvider === 'openai' && (
+                                <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 space-y-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">OpenAI Settings</h4>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">API Key</label>
+                                        <input
+                                            type="password"
+                                            value={openaiApiKey}
+                                            onChange={(e) => setCustomConfig({ openaiApiKey: e.target.value })}
+                                            placeholder="sk-..."
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 font-mono"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.modelName}</label>
+                                        <input
+                                            type="text"
+                                            value={openaiModel}
+                                            onChange={(e) => setCustomConfig({ openaiModel: e.target.value })}
+                                            placeholder="gpt-5.1"
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600"
+                                        />
+                                    </div>
+                                    <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                                        <p>Standard: <code>gpt-5.1</code>. Supports Vision & Text.</p>
                                     </div>
                                 </div>
-                            </>
-                        )}
+                            )
+                        }
 
-                        {llmProvider === 'openai' && (
-                            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800 space-y-3">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">OpenAI Settings</h4>
+                        {
+                            llmProvider === 'custom' && (
+                                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Custom LLM Settings</h4>
+                                        <button
+                                            type="button"
+                                            onClick={onOllamaDefaults}
+                                            className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            {t.ollamaDefaults}
+                                        </button>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.baseUrl}</label>
+                                        <input
+                                            type="text"
+                                            value={customBaseUrl}
+                                            onChange={(e) => setCustomConfig({ customBaseUrl: e.target.value })}
+                                            placeholder="http://localhost:11434/v1"
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">API Key (optional)</label>
+                                        <input
+                                            type="password"
+                                            value={customApiKey}
+                                            onChange={(e) => setCustomConfig({ customApiKey: e.target.value })}
+                                            placeholder="sk-..."
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.modelName}</label>
+                                        <input
+                                            type="text"
+                                            value={customModel}
+                                            onChange={(e) => setCustomConfig({ customModel: e.target.value })}
+                                            placeholder="llama3"
+                                            className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
+                                        />
+                                    </div>
                                 </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">API Key</label>
-                                    <input
-                                        type="password"
-                                        value={openaiApiKey}
-                                        onChange={(e) => setCustomConfig({ openaiApiKey: e.target.value })}
-                                        placeholder="sk-..."
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 font-mono"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.modelName}</label>
-                                    <input
-                                        type="text"
-                                        value={openaiModel}
-                                        onChange={(e) => setCustomConfig({ openaiModel: e.target.value })}
-                                        placeholder="gpt-5.1"
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600"
-                                    />
-                                </div>
-                                <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                    <p>Standard: <code>gpt-5.1</code>. Supports Vision & Text.</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {llmProvider === 'custom' && (
-                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                                <div className="flex justify-between items-center mb-2">
-                                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Custom LLM Settings</h4>
-                                    <button
-                                        type="button"
-                                        onClick={onOllamaDefaults}
-                                        className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
-                                    >
-                                        {t.ollamaDefaults}
-                                    </button>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.baseUrl}</label>
-                                    <input
-                                        type="text"
-                                        value={customBaseUrl}
-                                        onChange={(e) => setCustomConfig({ customBaseUrl: e.target.value })}
-                                        placeholder="http://localhost:11434/v1"
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">API Key (optional)</label>
-                                    <input
-                                        type="password"
-                                        value={customApiKey}
-                                        onChange={(e) => setCustomConfig({ customApiKey: e.target.value })}
-                                        placeholder="sk-..."
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.modelName}</label>
-                                    <input
-                                        type="text"
-                                        value={customModel}
-                                        onChange={(e) => setCustomConfig({ customModel: e.target.value })}
-                                        placeholder="llama3"
-                                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-600"
-                                    />
-                                </div>
-                            </div>
-                        )}
+                            )
+                        }
 
                     </div>
                 </div>

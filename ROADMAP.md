@@ -86,23 +86,26 @@ This file tracks the current development status and planned features.
 - [ ] **Label Printing:** PDF export for address labels (e.g., Avery).
 - [ ] **Calendar Export:** Export birthdays as `.ics` calendar subscription.
 - [ ] **Outlook Add-in:** Direct integration into Microsoft 365 / Exchange.
-- [ ] **Google Login & Sync:** Enable users to sign in with Google and sync contacts.
-    - [ ] **Phase 1: Authentication & Infrastructure**
-        - [ ] Setup Google Cloud Project (OAuth 2.0 Client IDs, Consent Screen).
-        - [ ] Enable Google People API.
-        - [ ] Integrate `@react-oauth/google` for frontend authentication.
-        - [ ] Implement secure Token handling (Implicit Flow / PKCE).
-    - [ ] **Phase 2: Import (Read)**
-        - [ ] Service: Fetch contacts (`people.connections.list`) with pagination.
-        - [ ] Mapper: Convert Google `Person` resource to App `vCard` format.
-        - [ ] UI: "Import from Google" Sidebar/Modal with group selection.
-    - [ ] **Phase 3: Export (Write)**
-        - [ ] Service: Create new contact (`people.createContact`).
-        - [ ] Service: Update existing contact (`people.updateContact` with `etag` handling).
-        - [ ] UI: "Save to Google" button in Editor/History.
-    - [ ] **Phase 4: Sync Strategy**
-        - [ ] ID Mapping: Store `resourceName` (Google ID) in IndexedDB.
-        - [ ] Conflict Resolution: Simple "Last Write Wins" or Manual Merge UI.
+- [ ] **Google Contacts Ecosystem 🌐**
+    *Leverage the Google People API to build a powerful contact management suite.*
+    - [ ] **Phase 1: Foundation (Auth & Basic I/O)**
+        - [x] OAuth 2.0 Integration (Implicit Flow).
+        - [x] Import Contacts (Read) with Pagination.
+        - [x] Export Contacts (Write) - Create new contacts.
+        - [ ] *Refinement:* Handle "Next Page" for large address books (>1000 contacts).
+    - [ ] **Phase 2: Advanced Sync & Management**
+        - [ ] **Two-Way Sync:** Track changes (ETags) to prevent overwriting. "Sync Now" button.
+        - [ ] **Group Management (Labels):** Import/Manage Google Contact Groups as Tags.
+        - [ ] **Photo Sync:** High-res photo upload & sync.
+        - [ ] **Trash/Restore:** View and restore deleted Google Contacts.
+    - [ ] **Phase 3: AI Enrichment ("Clean Up My Contacts")**
+        - [ ] **Health Check:** AI scans for missing country codes, formatting errors, mixed case.
+        - [ ] **Smart Merge:** AI-driven duplicate detection (Name + Email/Phone fuzzy match).
+        - [ ] **Enrichment:** "Update from Signature" (Paste text -> Update Contact).
+    - [ ] **Phase 4: Integrations**
+        - [ ] **Maps:** Visualize contacts on Google Maps.
+        - [ ] **Calendar:** Birthday & Anniversary sync.
+        - [ ] **Gmail:** Contextual "Draft Email" actions.
 - [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.
     - *Context Menu:* "Add to vCard" on selected text.
     - *LinkedIn Integration:* Button in profile for direct vCard export.
