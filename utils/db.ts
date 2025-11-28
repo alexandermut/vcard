@@ -39,7 +39,7 @@ interface VCardDB extends DBSchema {
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 5;
+const DB_VERSION = 6;
 const STORE_NAME = 'history';
 const STREETS_STORE = 'streets';
 const GOOGLE_STORE = 'google_contacts';
@@ -90,12 +90,19 @@ export const initDB = () => {
                     }
                 }
 
-                // Version 5: Google Contacts Cache
+                // Version 5: Google Contacts Cache (Legacy attempt)
                 if (oldVersion < 5) {
-                    if (!db.objectStoreNames.contains(GOOGLE_STORE)) {
-                        const gStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
-                        gStore.createIndex('by-name', 'names.0.displayName'); // Index by display name
+                    // We skip this now and handle it in v6 to ensure clean slate
+                }
+
+                // Version 6: Re-create Google Store (Fix for invalid index)
+                if (oldVersion < 6) {
+                    if (db.objectStoreNames.contains(GOOGLE_STORE)) {
+                        db.deleteObjectStore(GOOGLE_STORE);
                     }
+                    const gStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
+                    // We don't need an index for now as we scan in memory for search
+                    // gStore.createIndex('by-name', 'names.0.displayName'); 
                 }
             },
         });
