@@ -8,6 +8,7 @@ export const useGoogleSync = () => {
     const [status, setStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
     const [progress, setProgress] = useState(0);
     const [total, setTotal] = useState(0);
+    const [lastLog, setLastLog] = useState<string>('');
     const [error, setError] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -17,13 +18,18 @@ export const useGoogleSync = () => {
     }, []);
 
     const startSync = useCallback(async (force = false) => {
-        if (!token) return;
+        if (!token) {
+            setLastLog("Start failed: No token");
+            return;
+        }
         if (status === 'syncing' && !force) return;
 
         setStatus('syncing');
         setError(null);
+        setLastLog("Starting sync...");
 
         if (force) {
+            setLastLog("Clearing local DB...");
             await clearGoogleContacts();
             setProgress(0);
             setTotal(0);
@@ -36,15 +42,22 @@ export const useGoogleSync = () => {
 
         try {
             do {
-                if (abortControllerRef.current?.signal.aborted) break;
+                if (abortControllerRef.current?.signal.aborted) {
+                    setLastLog("Sync aborted by user.");
+                    break;
+                }
 
+                setLastLog(`Fetching page... (Token: ${pageToken ? 'Yes' : 'No'})`);
                 const response = await fetchGoogleContacts(token, pageToken);
 
                 if (response.connections && response.connections.length > 0) {
+                    setLastLog(`Saving ${response.connections.length} contacts...`);
                     await addGoogleContacts(response.connections);
                     count += response.connections.length;
                     setProgress(count);
                     setTotal(prev => Math.max(prev, count)); // Update total if we find more
+                } else {
+                    setLastLog("Page empty.");
                 }
 
                 pageToken = response.nextPageToken;
@@ -57,10 +70,12 @@ export const useGoogleSync = () => {
             setStatus('completed');
             const finalCount = await countGoogleContacts();
             setTotal(finalCount);
+            setLastLog("Sync completed successfully.");
 
         } catch (e: any) {
             console.error("Sync failed", e);
             setError(e.message);
+            setLastLog(`Error: ${e.message}`);
             setStatus('error');
         }
     }, [token, status]);
@@ -69,6 +84,7 @@ export const useGoogleSync = () => {
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
             setStatus('idle');
+            setLastLog("Stopped by user.");
         }
     }, []);
 
@@ -77,6 +93,7 @@ export const useGoogleSync = () => {
         progress,
         total,
         error,
+        lastLog,
         startSync,
         stopSync
     };

@@ -21,14 +21,14 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     // --- Hooks ---
-    const { status: syncStatus, progress: syncProgress, total: syncTotal, startSync, stopSync } = useGoogleSync();
-    const { results: searchResults, isSearching, search } = useGoogleSearch();
+    const { status: syncStatus, progress: syncProgress, total: syncTotal, startSync, stopSync, lastLog } = useGoogleSync();
+    const { results: searchResults, isSearching, localCount, search: searchContacts } = useGoogleSearch();
 
     // Initial load & Sync
     useEffect(() => {
         if (isOpen && isAuthenticated) {
             // Load initial view (empty search = all local contacts)
-            search('');
+            searchContacts('');
 
             // Auto-start sync if idle and few contacts
             if (syncStatus === 'idle' && syncTotal < 10) {
@@ -40,7 +40,7 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
     // Debounced Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (isOpen) search(searchTerm);
+            if (isOpen) searchContacts(searchTerm);
         }, 300);
         return () => clearTimeout(timer);
     }, [searchTerm, isOpen]);
@@ -111,6 +111,10 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
                             <div className="flex justify-between items-center text-[10px] text-slate-400">
                                 <span>{syncProgress} geladen</span>
                                 <button onClick={() => startSync(true)} className="text-blue-500 hover:underline">Neu starten</button>
+                            </div>
+                            {/* Debug Log */}
+                            <div className="mt-2 text-[10px] text-slate-400 font-mono bg-slate-50 dark:bg-slate-900 p-1 rounded truncate text-left">
+                                {lastLog || 'Warte auf Start...'}
                             </div>
                         </div>
 
