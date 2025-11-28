@@ -34,7 +34,16 @@ export const GoogleContactsProvider: React.FC<{ children: ReactNode }> = ({ chil
 export const useGoogleContacts = () => {
     const context = useContext(GoogleContactsContext);
     if (context === undefined) {
-        throw new Error('useGoogleContacts must be used within a GoogleContactsProvider');
+        // Return a safe fallback instead of throwing to prevent app crash
+        // when Google Client ID is missing or Provider is not mounted.
+        return {
+            login: () => {
+                console.warn("Google Login attempted but Provider is missing (likely missing VITE_GOOGLE_CLIENT_ID).");
+                alert("Google Integration ist nicht konfiguriert (fehlende Client ID).");
+            },
+            token: null,
+            isAuthenticated: false
+        };
     }
     return context;
 };
