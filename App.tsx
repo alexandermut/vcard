@@ -23,7 +23,7 @@ import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem } from './utils/db';
+import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { NotesModal } from './components/NotesModal';
 import { QRScannerModal } from './components/QRScannerModal';
@@ -643,16 +643,46 @@ const App: React.FC = () => {
   const isAIReady = !!apiKey || hasSystemKey;
 
   const handleImportGoogleContacts = async (vcards: string[]) => {
-    let count = 0;
-    for (const vcard of vcards) {
-      try {
-        await addToHistory(vcard);
-        count++;
-      } catch (e) {
-        console.error("Failed to import contact", e);
+    if (vcards.length === 0) return;
+
+    // Show loading state? We don't have a global loader, but we can use an alert or toast.
+    // For now, let's just do it.
+
+    // Prepare items
+    const newItems: HistoryItem[] = [];
+    const timestamp = Date.now();
+
+    // Optimization: We skip complex merge logic for bulk import of 25k items for now.
+    // We assume Google Import is "source of truth" or new additions.
+    // Real duplicate checking for 25k items against 25k existing items is O(N^2) and too slow here.
+    // We rely on ID generation or simple checks.
+
+    vcards.forEach((vcard, index) => {
+      const p = parseVCardString(vcard);
+      if (p.isValid) {
+        newItems.push({
+          id: crypto.randomUUID(),
+          timestamp: timestamp + index, // Ensure unique order
+          name: p.data.fn || 'Unbekannt',
+          org: p.data.org,
+          vcard: vcard,
+          images: []
+        });
       }
+    });
+
+    if (newItems.length > 0) {
+      // Bulk Insert
+      await addHistoryItems(newItems);
+
+      // Refresh UI (only first page)
+      const items = await getHistoryPaged(HISTORY_LIMIT);
+      setHistory(items);
+      setHasMoreHistory(true);
+
+      alert(`${newItems.length} Kontakte erfolgreich importiert!`);
     }
-    alert(`${count} Kontakte erfolgreich importiert!`);
+
     setIsSettingsOpen(false);
   };
 

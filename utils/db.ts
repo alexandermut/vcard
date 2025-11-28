@@ -255,6 +255,22 @@ export const addHistoryItem = async (item: HistoryItem) => {
     return db.put(STORE_NAME, item);
 };
 
+export const addHistoryItems = async (items: HistoryItem[]) => {
+    const db = await initDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+
+    // Generate keywords for all items
+    // This is CPU intensive, so we might want to do it in chunks or before calling this
+    // But for DB consistency, we do it here.
+    for (const item of items) {
+        item.keywords = generateKeywords(item);
+        store.put(item);
+    }
+
+    return tx.done;
+};
+
 export const getHistory = async (): Promise<HistoryItem[]> => {
     const db = await initDB();
     const items = await db.getAllFromIndex(STORE_NAME, 'by-date');
