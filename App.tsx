@@ -642,6 +642,20 @@ const App: React.FC = () => {
 
   const isAIReady = !!apiKey || hasSystemKey;
 
+  const handleImportGoogleContacts = async (vcards: string[]) => {
+    let count = 0;
+    for (const vcard of vcards) {
+      try {
+        await addToHistory(vcard);
+        count++;
+      } catch (e) {
+        console.error("Failed to import contact", e);
+      }
+    }
+    alert(`${count} Kontakte erfolgreich importiert!`);
+    setIsSettingsOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
       <SettingsSidebar
@@ -668,6 +682,7 @@ const App: React.FC = () => {
         streetDbProgress={streetDbProgress}
         streetDbError={streetDbError}
         onLoadStreetDb={handleLoadStreetDb}
+        onImportGoogleContacts={handleImportGoogleContacts}
       />
 
       <BatchUploadModal

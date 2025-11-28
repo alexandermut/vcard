@@ -18,7 +18,7 @@ export const useGoogleContactsAuth = (): GoogleAuth => {
         onError: (error) => {
             console.error('Google Login Error:', error);
         },
-        scope: 'https://www.googleapis.com/auth/contacts',
+        scope: 'https://www.googleapis.com/auth/contacts.readonly',
         flow: 'implicit',
     });
 

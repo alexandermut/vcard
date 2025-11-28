@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle } from 'lucide-react';
+import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download } from 'lucide-react';
 import { GoogleConnectButton } from './GoogleConnectButton';
+import { ImportGoogleModal } from './ImportGoogleModal';
+import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -29,14 +31,17 @@ interface SettingsSidebarProps {
     streetDbProgress: number;
     streetDbError?: string | null;
     onLoadStreetDb: () => void;
+    onImportGoogleContacts: (vcards: string[]) => void;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isOpen, onClose, onSave, apiKey, lang, setLang, isDarkMode, setIsDarkMode, errorMessage,
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
-    isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb
+    isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const { isAuthenticated } = useGoogleContactsAuth();
     const t = translations[lang];
 
     useEffect(() => {
@@ -67,6 +72,12 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
     return (
         <>
+            <ImportGoogleModal
+                isOpen={isImportModalOpen}
+                onClose={() => setIsImportModalOpen(false)}
+                onImport={onImportGoogleContacts}
+            />
+
             {/* Backdrop */}
             {isOpen && (
                 <div
@@ -105,7 +116,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                         {/* Account Settings */}
                         <div>
                             <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Account</h3>
-                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <div className="p-2 bg-white dark:bg-slate-700 rounded-full shadow-sm">
@@ -118,6 +129,16 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                     </div>
                                     <GoogleConnectButton />
                                 </div>
+
+                                {isAuthenticated && (
+                                    <button
+                                        onClick={() => setIsImportModalOpen(true)}
+                                        className="w-full flex items-center justify-center gap-2 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                                    >
+                                        <Download size={16} />
+                                        Kontakte importieren
+                                    </button>
+                                )}
                             </div>
                         </div>
 
