@@ -33,13 +33,12 @@ export const Logo: React.FC<LogoProps> = ({ className = "", height = 40, variant
         );
     }
 
-    // Full Logo: "kontakte.me" with icon as 'o'
-    // Viewbox needs to be wider. Text is roughly 4-5x height.
-    // Let's estimate: "k" (width 40) + "o" (width 60) + "ntakte.me" (width ~300)
+    // Full Logo: "k( )ntakte.me"
+    // Estimated width: "k( )ntakte.me" is roughly 13 chars.
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 420 80"
+            viewBox="0 0 450 80"
             height={height}
             className={className}
             preserveAspectRatio="xMidYMid meet"
@@ -50,16 +49,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "", height = 40, variant
         `}
             </style>
 
-            {/* k */}
-            <text x="0" y="60" className="logo-text" fontSize="60" fill="currentColor">k</text>
-
-            {/* o (Icon) - shifted to align with text */}
-            <g transform="translate(36, 10) scale(0.55)">
-                <IconContent />
-            </g>
-
-            {/* ntakte.me */}
-            <text x="96" y="60" className="logo-text" fontSize="60" fill="currentColor">ntakte.me</text>
+            <text x="0" y="60" className="logo-text" fontSize="60" fill="currentColor">k( )ntakte.me</text>
         </svg>
     );
 };
