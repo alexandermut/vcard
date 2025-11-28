@@ -239,6 +239,17 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                                 <p className="text-sm">
                                     Wenn Sie ein lokales LLM (z.B. via Ollama) konfigurieren, werden Ihre Daten nicht an externe Server gesendet. Die Verarbeitung erfolgt ausschließlich innerhalb Ihres Netzwerks (localhost). Sie sind selbst für die sichere Konfiguration Ihres lokalen Servers verantwortlich.
                                 </p>
+
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">5.3. Google Kontakte Integration (Import/Export)</h3>
+                                <p className="text-sm mb-2">
+                                    Wenn Sie sich mit Ihrem Google-Konto verbinden ("Sign in with Google"), um Kontakte zu importieren oder zu exportieren, geschieht dies in Ihrer alleinigen Verantwortung.
+                                </p>
+                                <ul className="list-disc pl-5 space-y-1 text-sm">
+                                    <li><strong>Direkte Verbindung:</strong> Die Verbindung erfolgt direkt zwischen Ihrem Browser und den Google-Servern (Google People API).</li>
+                                    <li><strong>Kein Zwischenspeicher:</strong> Wir als Dienstanbieter ("kontakte.me") haben technisch keinen Zugriff auf Ihre Google-Zugangsdaten oder Ihre Kontakte. Es werden keine Daten auf unseren Servern gespeichert.</li>
+                                    <li><strong>Lokale Verarbeitung:</strong> Die abgerufenen Kontaktdaten werden ausschließlich lokal in Ihrem Browser verarbeitet und gespeichert.</li>
+                                    <li><strong>Datenschutz bei Google:</strong> Für die Datenverarbeitung durch Google gelten die <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Datenschutzbestimmungen von Google</a>.</li>
+                                </ul>
                             </section>
 
                             <section>
