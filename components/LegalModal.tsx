@@ -240,15 +240,15 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                                     Wenn Sie ein lokales LLM (z.B. via Ollama) konfigurieren, werden Ihre Daten nicht an externe Server gesendet. Die Verarbeitung erfolgt ausschließlich innerhalb Ihres Netzwerks (localhost). Sie sind selbst für die sichere Konfiguration Ihres lokalen Servers verantwortlich.
                                 </p>
 
-                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">5.3. Google Kontakte Integration (Import/Export)</h3>
+                                <h3 className="font-semibold text-slate-700 dark:text-slate-400 mt-3 mb-1">5.3. Google Kontakte Integration (Google People API)</h3>
                                 <p className="text-sm mb-2">
-                                    Wenn Sie sich mit Ihrem Google-Konto verbinden ("Sign in with Google"), um Kontakte zu importieren oder zu exportieren, geschieht dies in Ihrer alleinigen Verantwortung.
+                                    Die Anwendung bietet die Möglichkeit, Ihre Google Kontakte zu synchronisieren, zu durchsuchen und zu bearbeiten.
                                 </p>
                                 <ul className="list-disc pl-5 space-y-1 text-sm">
-                                    <li><strong>Direkte Verbindung:</strong> Die Verbindung erfolgt direkt zwischen Ihrem Browser und den Google-Servern (Google People API).</li>
-                                    <li><strong>Kein Zwischenspeicher:</strong> Wir als Dienstanbieter ("kontakte.me") haben technisch keinen Zugriff auf Ihre Google-Zugangsdaten oder Ihre Kontakte. Es werden keine Daten auf unseren Servern gespeichert.</li>
-                                    <li><strong>Lokale Verarbeitung:</strong> Die abgerufenen Kontaktdaten werden ausschließlich lokal in Ihrem Browser verarbeitet und gespeichert.</li>
-                                    <li><strong>Datenschutz bei Google:</strong> Für die Datenverarbeitung durch Google gelten die <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Datenschutzbestimmungen von Google</a>.</li>
+                                    <li><strong>Datenzugriff:</strong> Die App fordert Zugriff auf Ihre Kontakte (Lesen und Schreiben) über die Google People API an. Dies umfasst Namen, E-Mail-Adressen, Telefonnummern, Adressen, Fotos und Organisationsdaten.</li>
+                                    <li><strong>Verwendung:</strong> Die Daten werden ausschließlich verwendet, um sie Ihnen in der App anzuzeigen, durchsuchbar zu machen und von Ihnen gewünschte Änderungen (z.B. neue Kontakte) zurück an Google zu senden.</li>
+                                    <li><strong>Speicherung:</strong> Die Daten werden temporär in Ihrem Browser (IndexedDB) zwischengespeichert, um die Performance zu verbessern und Offline-Zugriff zu ermöglichen. Es erfolgt <strong>keine Übertragung an unsere Server</strong> oder Dritte (außer Google selbst).</li>
+                                    <li><strong>Limited Use Policy:</strong> Die Nutzung und Weitergabe von Informationen, die von Google APIs empfangen werden, an andere Apps erfolgt unter Einhaltung der <a href="https://developers.google.com/terms/api-services-user-data-policy#additional_requirements_for_specific_api_scopes" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Google API Services User Data Policy</a>, einschließlich der "Limited Use"-Anforderungen.</li>
                                 </ul>
                             </section>
 
