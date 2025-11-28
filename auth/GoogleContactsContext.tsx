@@ -20,7 +20,7 @@ export const GoogleContactsProvider: React.FC<{ children: ReactNode }> = ({ chil
         onError: (error) => {
             console.error('Google Login Error:', error);
         },
-        scope: 'https://www.googleapis.com/auth/contacts.readonly',
+        scope: 'https://www.googleapis.com/auth/contacts',
         flow: 'implicit',
     });
 

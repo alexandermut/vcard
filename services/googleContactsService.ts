@@ -65,3 +65,40 @@ export const fetchGoogleContacts = async (accessToken: string, pageToken?: strin
         throw error;
     }
 };
+
+export const createGoogleContact = async (accessToken: string, contact: Partial<GoogleContact>): Promise<GoogleContact> => {
+    const url = 'https://people.googleapis.com/v1/people:createContact';
+
+    console.log('Creating contact in Google:', contact);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(contact)
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Google API Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorBody = await response.json();
+                console.error('Google API Error Body:', errorBody);
+                if (errorBody.error && errorBody.error.message) {
+                    errorMsg += ` - ${errorBody.error.message}`;
+                }
+            } catch (e) {
+                console.error('Could not parse error body', e);
+            }
+            throw new Error(errorMsg);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Create error in googleContactsService:", error);
+        throw error;
+    }
+};

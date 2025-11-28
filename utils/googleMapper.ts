@@ -42,3 +42,44 @@ export const mapGooglePersonToVCard = (person: GoogleContact): { vcard: string; 
 
     return { vcard, data };
 };
+
+export const mapVCardToGooglePerson = (data: VCardData): Partial<GoogleContact> => {
+    const names = data.n?.split(';') || [];
+    const familyName = names[0] || '';
+    const givenName = names[1] || '';
+
+    return {
+        names: [{
+            givenName,
+            familyName,
+            displayName: data.fn || `${givenName} ${familyName}`.trim()
+        }],
+        organizations: data.org ? [{
+            name: data.org,
+            title: data.title
+        }] : [],
+        phoneNumbers: data.tel?.map(t => ({
+            value: t.value,
+            type: t.type
+        })),
+        emailAddresses: data.email?.map(e => ({
+            value: e.value,
+            type: e.type
+        })),
+        addresses: data.adr?.map(a => ({
+            streetAddress: a.value.street,
+            postalCode: a.value.zip,
+            city: a.value.city,
+            country: a.value.country,
+            type: a.type
+        })),
+        urls: data.url?.map(u => ({
+            value: u.value,
+            type: u.type
+        })),
+        biographies: data.note ? [{
+            value: data.note,
+            contentType: 'TEXT_PLAIN'
+        }] : []
+    };
+};
