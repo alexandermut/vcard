@@ -1,30 +1,7 @@
-import { useState, useCallback } from 'react';
-import { useGoogleLogin, TokenResponse } from '@react-oauth/google';
+import { useGoogleContacts } from './GoogleContactsContext';
 
-interface GoogleAuth {
-    login: () => void;
-    token: string | null;
-    isAuthenticated: boolean;
-}
-
-export const useGoogleContactsAuth = (): GoogleAuth => {
-    const [token, setToken] = useState<string | null>(null);
-
-    const login = useGoogleLogin({
-        onSuccess: (tokenResponse: TokenResponse) => {
-            console.log('Google Login Success:', tokenResponse);
-            setToken(tokenResponse.access_token);
-        },
-        onError: (error) => {
-            console.error('Google Login Error:', error);
-        },
-        scope: 'https://www.googleapis.com/auth/contacts.readonly',
-        flow: 'implicit',
-    });
-
-    return {
-        login,
-        token,
-        isAuthenticated: !!token,
-    };
+// Re-export for backward compatibility, but now using the shared context
+export const useGoogleContactsAuth = () => {
+    return useGoogleContacts();
 };
+

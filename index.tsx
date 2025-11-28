@@ -23,13 +23,18 @@ if (!clientId) {
   console.warn("Google Client ID is missing. Google Auth will be disabled.");
 }
 
+import { GoogleContactsProvider } from './auth/GoogleContactsContext';
+
 const root = ReactDOM.createRoot(rootElement);
+
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       {clientId ? (
         <GoogleOAuthProvider clientId={clientId}>
-          <App />
+          <GoogleContactsProvider>
+            <App />
+          </GoogleContactsProvider>
         </GoogleOAuthProvider>
       ) : (
         <App />

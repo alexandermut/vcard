@@ -63,6 +63,8 @@ This file tracks the current development status and planned features.
 
 
 ## 🔮 Future Vision (Backlog)
+- [ ] **Dubletten** Management
+- [ ] Import vcf files
 - [ ] **Offline-OCR:** Integration of Tesseract.js as fallback when no Internet/API Key is available.
 - [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud).
 - [ ] **CRM Integration:** Direct export to HubSpot / Salesforce via API.
