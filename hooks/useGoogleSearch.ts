@@ -14,7 +14,8 @@ export const useGoogleSearch = () => {
 
         try {
             // 1. Local Search (Fast)
-            const localResults = await searchLocalGoogleContacts(query);
+            // Limit to 50 to prevent UI freezing with 25k+ contacts
+            const localResults = await searchLocalGoogleContacts(query, 50);
             setLocalCount(localResults.length);
 
             // If query is short, just return local results to save API calls

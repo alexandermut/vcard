@@ -115,22 +115,38 @@ export const addGoogleContacts = async (contacts: any[]) => {
     await tx.done;
 };
 
-export const getGoogleContacts = async (): Promise<any[]> => {
+export const getGoogleContacts = async (limit = 50): Promise<any[]> => {
     const db = await initDB();
-    return db.getAll(GOOGLE_STORE);
+    return db.getAll(GOOGLE_STORE, null, limit);
 };
 
-export const searchLocalGoogleContacts = async (query: string): Promise<any[]> => {
+export const searchLocalGoogleContacts = async (query: string, limit = 50): Promise<any[]> => {
     const db = await initDB();
+
+    if (!query) {
+        return db.getAll(GOOGLE_STORE, null, limit);
+    }
+
+    // For search, we unfortunately need to scan. 
+    // Optimization: Use a cursor to avoid loading ALL into memory at once if possible,
+    // but for < 50k items, loading all keys/values is often faster than cursor iteration due to transaction overhead.
+    // However, to be safe, let's just load all, filter, and slice. 
+    // 25k items in memory is ~10-20MB, which is fine. Rendering is the bottleneck.
     const all = await db.getAll(GOOGLE_STORE);
-    if (!query) return all;
 
     const lowerQuery = query.toLowerCase();
-    return all.filter(c => {
+    const results: any[] = [];
+
+    for (const c of all) {
         const name = c.names?.[0]?.displayName?.toLowerCase() || '';
         const email = c.emailAddresses?.[0]?.value?.toLowerCase() || '';
-        return name.includes(lowerQuery) || email.includes(lowerQuery);
-    });
+        if (name.includes(lowerQuery) || email.includes(lowerQuery)) {
+            results.push(c);
+            if (results.length >= limit) break; // Stop once we have enough
+        }
+    }
+
+    return results;
 };
 
 export const clearGoogleContacts = async () => {
