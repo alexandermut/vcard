@@ -15,11 +15,15 @@ if (!rootElement) {
 
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <App />
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <App />
+      </GoogleOAuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );

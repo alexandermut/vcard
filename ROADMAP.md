@@ -44,15 +44,26 @@ This file tracks the current development status and planned features.
 - [x] Imprint (DDG compliant)
 - [x] Privacy (Google Cloud & AI specific)
 
+- [x] **AI Meeting & Hybrid Scan:** Photo of Business Card + Handwritten Notes -> AI extracts contact AND structured context/notes.
+- [x] **Advanced Notes System:**
+    - Separate storage for notes (not just in vCard `NOTE` field).
+    - Notes History: Searchable and exportable text files.
+    - Header Button for quick access to Notes.
+    - Structured Note Format: Location, Date, Contact Data, Content.
+- [x] **Batch Hybrid Scan:** Support for "Card + Notes" mode in batch processing.
+- [x] **PDF Support:** Upload and process PDF files (scans) in all modes.
+- [x] **Note Navigation:** Jump from Note to Contact Preview.
+- [x] **Logo:** Simple SVG logo with text "k◎ntakte.me". 
+
 ---
 
 ## 🚧 In Progress / Improvements
 
 - [ ] **Performance:** Optimization of `cities.ts` (Lazy Loading) to reduce bundle size.
-- [ ] **Offline-OCR:** Integration of Tesseract.js as fallback when no Internet/API Key is available.
+
 
 ## 🔮 Future Vision (Backlog)
-
+- [ ] **Offline-OCR:** Integration of Tesseract.js as fallback when no Internet/API Key is available.
 - [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud).
 - [ ] **CRM Integration:** Direct export to HubSpot / Salesforce via API.
 - [ ] **Team Mode:** Sharing scanned contacts within a team (encrypted).
@@ -71,7 +82,23 @@ This file tracks the current development status and planned features.
 - [ ] **Label Printing:** PDF export for address labels (e.g., Avery).
 - [ ] **Calendar Export:** Export birthdays as `.ics` calendar subscription.
 - [ ] **Outlook Add-in:** Direct integration into Microsoft 365 / Exchange.
-- [ ] **Google Contacts Sync:** Bidirectional synchronization with Google Contacts (People API).
+- [ ] **Google Login & Sync:** Enable users to sign in with Google and sync contacts.
+    - [ ] **Phase 1: Authentication & Infrastructure**
+        - [ ] Setup Google Cloud Project (OAuth 2.0 Client IDs, Consent Screen).
+        - [ ] Enable Google People API.
+        - [ ] Integrate `@react-oauth/google` for frontend authentication.
+        - [ ] Implement secure Token handling (Implicit Flow / PKCE).
+    - [ ] **Phase 2: Import (Read)**
+        - [ ] Service: Fetch contacts (`people.connections.list`) with pagination.
+        - [ ] Mapper: Convert Google `Person` resource to App `vCard` format.
+        - [ ] UI: "Import from Google" Sidebar/Modal with group selection.
+    - [ ] **Phase 3: Export (Write)**
+        - [ ] Service: Create new contact (`people.createContact`).
+        - [ ] Service: Update existing contact (`people.updateContact` with `etag` handling).
+        - [ ] UI: "Save to Google" button in Editor/History.
+    - [ ] **Phase 4: Sync Strategy**
+        - [ ] ID Mapping: Store `resourceName` (Google ID) in IndexedDB.
+        - [ ] Conflict Resolution: Simple "Last Write Wins" or Manual Merge UI.
 - [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.
     - *Context Menu:* "Add to vCard" on selected text.
     - *LinkedIn Integration:* Button in profile for direct vCard export.
@@ -83,12 +110,3 @@ This file tracks the current development status and planned features.
 - [ ] **Webhooks:** API endpoint to automatically create cards from other apps (e.g., Typeform).
 - [ ] **Accessibility:** Automatic generation of phonetic fields for screen readers.
 - [- ] **Social Photo Link:** Link profile picture directly from LinkedIn/Xing/Gravatar (without upload).
-- [x] **AI Meeting & Hybrid Scan:** Photo of Business Card + Handwritten Notes -> AI extracts contact AND structured context/notes.
-- [x] **Advanced Notes System:**
-    - Separate storage for notes (not just in vCard `NOTE` field).
-    - Notes History: Searchable and exportable text files.
-    - Header Button for quick access to Notes.
-    - Structured Note Format: Location, Date, Contact Data, Content.
-- [x] **Batch Hybrid Scan:** Support for "Card + Notes" mode in batch processing.
-- [x] **PDF Support:** Upload and process PDF files (scans) in all modes.
-- [x] **Note Navigation:** Jump from Note to Contact Preview.
