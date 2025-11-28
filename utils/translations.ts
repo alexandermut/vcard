@@ -93,7 +93,7 @@ export const translations = {
     errors: "Fehler",
 
     // Settings Modal
-    settingsTitle: "KI-Einstellungen",
+    settingsTitle: "Einstellungen",
     geminiIntegration: "Google Gemini Integration",
     geminiDesc: "Für Korrektur & Bilderkennung",
     recommended: "Empfohlen",
@@ -325,7 +325,7 @@ export const translations = {
     errors: "Errors",
 
     // Settings Modal
-    settingsTitle: "AI Settings",
+    settingsTitle: "Settings",
     geminiIntegration: "Google Gemini Integration",
     geminiDesc: "For correction & image recognition",
     recommended: "Recommended",
