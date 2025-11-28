@@ -35,16 +35,33 @@ export const fetchGoogleContacts = async (accessToken: string, pageToken?: strin
         url.searchParams.append('pageToken', pageToken);
     }
 
-    const response = await fetch(url.toString(), {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Accept': 'application/json'
+    console.log(`Fetching contacts from: ${url.toString()}`);
+
+    try {
+        const response = await fetch(url.toString(), {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            let errorMsg = `Google API Error: ${response.status} ${response.statusText}`;
+            try {
+                const errorBody = await response.json();
+                console.error('Google API Error Body:', errorBody);
+                if (errorBody.error && errorBody.error.message) {
+                    errorMsg += ` - ${errorBody.error.message}`;
+                }
+            } catch (e) {
+                console.error('Could not parse error body', e);
+            }
+            throw new Error(errorMsg);
         }
-    });
 
-    if (!response.ok) {
-        throw new Error(`Google API Error: ${response.status} ${response.statusText}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Fetch error in googleContactsService:", error);
+        throw error;
     }
-
-    return await response.json();
 };

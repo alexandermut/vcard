@@ -36,9 +36,9 @@ export const ImportGoogleModal: React.FC<ImportGoogleModalProps> = ({ isOpen, on
                 setContacts(prev => pageToken ? [...prev, ...res.connections] : res.connections);
                 setNextPageToken(res.nextPageToken);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error("Failed to load contacts", e);
-            alert("Fehler beim Laden der Kontakte.");
+            alert(`Fehler beim Laden der Kontakte: ${e.message}`);
         } finally {
             setLoading(false);
         }
@@ -136,8 +136,8 @@ export const ImportGoogleModal: React.FC<ImportGoogleModalProps> = ({ isOpen, on
                                         key={contact.resourceName}
                                         onClick={() => handleToggleSelect(contact.resourceName)}
                                         className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors border ${isSelected
-                                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                                                : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
+                                            : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50'
                                             }`}
                                     >
                                         <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500 border-blue-500' : 'border-slate-300 dark:border-slate-600'
