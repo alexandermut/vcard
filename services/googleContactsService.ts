@@ -25,7 +25,7 @@ export interface GoogleConnectionsResponse {
     totalPeople?: number;
 }
 
-export const fetchGoogleContacts = async (accessToken: string, pageToken?: string): Promise<GoogleConnectionsResponse> => {
+export const fetchGoogleContacts = async (accessToken: string, pageToken?: string, signal?: AbortSignal): Promise<GoogleConnectionsResponse> => {
     const fields = 'names,photos,emailAddresses,phoneNumbers,organizations,addresses,urls,biographies';
     const url = new URL('https://people.googleapis.com/v1/people/me/connections');
     url.searchParams.append('personFields', fields);
@@ -39,10 +39,12 @@ export const fetchGoogleContacts = async (accessToken: string, pageToken?: strin
 
     try {
         const response = await fetch(url.toString(), {
+            method: 'GET',
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Accept': 'application/json'
-            }
+            },
+            signal // Pass the signal to fetch
         });
 
         if (!response.ok) {

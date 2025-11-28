@@ -48,11 +48,18 @@ export const useGoogleSync = () => {
                 }
 
                 setLastLog(`Fetching page... (Token: ${pageToken ? 'Yes' : 'No'})`);
-                const response = await fetchGoogleContacts(token, pageToken);
+                const response = await fetchGoogleContacts(token, pageToken, abortControllerRef.current.signal);
 
                 if (response.connections && response.connections.length > 0) {
-                    setLastLog(`Saving ${response.connections.length} contacts...`);
-                    await addGoogleContacts(response.connections);
+                    setLastLog(`Fetched ${response.connections.length}. Saving to DB...`);
+                    try {
+                        await addGoogleContacts(response.connections);
+                        setLastLog(`Saved ${response.connections.length} contacts.`);
+                    } catch (dbErr: any) {
+                        console.error("DB Save Error", dbErr);
+                        throw new Error(`DB Error: ${dbErr.message}`);
+                    }
+
                     count += response.connections.length;
                     setProgress(count);
                     setTotal(prev => Math.max(prev, count)); // Update total if we find more
@@ -73,10 +80,15 @@ export const useGoogleSync = () => {
             setLastLog("Sync completed successfully.");
 
         } catch (e: any) {
-            console.error("Sync failed", e);
-            setError(e.message);
-            setLastLog(`Error: ${e.message}`);
-            setStatus('error');
+            if (e.name === 'AbortError') {
+                setLastLog("Sync stopped by user.");
+                setStatus('idle');
+            } else {
+                console.error("Sync failed", e);
+                setError(e.message);
+                setLastLog(`Error: ${e.message}`);
+                setStatus('error');
+            }
         }
     }, [token, status]);
 
