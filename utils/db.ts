@@ -29,12 +29,20 @@ interface VCardDB extends DBSchema {
             'name': string;
         };
     };
+    google_contacts: {
+        key: string;
+        value: any; // GoogleContact
+        indexes: {
+            'by-name': string;
+        };
+    };
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE_NAME = 'history';
 const STREETS_STORE = 'streets';
+const GOOGLE_STORE = 'google_contacts';
 
 let dbPromise: Promise<IDBPDatabase<VCardDB>>;
 
@@ -81,10 +89,58 @@ export const initDB = () => {
                         notesStore.createIndex('by-contact', 'contactId');
                     }
                 }
+
+                // Version 5: Google Contacts Cache
+                if (oldVersion < 5) {
+                    if (!db.objectStoreNames.contains(GOOGLE_STORE)) {
+                        const gStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
+                        gStore.createIndex('by-name', 'names.0.displayName'); // Index by display name
+                    }
+                }
             },
         });
     }
     return dbPromise;
+};
+
+// --- GOOGLE CONTACTS OPERATIONS ---
+
+export const addGoogleContacts = async (contacts: any[]) => {
+    const db = await initDB();
+    const tx = db.transaction(GOOGLE_STORE, 'readwrite');
+    const store = tx.objectStore(GOOGLE_STORE);
+    for (const contact of contacts) {
+        await store.put(contact);
+    }
+    await tx.done;
+};
+
+export const getGoogleContacts = async (): Promise<any[]> => {
+    const db = await initDB();
+    return db.getAll(GOOGLE_STORE);
+};
+
+export const searchLocalGoogleContacts = async (query: string): Promise<any[]> => {
+    const db = await initDB();
+    const all = await db.getAll(GOOGLE_STORE);
+    if (!query) return all;
+
+    const lowerQuery = query.toLowerCase();
+    return all.filter(c => {
+        const name = c.names?.[0]?.displayName?.toLowerCase() || '';
+        const email = c.emailAddresses?.[0]?.value?.toLowerCase() || '';
+        return name.includes(lowerQuery) || email.includes(lowerQuery);
+    });
+};
+
+export const clearGoogleContacts = async () => {
+    const db = await initDB();
+    return db.clear(GOOGLE_STORE);
+};
+
+export const countGoogleContacts = async (): Promise<number> => {
+    const db = await initDB();
+    return db.count(GOOGLE_STORE);
 };
 
 // --- NOTES OPERATIONS ---

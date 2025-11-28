@@ -3,6 +3,8 @@ import { X, User, Download, Upload, Sparkles, LogOut, RefreshCw, Search, Check, 
 import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { fetchGoogleContacts, GoogleContact } from '../services/googleContactsService';
 import { mapGooglePersonToVCard } from '../utils/googleMapper';
+import { useGoogleSync } from '../hooks/useGoogleSync';
+import { useGoogleSearch } from '../hooks/useGoogleSearch';
 
 interface GoogleContactsModalProps {
     isOpen: boolean;
@@ -14,37 +16,34 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
     const { isAuthenticated, login, token } = useGoogleContactsAuth();
     const [activeTab, setActiveTab] = useState<'overview' | 'import' | 'sync' | 'tools'>('overview');
 
-    // Import State
-    const [contacts, setContacts] = useState<GoogleContact[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    // UI State
     const [searchTerm, setSearchTerm] = useState('');
-    const [nextPageToken, setNextPageToken] = useState<string | undefined>(undefined);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+    // --- Hooks ---
+    const { status: syncStatus, progress: syncProgress, total: syncTotal, startSync, stopSync } = useGoogleSync();
+    const { results: searchResults, isSearching, search } = useGoogleSearch();
+
+    // Initial load & Sync
     useEffect(() => {
-        if (isOpen) {
-            // Reset state or refresh if needed
-            if (!isAuthenticated) setActiveTab('overview');
+        if (isOpen && isAuthenticated) {
+            // Load initial view (empty search = all local contacts)
+            search('');
+
+            // Auto-start sync if idle and few contacts
+            if (syncStatus === 'idle' && syncTotal < 10) {
+                startSync();
+            }
         }
     }, [isOpen, isAuthenticated]);
 
-    // --- Import Logic ---
-    const loadContacts = async (pageToken?: string) => {
-        if (!token) return;
-        setLoading(true);
-        try {
-            const res = await fetchGoogleContacts(token, pageToken);
-            if (res.connections) {
-                setContacts(prev => pageToken ? [...prev, ...res.connections] : res.connections);
-                setNextPageToken(res.nextPageToken);
-            }
-        } catch (e: any) {
-            console.error("Failed to load contacts", e);
-            alert(`Fehler beim Laden der Kontakte: ${e.message}`);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Debounced Search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (isOpen) search(searchTerm);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchTerm, isOpen]);
 
     const handleToggleSelect = (id: string) => {
         const newSelected = new Set(selectedIds);
@@ -54,27 +53,20 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
     };
 
     const handleSelectAll = () => {
-        if (selectedIds.size === filteredContacts.length) setSelectedIds(new Set());
+        if (selectedIds.size === searchResults.length) setSelectedIds(new Set());
         else {
             const newSelected = new Set(selectedIds);
-            filteredContacts.forEach(c => newSelected.add(c.resourceName));
+            searchResults.forEach(c => newSelected.add(c.resourceName));
             setSelectedIds(newSelected);
         }
     };
 
     const handleImport = () => {
-        const selectedContacts = contacts.filter(c => selectedIds.has(c.resourceName));
+        const selectedContacts = searchResults.filter(c => selectedIds.has(c.resourceName));
         const vcards = selectedContacts.map(c => mapGooglePersonToVCard(c).vcard);
         onImport(vcards);
         onClose();
     };
-
-    const filteredContacts = contacts.filter(c => {
-        const name = c.names?.[0]?.displayName?.toLowerCase() || '';
-        const email = c.emailAddresses?.[0]?.value?.toLowerCase() || '';
-        const term = searchTerm.toLowerCase();
-        return name.includes(term) || email.includes(term);
-    });
 
     // --- Render Helpers ---
     const renderOverview = () => (
@@ -101,12 +93,32 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
                         Mit Google anmelden
                     </button>
                 ) : (
-                    <div className="flex justify-center gap-3">
+                    <div className="flex flex-col items-center gap-4">
+                        {/* Sync Status */}
+                        <div className="w-full max-w-xs bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Synchronisation</span>
+                                <span className="text-xs text-slate-400">
+                                    {syncStatus === 'syncing' ? 'Läuft...' : syncStatus === 'completed' ? 'Aktuell' : 'Pausiert'}
+                                </span>
+                            </div>
+                            <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 mb-2">
+                                <div
+                                    className={`h-2 rounded-full transition-all duration-500 ${syncStatus === 'syncing' ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`}
+                                    style={{ width: syncTotal > 0 ? `${Math.min((syncProgress / syncTotal) * 100, 100)}%` : '0%' }}
+                                />
+                            </div>
+                            <div className="flex justify-between items-center text-[10px] text-slate-400">
+                                <span>{syncProgress} geladen</span>
+                                <button onClick={() => startSync(true)} className="text-blue-500 hover:underline">Neu starten</button>
+                            </div>
+                        </div>
+
                         <button
-                            onClick={() => window.location.reload()} // Simple logout by reload for implicit flow or just clear token if we had a logout function
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors"
+                            onClick={() => window.location.reload()}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors text-sm"
                         >
-                            <LogOut size={16} />
+                            <LogOut size={14} />
                             Trennen
                         </button>
                     </div>
@@ -114,22 +126,25 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div
+                    onClick={() => setActiveTab('import')}
+                    className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 cursor-pointer hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                >
                     <div className="flex items-center gap-2 mb-2 text-slate-900 dark:text-white font-medium">
                         <Download size={18} className="text-blue-500" />
                         Import
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Laden Sie Kontakte aus Google direkt in die App.
+                        {syncTotal > 0 ? `${syncTotal} Kontakte verfügbar` : 'Kontakte laden...'}
                     </p>
                 </div>
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 opacity-60">
                     <div className="flex items-center gap-2 mb-2 text-slate-900 dark:text-white font-medium">
                         <Upload size={18} className="text-green-500" />
                         Export
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Speichern Sie Kontakte aus der App in Google.
+                        Via History Sidebar
                     </p>
                 </div>
             </div>
@@ -151,38 +166,36 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
                             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Suchen..."
+                                placeholder="Google Kontakte durchsuchen..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
+                            {isSearching && (
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                    <Loader2 size={14} className="animate-spin text-blue-500" />
+                                </div>
+                            )}
                         </div>
                         <button
-                            onClick={() => loadContacts()}
-                            className="px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                            title="Neu laden"
+                            onClick={() => startSync()}
+                            className={`px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors ${syncStatus === 'syncing' ? 'animate-pulse' : ''}`}
+                            title="Synchronisieren"
                         >
-                            <RefreshCw size={18} />
+                            <RefreshCw size={18} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
                         </button>
                     </div>
 
                     {/* List */}
                     <div className="flex-1 overflow-y-auto min-h-0 space-y-1 custom-scrollbar border border-slate-100 dark:border-slate-800 rounded-xl p-2">
-                        {contacts.length === 0 && !loading && (
+                        {searchResults.length === 0 && !isSearching && (
                             <div className="flex flex-col items-center justify-center h-40 text-slate-500">
-                                <p>Keine Kontakte geladen.</p>
-                                <button onClick={() => loadContacts()} className="mt-2 text-blue-600 hover:underline text-sm">Jetzt laden</button>
+                                <p>Keine Kontakte gefunden.</p>
+                                <p className="text-xs mt-1">Suche nach Namen oder E-Mail.</p>
                             </div>
                         )}
 
-                        {loading && contacts.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-40 text-slate-500">
-                                <Loader2 size={32} className="animate-spin mb-2" />
-                                <p>Lade Kontakte...</p>
-                            </div>
-                        )}
-
-                        {filteredContacts.map(contact => {
+                        {searchResults.map(contact => {
                             const isSelected = selectedIds.has(contact.resourceName);
                             const name = contact.names?.[0]?.displayName || 'Unbekannt';
                             const email = contact.emailAddresses?.[0]?.value;
@@ -214,23 +227,12 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
                                 </div>
                             );
                         })}
-
-                        {nextPageToken && (
-                            <button
-                                onClick={() => loadContacts(nextPageToken)}
-                                disabled={loading}
-                                className="w-full py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2"
-                            >
-                                {loading && <Loader2 size={14} className="animate-spin" />}
-                                Mehr laden
-                            </button>
-                        )}
                     </div>
 
                     {/* Footer Actions */}
                     <div className="mt-4 flex justify-between items-center">
                         <button onClick={handleSelectAll} className="text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-                            {selectedIds.size === filteredContacts.length ? 'Keine' : 'Alle'} auswählen
+                            {selectedIds.size === searchResults.length ? 'Keine' : 'Alle'} auswählen
                         </button>
                         <button
                             onClick={handleImport}

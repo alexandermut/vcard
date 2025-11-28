@@ -66,6 +66,39 @@ export const fetchGoogleContacts = async (accessToken: string, pageToken?: strin
     }
 };
 
+export const searchGoogleContacts = async (accessToken: string, query: string): Promise<GoogleContact[]> => {
+    if (!query || query.length < 3) return [];
+
+    const fields = 'names,photos,emailAddresses,phoneNumbers,organizations,addresses,urls,biographies';
+    const url = new URL('https://people.googleapis.com/v1/people:searchContacts');
+    url.searchParams.append('query', query);
+    url.searchParams.append('readMask', fields);
+    url.searchParams.append('pageSize', '30');
+
+    console.log(`Searching Google Contacts: ${query}`);
+
+    try {
+        const response = await fetch(url.toString(), {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.warn(`Search failed: ${response.status}`);
+            return [];
+        }
+
+        const data = await response.json();
+        // The search endpoint returns { results: [ { person: ... } ] }
+        return data.results ? data.results.map((r: any) => r.person) : [];
+    } catch (error) {
+        console.error("Search error in googleContactsService:", error);
+        return [];
+    }
+};
+
 export const createGoogleContact = async (accessToken: string, contact: Partial<GoogleContact>): Promise<GoogleContact> => {
     const url = 'https://people.googleapis.com/v1/people:createContact';
 

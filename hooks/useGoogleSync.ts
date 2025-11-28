@@ -1,0 +1,83 @@
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
+import { fetchGoogleContacts } from '../services/googleContactsService';
+import { addGoogleContacts, countGoogleContacts, clearGoogleContacts } from '../utils/db';
+
+export const useGoogleSync = () => {
+    const { token, isAuthenticated } = useGoogleContactsAuth();
+    const [status, setStatus] = useState<'idle' | 'syncing' | 'completed' | 'error'>('idle');
+    const [progress, setProgress] = useState(0);
+    const [total, setTotal] = useState(0);
+    const [error, setError] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Load initial count
+    useEffect(() => {
+        countGoogleContacts().then(setTotal);
+    }, []);
+
+    const startSync = useCallback(async (force = false) => {
+        if (!token) return;
+        if (status === 'syncing' && !force) return;
+
+        setStatus('syncing');
+        setError(null);
+
+        if (force) {
+            await clearGoogleContacts();
+            setProgress(0);
+            setTotal(0);
+        }
+
+        abortControllerRef.current = new AbortController();
+
+        let pageToken: string | undefined = undefined;
+        let count = 0;
+
+        try {
+            do {
+                if (abortControllerRef.current?.signal.aborted) break;
+
+                const response = await fetchGoogleContacts(token, pageToken);
+
+                if (response.connections && response.connections.length > 0) {
+                    await addGoogleContacts(response.connections);
+                    count += response.connections.length;
+                    setProgress(count);
+                    setTotal(prev => Math.max(prev, count)); // Update total if we find more
+                }
+
+                pageToken = response.nextPageToken;
+
+                // Throttle to be nice to the API
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+            } while (pageToken);
+
+            setStatus('completed');
+            const finalCount = await countGoogleContacts();
+            setTotal(finalCount);
+
+        } catch (e: any) {
+            console.error("Sync failed", e);
+            setError(e.message);
+            setStatus('error');
+        }
+    }, [token, status]);
+
+    const stopSync = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+            setStatus('idle');
+        }
+    }, []);
+
+    return {
+        status,
+        progress,
+        total,
+        error,
+        startSync,
+        stopSync
+    };
+};
