@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect x="32" y="64" width="448" height="384" rx="64" ry="64" fill="#2563eb" />
-  <circle cx="150" cy="180" r="48" fill="white" />
-  <rect x="240" y="150" width="160" height="24" rx="12" fill="white" opacity="0.9"/>
-  <rect x="240" y="200" width="100" height="24" rx="12" fill="white" opacity="0.7"/>
-  <rect x="100" y="280" width="312" height="24" rx="12" fill="white" opacity="0.5"/>
-  <rect x="100" y="330" width="200" height="24" rx="12" fill="white" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+  <style>
+    .logo-symbol { font-family: system-ui, -apple-system, sans-serif; font-weight: 800; }
+  </style>
+  <text x="50" y="70" textAnchor="middle" class="logo-symbol" fontSize="80" fill="#2563eb">◎</text>
 </svg>
