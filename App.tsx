@@ -32,7 +32,7 @@ import { enrichAddress } from './utils/addressEnricher';
 import {
   Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
   MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
-  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle
+  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 
@@ -642,52 +642,83 @@ const App: React.FC = () => {
 
   const isAIReady = !!apiKey || hasSystemKey;
 
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
+
   const handleImportGoogleContacts = async (vcards: string[]) => {
     if (vcards.length === 0) return;
 
-    // Show loading state? We don't have a global loader, but we can use an alert or toast.
-    // For now, let's just do it.
+    setIsSettingsOpen(false);
+    setImportProgress({ current: 0, total: vcards.length });
 
-    // Prepare items
-    const newItems: HistoryItem[] = [];
+    const CHUNK_SIZE = 500;
     const timestamp = Date.now();
 
-    // Optimization: We skip complex merge logic for bulk import of 25k items for now.
-    // We assume Google Import is "source of truth" or new additions.
-    // Real duplicate checking for 25k items against 25k existing items is O(N^2) and too slow here.
-    // We rely on ID generation or simple checks.
+    // Process in chunks to keep UI responsive and show progress
+    for (let i = 0; i < vcards.length; i += CHUNK_SIZE) {
+      const chunk = vcards.slice(i, i + CHUNK_SIZE);
+      const newItems: HistoryItem[] = [];
 
-    vcards.forEach((vcard, index) => {
-      const p = parseVCardString(vcard);
-      if (p.isValid) {
-        newItems.push({
-          id: crypto.randomUUID(),
-          timestamp: timestamp + index, // Ensure unique order
-          name: p.data.fn || 'Unbekannt',
-          org: p.data.org,
-          vcard: vcard,
-          images: []
-        });
+      chunk.forEach((vcard, idx) => {
+        const p = parseVCardString(vcard);
+        if (p.isValid) {
+          newItems.push({
+            id: crypto.randomUUID(),
+            timestamp: timestamp + i + idx, // Ensure unique order
+            name: p.data.fn || 'Unbekannt',
+            org: p.data.org,
+            vcard: vcard,
+            images: []
+          });
+        }
+      });
+
+      if (newItems.length > 0) {
+        await addHistoryItems(newItems);
       }
-    });
 
-    if (newItems.length > 0) {
-      // Bulk Insert
-      await addHistoryItems(newItems);
+      // Update progress
+      setImportProgress({ current: Math.min(i + CHUNK_SIZE, vcards.length), total: vcards.length });
 
-      // Refresh UI (only first page)
-      const items = await getHistoryPaged(HISTORY_LIMIT);
-      setHistory(items);
-      setHasMoreHistory(true);
-
-      alert(`${newItems.length} Kontakte erfolgreich importiert!`);
+      // Yield to UI loop
+      await new Promise(resolve => setTimeout(resolve, 10));
     }
 
-    setIsSettingsOpen(false);
+    // Refresh UI
+    const items = await getHistoryPaged(HISTORY_LIMIT);
+    setHistory(items);
+    setHasMoreHistory(true);
+
+    // Small delay to show 100%
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setImportProgress(null);
+    alert(`${vcards.length} Kontakte erfolgreich importiert!`);
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
+      {/* Import Progress Overlay */}
+      {importProgress && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex flex-col items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center border border-slate-200 dark:border-slate-800">
+            <Loader2 size={48} className="animate-spin text-blue-600 mx-auto mb-4" />
+            <h3 className="text-xl font-bold mb-2">Importiere Kontakte...</h3>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Bitte warten, dies kann einen Moment dauern.
+            </p>
+
+            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-4 mb-2 overflow-hidden">
+              <div
+                className="h-full bg-blue-600 transition-all duration-300 ease-out"
+                style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
+              />
+            </div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {importProgress.current} von {importProgress.total}
+            </p>
+          </div>
+        </div>
+      )}
+
       <SettingsSidebar
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
