@@ -27,9 +27,6 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
     // Initial load & Sync
     useEffect(() => {
         if (isOpen && isAuthenticated) {
-            // Load initial view (empty search = all local contacts)
-            searchContacts('');
-
             // Auto-start sync if idle and few contacts
             if (syncStatus === 'idle' && syncTotal < 10) {
                 startSync();
@@ -37,10 +34,17 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
         }
     }, [isOpen, isAuthenticated]);
 
+    // Refresh list when switching to Import tab or when sync completes
+    useEffect(() => {
+        if (isOpen && activeTab === 'import') {
+            searchContacts(searchTerm);
+        }
+    }, [activeTab, isOpen, syncStatus]); // Re-run when sync status changes (e.g. completes)
+
     // Debounced Search
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (isOpen) searchContacts(searchTerm);
+            if (isOpen && activeTab === 'import') searchContacts(searchTerm);
         }, 300);
         return () => clearTimeout(timer);
     }, [searchTerm, isOpen]);
@@ -111,10 +115,6 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
                             <div className="flex justify-between items-center text-[10px] text-slate-400">
                                 <span>{syncProgress} geladen</span>
                                 <button onClick={() => startSync(true)} className="text-blue-500 hover:underline">Neu starten</button>
-                            </div>
-                            {/* Debug Log */}
-                            <div className="mt-2 text-[10px] text-slate-400 font-mono bg-slate-50 dark:bg-slate-900 p-1 rounded truncate text-left">
-                                {lastLog || 'Warte auf Start...'}
                             </div>
                         </div>
 
