@@ -35,7 +35,10 @@ export const LoggerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     // Subscribe to logger updates
     useEffect(() => {
         const unsubscribe = logger.subscribe((newLogs) => {
-            setLogs([...newLogs]);
+            // Defer state update to avoid blocking event propagation (e.g. when clicking the toggle)
+            setTimeout(() => {
+                setLogs([...newLogs]);
+            }, 0);
         });
         return unsubscribe;
     }, []);

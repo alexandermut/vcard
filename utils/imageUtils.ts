@@ -109,7 +109,7 @@ export const combineImages = (frontBase64: string, backBase64: string | undefine
 export const base64ToBlob = (base64: string): Blob => {
   const parts = base64.split(';base64,');
   const contentType = parts[0].split(':')[1];
-  const raw = window.atob(parts[1]);
+  const raw = atob(parts[1]);
   const rawLength = raw.length;
   const uInt8Array = new Uint8Array(rawLength);
 

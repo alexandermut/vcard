@@ -720,20 +720,69 @@ const App: React.FC = () => {
     toast.success(`${vcards.length} Kontakte erfolgreich importiert!`);
   };
 
+  // --- WORKER SETUP ---
+  const importExportWorker = useMemo(() => new Worker(new URL('./workers/importExport.worker.ts', import.meta.url), { type: 'module' }), []);
+
+  const runWorkerJob = (type: string, payload: any): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const id = crypto.randomUUID();
+      const handler = (e: MessageEvent) => {
+        if (e.data.id === id) {
+          importExportWorker.removeEventListener('message', handler);
+          if (e.data.type === 'success') {
+            resolve(e.data.result);
+          } else {
+            reject(new Error(e.data.error));
+          }
+        }
+      };
+      importExportWorker.addEventListener('message', handler);
+      importExportWorker.postMessage({ type, payload, id });
+    });
+  };
+
   // --- EXPORT HANDLERS ---
+  const [isExporting, setIsExporting] = useState(false);
+
   const handleExportCSV = async () => {
-    const items = await getHistory(); // Get all items
-    const csv = generateCSV(items);
-    downloadCSV(csv, `kontakte_export_${getTimestamp()}.csv`);
+    try {
+      setIsExporting(true);
+      const items = await getHistory();
+      const csv = await runWorkerJob('generateCSV', items);
+      downloadCSV(csv, `kontakte_export_${getTimestamp()}.csv`);
+      toast.success("CSV Export erfolgreich!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Export fehlgeschlagen: " + (e as Error).message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportJSON = async () => {
-    const items = await getHistory();
-    const json = await generateJSON(items);
-    downloadJSON(json, `kontakte_backup_${getTimestamp()}.json`);
+    try {
+      setIsExporting(true);
+      const items = await getHistory();
+      const json = await runWorkerJob('generateJSON', items);
+      downloadJSON(json, `kontakte_backup_${getTimestamp()}.json`);
+      toast.success("Backup erfolgreich erstellt!");
+    } catch (e) {
+      console.error(e);
+      toast.error("Export fehlgeschlagen: " + (e as Error).message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleExportVCard = async () => {
+    // vCard concatenation is fast enough on main thread usually, 
+    // but for consistency we could move it. 
+    // For now, let's keep it simple as it's just string join.
+    // Actually, let's move it to worker if we want to be consistent.
+    // But I didn't add it to worker yet.
+    // Let's stick to main thread for simple join, or add to worker.
+    // Worker has 'parseVCardFile' but not 'generateVCardFile'.
+    // Let's keep main thread for now.
     const items = await getHistory();
     const allVcards = items.map(i => i.vcard).join('\n');
     downloadVCard(allVcards, `kontakte_all_${getTimestamp()}.vcf`);
@@ -743,10 +792,10 @@ const App: React.FC = () => {
   const handleImportCSV = async (file: File) => {
     try {
       const text = await file.text();
-      const data = parseCSV(text);
-      const vcards = csvToVCard(data);
+      const vcards = await runWorkerJob('parseCSVFile', text);
+
       if (vcards.length > 0) {
-        await handleImportGoogleContacts(vcards); // Reuse logic
+        await handleImportGoogleContacts(vcards);
       } else {
         toast.info("Keine gültigen Kontakte in der CSV gefunden.");
       }
@@ -763,11 +812,10 @@ const App: React.FC = () => {
   const handleImportVCard = async (file: File) => {
     try {
       const text = await file.text();
-      // Split by END:VCARD
-      const rawVcards = text.split('END:VCARD').map(v => v.trim() + '\nEND:VCARD').filter(v => v.includes('BEGIN:VCARD'));
+      const rawVcards = await runWorkerJob('parseVCardFile', text);
 
       if (rawVcards.length > 0) {
-        await handleImportGoogleContacts(rawVcards); // Reuse logic
+        await handleImportGoogleContacts(rawVcards);
       } else {
         toast.info("Keine vCards in der Datei gefunden.");
       }
@@ -780,12 +828,17 @@ const App: React.FC = () => {
   // --- ZIP BACKUP HANDLERS ---
   const handleBackupAll = async () => {
     try {
+      setIsExporting(true);
       const items = await getHistory();
-      const blob = await generateBackupZip(items);
+      // This is the heavy one!
+      const blob = await runWorkerJob('generateBackupZip', items);
       downloadZip(blob, `kontakte_full_backup_${getTimestamp()}.zip`);
+      toast.success("Vollständiges Backup erstellt!");
     } catch (e) {
       console.error(e);
       toast.error("Backup fehlgeschlagen: " + (e as Error).message);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -879,7 +932,7 @@ const App: React.FC = () => {
         onImportVCard={handleImportVCard}
         onBackupAll={handleBackupAll}
         onRestoreZip={handleRestoreZip}
-
+        isExporting={isExporting}
         clearHistory={clearHistory}
       />
 

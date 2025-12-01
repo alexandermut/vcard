@@ -39,6 +39,7 @@ interface SettingsSidebarProps {
     onBackupAll: () => void;
     onRestoreZip: (file: File) => void;
     clearHistory: () => void;
+    isExporting?: boolean;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
@@ -46,7 +47,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip
+    onBackupAll, onRestoreZip, isExporting
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -366,9 +367,11 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                 <div className="grid grid-cols-2 gap-2">
                                     <button
                                         onClick={onBackupAll}
-                                        className="py-2 px-3 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                                        disabled={isExporting}
+                                        className={`py-2 px-3 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        <Download size={14} /> Backup erstellen
+                                        {isExporting ? <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /> : <Download size={14} />}
+                                        {isExporting ? 'Exporting...' : 'Backup erstellen'}
                                     </button>
                                     <label className="py-2 px-3 bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-lg text-xs font-bold text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
                                         <Upload size={14} /> Backup einspielen
@@ -409,21 +412,24 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                 <div className="flex gap-2">
                                     <button
                                         onClick={onExportCSV}
-                                        className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                        disabled={isExporting}
+                                        className={`flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         title="Für Excel / Outlook"
                                     >
                                         <Download size={14} /> CSV
                                     </button>
                                     <button
                                         onClick={onExportVCard}
-                                        className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                        disabled={isExporting}
+                                        className={`flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         title="Alle Kontakte als eine .vcf Datei"
                                     >
                                         <Download size={14} /> vCard
                                     </button>
                                     <button
                                         onClick={onExportJSON}
-                                        className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                        disabled={isExporting}
+                                        className={`flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 ${isExporting ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         title="Vollständiges Backup inkl. Bilder"
                                     >
                                         <Download size={14} /> Backup
