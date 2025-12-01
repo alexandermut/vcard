@@ -100,6 +100,7 @@ This file tracks the current development status and planned features.
     - [x] **Persistence:** Keep manual edits in Duplicate Finder when switching Master side.
     - [x] **List Merging:** Interactive add/remove for emails, phones, etc.
     - [x] **Streaming:** Process contacts in chunks to support 20k+ items.
+    - [x] **Fuzzy Search:** Find typos and phonetic matches (Cologne Phonetics).
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).
