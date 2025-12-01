@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ParsedVCard, VCardData, Language, VCardAddress } from '../types';
 import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
+import { createGoogleContact } from '../services/googleContactsService';
+import { mapVCardToGooglePerson } from '../utils/googleMapper';
+import { toast } from 'sonner';
 import { translations } from '../utils/translations';
 
 interface PreviewCardProps {
@@ -14,10 +17,11 @@ interface PreviewCardProps {
   onViewNotes?: () => void;
   lang: Language;
   images?: string[];
+  token?: string; // Added token prop
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, lang, images
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, lang, images, token
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -73,7 +77,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
         const file = new File([generateVCardFromData(localData)], `${generateContactFilename({ fn: localData.fn, org: localData.org })}.vcf`, { type: 'text/vcard' });
         await navigator.share({
           title: localData.fn || 'vCard',
-          text: `vCard: ${localData.fn}`,
+          text: `vCard: ${localData.fn} `,
           files: [file]
         });
       } catch (err) {
@@ -180,7 +184,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
           <div className="flex gap-2 mt-4">
             {primaryPhone && (
               <a
-                href={`tel:${primaryPhone}`}
+                href={`tel:${primaryPhone} `}
                 className="flex-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/30 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-green-200 dark:border-green-800"
               >
                 <Phone size={14} /> {t.call}
@@ -188,7 +192,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             )}
             {primaryEmail && (
               <a
-                href={`mailto:${primaryEmail}`}
+                href={`mailto:${primaryEmail} `}
                 className="flex-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-colors border border-blue-200 dark:border-blue-800"
               >
                 <Send size={14} /> {t.email}
@@ -201,7 +205,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
           <div className="grid gap-3">
             {localData.email?.map((e, i) => (
               <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-                <a href={`mailto:${e.value}`} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer" title={t.email}>
+                <a href={`mailto:${e.value} `} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer" title={t.email}>
                   <Mail size={16} />
                 </a>
                 <div className="flex-1 overflow-hidden">
@@ -217,7 +221,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 
             {localData.tel?.map((telItem, i) => (
               <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-                <a href={`tel:${telItem.value}`} className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer" title={t.call}>
+                <a href={`tel:${telItem.value} `} className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer" title={t.call}>
                   <Phone size={16} />
                 </a>
                 <div className="flex-1 overflow-hidden">
@@ -251,7 +255,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               const Icon = style.icon;
               return (
                 <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
-                  <a href={u.value} target="_blank" rel="noopener noreferrer" className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${style.colorBg} ${style.colorText} hover:opacity-80 cursor-pointer`}>
+                  <a href={u.value} target="_blank" rel="noopener noreferrer" className={`w - 8 h - 8 rounded - full flex items - center justify - center transition - colors shrink - 0 ${style.colorBg} ${style.colorText} hover: opacity - 80 cursor - pointer`}>
                     <Icon size={16} />
                   </a>
                   <div className="flex-1 overflow-hidden">
@@ -285,7 +289,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 
               return (
                 <div key={platform} className="flex items-center gap-3 p-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg transition-colors group">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-100 ${style.colorBg} ${style.colorText}`}>
+                  <div className={`w - 8 h - 8 rounded - full flex items - center justify - center transition - colors shrink - 0 opacity - 50 grayscale group - hover: grayscale - 0 group - hover: opacity - 100 ${style.colorBg} ${style.colorText} `}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1 flex items-center justify-between">
@@ -311,7 +315,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                   title="Google Maps"
                 >
                   <MapPin size={16} />
-                </a>
+                </a >
                 <div className="flex-1 overflow-hidden space-y-1">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{a.type}</p>
 
@@ -342,9 +346,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                     placeholder={t.country}
                   />
                 </div>
-              </div>
+              </div >
             ))}
-          </div>
+          </div >
 
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-900/30">
             <p className="text-xs font-bold text-yellow-800 dark:text-yellow-500 mb-1">{t.noteLabel}</p>
@@ -358,27 +362,29 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
           </div>
 
           {/* Images Section */}
-          {images && images.length > 0 && (
-            <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
-              <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 flex items-center gap-2">
-                <ImageIcon size={14} /> {t.scans}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group bg-slate-100 dark:bg-slate-800/50">
-                    <img
-                      src={img}
-                      alt={`Scan ${idx + 1}`}
-                      className="w-full h-auto object-contain hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                ))}
+          {
+            images && images.length > 0 && (
+              <div className="mt-6 border-t border-slate-100 dark:border-slate-800 pt-4">
+                <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-3 flex items-center gap-2">
+                  <ImageIcon size={14} /> {t.scans}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {images.map((img, idx) => (
+                    <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 group bg-slate-100 dark:bg-slate-800/50">
+                      <img
+                        src={img}
+                        alt={`Scan ${idx + 1}`}
+                        className="w-full h-auto object-contain hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )
+          }
 
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 };

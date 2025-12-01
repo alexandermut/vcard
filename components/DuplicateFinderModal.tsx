@@ -3,6 +3,7 @@ import { X, Check, AlertTriangle, ArrowLeft, ArrowRight, User, Building2, Phone,
 import { HistoryItem, VCardData } from '../types';
 import { findDuplicates, mergeContacts, DuplicateGroup } from '../utils/deduplicationUtils';
 import { parseVCardString, generateVCardFromData } from '../utils/vcardUtils';
+import { toast } from 'sonner';
 import { addHistoryItem, deleteHistoryItem } from '../utils/db';
 
 interface DuplicateFinderModalProps {
@@ -101,7 +102,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             await addHistoryItem(mergedContact); // Updates master (same ID)
         } catch (e) {
             console.error("Failed to update DB during merge", e);
-            alert("Fehler beim Speichern der Änderungen.");
+            toast.error("Fehler beim Speichern der Änderungen.");
             return;
         }
 
@@ -197,12 +198,6 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     <p className="text-slate-500 dark:text-slate-400 mb-6">
                         Deine Kontaktliste sieht sauber aus!
                     </p>
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium transition-colors"
-                    >
-                        Schließen
-                    </button>
                 </div>
             );
         }
@@ -232,7 +227,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             return (
                 <div className="mb-4 shrink-0">
                     <div className="flex items-center gap-2 mb-1">
-                        <div className={`p-1 rounded-md bg-slate-100 dark:bg-slate-800 ${colorClass}`}>
+                        <div className={`p - 1 rounded - md bg - slate - 100 dark: bg - slate - 800 ${colorClass} `}>
                             {React.createElement(icon, { size: 14 })}
                         </div>
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
@@ -252,7 +247,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         ) : (
                             // Left is Duplicate (Read-only)
                             <div
-                                className={`p-2 md:p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs md:text-sm text-slate-500 dark:text-slate-400 break-words ${!val1 ? 'italic opacity-50' : ''}`}
+                                className={`p - 2 md: p - 3 rounded - lg border border - slate - 200 dark: border - slate - 800 bg - slate - 50 dark: bg - slate - 900 / 50 text - xs md: text - sm text - slate - 500 dark: text - slate - 400 break-words ${!val1 ? 'italic opacity-50' : ''} `}
                             >
                                 {val1 || 'Leer'}
                             </div>
@@ -288,7 +283,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         ) : (
                             // Right is Duplicate (Read-only)
                             <div
-                                className={`p-2 md:p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs md:text-sm text-slate-500 dark:text-slate-400 break-words ${!val2 ? 'italic opacity-50' : ''}`}
+                                className={`p - 2 md: p - 3 rounded - lg border border - slate - 200 dark: border - slate - 800 bg - slate - 50 dark: bg - slate - 900 / 50 text - xs md: text - sm text - slate - 500 dark: text - slate - 400 break-words ${!val2 ? 'italic opacity-50' : ''} `}
                             >
                                 {val2 || 'Leer'}
                             </div>
@@ -330,7 +325,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     </div>
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-start">
                         {/* Left List */}
-                        <div className={`space-y-1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
+                        <div className={`space - y - 1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''} `}>
                             {list1?.map((item, i) => (
                                 <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
                                     {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
@@ -344,7 +339,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         </div>
 
                         {/* Right List */}
-                        <div className={`space-y-1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
+                        <div className={`space - y - 1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''} `}>
                             {list2?.map((item, i) => (
                                 <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
                                     {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
@@ -385,7 +380,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 mb-6 items-end">
                         <div
                             onClick={() => setMasterSide('left')}
-                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                            className={`cursor - pointer p - 2 md: p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 2 md: gap - 3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
                         >
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c1.images && c1.images.length > 0 ? (
@@ -395,7 +390,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                                 )}
                             </div>
                             <div className="text-center w-full">
-                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                                <span className={`text - [10px] md: text - xs font - bold uppercase px - 2 py - 1 rounded - full block w - full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
                                     {masterSide === 'left' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>
@@ -407,7 +402,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
                         <div
                             onClick={() => setMasterSide('right')}
-                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                            className={`cursor - pointer p - 2 md: p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 2 md: gap - 3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
                         >
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c2.images && c2.images.length > 0 ? (
@@ -417,7 +412,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                                 )}
                             </div>
                             <div className="text-center w-full">
-                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                                <span className={`text - [10px] md: text - xs font - bold uppercase px - 2 py - 1 rounded - full block w - full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
                                     {masterSide === 'right' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>

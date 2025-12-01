@@ -11,6 +11,7 @@ import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
+import { toast } from 'sonner';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -78,7 +79,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
   const handleSaveToGoogle = async (item: HistoryItem) => {
     if (!token) {
-      alert("Bitte zuerst in den Einstellungen mit Google verbinden.");
+      toast.error("Bitte zuerst in den Einstellungen mit Google verbinden.");
       return;
     }
 
@@ -88,10 +89,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       const vcardData = parseVCardString(item.vcard);
       const googlePerson = mapVCardToGooglePerson(vcardData.data);
       await createGoogleContact(token, googlePerson);
-      alert(`Kontakt "${item.name}" erfolgreich gespeichert!`);
+      toast.success(`Kontakt "${item.name}" erfolgreich gespeichert!`);
     } catch (e: any) {
       console.error("Failed to save contact", e);
-      alert(`Fehler beim Speichern: ${e.message}`);
+      toast.error(`Fehler beim Speichern: ${e.message}`);
     }
   };
 

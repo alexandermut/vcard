@@ -3,6 +3,7 @@ import { X, Upload, Trash2, RefreshCw, CheckCircle, AlertCircle, Loader } from '
 import { Language, ScanJob } from '../types';
 import { translations } from '../utils/translations';
 import { convertPdfToImages } from '../utils/pdfUtils';
+import { toast } from 'sonner';
 
 interface BatchUploadModalProps {
     isOpen: boolean;
@@ -110,7 +111,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     }
                 } catch (err: any) {
                     console.error("PDF conversion failed", err);
-                    alert(`Fehler beim Verarbeiten von ${file.name}: ${err.message}`);
+                    toast.error(`Fehler beim Verarbeiten von ${file.name}: ${err.message}`);
                 }
             } else if (file.type.startsWith('image/')) {
                 newJobs.push([file]); // 1 Image = 1 Job
@@ -330,15 +331,6 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                     )}
                 </div>
 
-                {/* Footer */}
-                <div className="bg-slate-50 dark:bg-slate-950 p-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                    >
-                        {t.close}
-                    </button>
-                </div>
             </div>
         </div>
     );

@@ -82,8 +82,17 @@ export const useScanQueue = (
 
     } catch (error: any) {
       console.error("Job failed", error);
-      // Mark as error, keep in queue so user sees it failed
-      setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: error.message } : j));
+      if (error.message && error.message.includes("Timeout")) {
+        console.warn("Job timed out, moving to back of queue", job.id);
+        setQueue(prev => {
+          // Remove current job and add to end with pending status
+          const filtered = prev.filter(j => j.id !== job.id);
+          return [...filtered, { ...job, status: 'pending', error: undefined }];
+        });
+      } else {
+        // Mark as error, keep in queue so user sees it failed
+        setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: error.message } : j));
+      }
     } finally {
       setIsProcessing(false);
     }

@@ -3,6 +3,7 @@ import { X, Search, FileText, Calendar, MapPin, Download, Trash2, StickyNote, Us
 import { Note, Language } from '../types';
 import { getNotes, searchNotes, deleteNote, addNote } from '../utils/db';
 import { translations } from '../utils/translations';
+import { toast } from 'sonner';
 
 interface NotesSidebarProps {
     isOpen: boolean;
@@ -96,7 +97,7 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
             loadNotes();
         } catch (e) {
             console.error("Failed to update note", e);
-            alert("Failed to save note.");
+            toast.error("Failed to save note.");
         }
     };
 

@@ -286,14 +286,6 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
                     )}
 
                 </div>
-
-                {/* Footer */}
-                <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-white bg-slate-900 dark:bg-slate-700 hover:bg-slate-800 dark:hover:bg-slate-600 rounded-lg shadow-sm">
-                        Schließen
-                    </button>
-                </div>
-
             </div>
         </div>
     );

@@ -36,6 +36,8 @@ import {
   Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
+import { Toaster, toast } from 'sonner';
+import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
 
 
 
@@ -184,6 +186,13 @@ const App: React.FC = () => {
     }
   };
 
+  // Smart Loader
+  useSmartStreetLoader({
+    enabled: true,
+    status: streetDbStatus,
+    onLoad: handleLoadStreetDb
+  });
+
 
 
   // Load History & Migrate on Mount
@@ -318,10 +327,10 @@ const App: React.FC = () => {
       setHistory(items);
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
 
-      alert(translations[lang].qrScanSuccess.replace('vCard', `${count} Items`)); // Reuse success message or add new one
+      toast.success(translations[lang].qrScanSuccess.replace('vCard', `${count} Items`)); // Reuse success message or add new one
     } catch (e) {
       console.error(e);
-      alert("Restore failed: " + (e as Error).message);
+      toast.error("Restore failed: " + (e as Error).message);
     }
   };
 
@@ -357,7 +366,7 @@ const App: React.FC = () => {
     if (currentHistory.length > 0 && currentHistory[0].vcard === str) {
       console.log("Exact duplicate detected - skipping save");
       // Optional: Notify user?
-      // alert("Kontakt ist bereits der neueste Eintrag.");
+      // toast.info("Kontakt ist bereits der neueste Eintrag.");
       return;
     }
 
@@ -692,7 +701,7 @@ const App: React.FC = () => {
     // Small delay to show 100%
     await new Promise(resolve => setTimeout(resolve, 500));
     setImportProgress(null);
-    alert(`${vcards.length} Kontakte erfolgreich importiert!`);
+    toast.success(`${vcards.length} Kontakte erfolgreich importiert!`);
   };
 
   // --- EXPORT HANDLERS ---
@@ -723,11 +732,11 @@ const App: React.FC = () => {
       if (vcards.length > 0) {
         await handleImportGoogleContacts(vcards); // Reuse logic
       } else {
-        alert("Keine gültigen Kontakte in der CSV gefunden.");
+        toast.info("Keine gültigen Kontakte in der CSV gefunden.");
       }
     } catch (e) {
       console.error(e);
-      alert("CSV Import fehlgeschlagen: " + (e as Error).message);
+      toast.error("CSV Import fehlgeschlagen: " + (e as Error).message);
     }
   };
 
@@ -744,11 +753,11 @@ const App: React.FC = () => {
       if (rawVcards.length > 0) {
         await handleImportGoogleContacts(rawVcards); // Reuse logic
       } else {
-        alert("Keine vCards in der Datei gefunden.");
+        toast.info("Keine vCards in der Datei gefunden.");
       }
     } catch (e) {
       console.error(e);
-      alert("vCard Import fehlgeschlagen: " + (e as Error).message);
+      toast.error("vCard Import fehlgeschlagen: " + (e as Error).message);
     }
   };
 
@@ -760,13 +769,13 @@ const App: React.FC = () => {
       downloadZip(blob, `kontakte_full_backup_${getTimestamp()}.zip`);
     } catch (e) {
       console.error(e);
-      alert("Backup fehlgeschlagen: " + (e as Error).message);
+      toast.error("Backup fehlgeschlagen: " + (e as Error).message);
     }
   };
 
   const handleRestoreZip = async (file: File) => {
     // Manually handle loading state since we can't easily reuse handleRestoreBackup's internal logic without refactoring
-    // But we can reuse the setImportProgress if we expose it or just use a simple alert for now if complex.
+    // But we can reuse the setImportProgress if we expose it or just use a simple toast for now if complex.
     // Actually, App.tsx has importProgress state.
 
     // Let's just use the existing handleRestoreBackup if it supports zip? No, it expects JSON.
@@ -786,10 +795,10 @@ const App: React.FC = () => {
     try {
       const count = await restoreBackupZip(file);
       setHistory(await getHistoryPaged(1, 50)); // Refresh
-      alert(`${count} Kontakte erfolgreich aus Backup wiederhergestellt!`);
+      toast.success(`${count} Kontakte erfolgreich aus Backup wiederhergestellt!`);
     } catch (e) {
       console.error(e);
-      alert("Restore fehlgeschlagen: " + (e as Error).message);
+      toast.error("Restore fehlgeschlagen: " + (e as Error).message);
     } finally {
       setImportProgress(null);
     }
@@ -996,7 +1005,7 @@ const App: React.FC = () => {
               addToHistory(data);
             } else {
               console.warn('QR Code scanned but invalid vCard format');
-              alert('Der QR-Code enthält keine gültige vCard.');
+              toast.error('Der QR-Code enthält keine gültige vCard.');
             }
           }
         }}
@@ -1092,7 +1101,7 @@ const App: React.FC = () => {
               </span>
             </button>
 
-            {/* 8. Help */}
+            <Toaster position="top-center" richColors />
             <button
               onClick={() => setIsHelpOpen(true)}
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"

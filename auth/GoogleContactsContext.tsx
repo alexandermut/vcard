@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useGoogleLogin, TokenResponse } from '@react-oauth/google';
+import { toast } from 'sonner';
 
 interface GoogleContactsContextType {
     login: () => void;
@@ -17,8 +18,9 @@ export const GoogleContactsProvider: React.FC<{ children: ReactNode }> = ({ chil
             console.log('Google Login Success:', tokenResponse);
             setToken(tokenResponse.access_token);
         },
-        onError: (error) => {
-            console.error('Google Login Error:', error);
+        onError: (errorResponse) => {
+            console.error("Google Login Failed", errorResponse);
+            toast.warning("Google Login fehlgeschlagen oder abgebrochen.");
         },
         scope: 'https://www.googleapis.com/auth/contacts',
         flow: 'implicit',
