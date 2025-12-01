@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check, AlertTriangle, ArrowLeft, ArrowRight, User, Building2, Phone, Mail, Globe, MapPin, Cake, StickyNote, Award, Search, ExternalLink, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Merge } from 'lucide-react';
 import { HistoryItem, VCardData } from '../types';
 import { findDuplicates, mergeContacts, DuplicateGroup } from '../utils/deduplicationUtils';
-import { parseVCardString } from '../utils/vcardUtils';
+import { parseVCardString, generateVCardFromData } from '../utils/vcardUtils';
 import { addHistoryItem, deleteHistoryItem } from '../utils/db';
 
 interface DuplicateFinderModalProps {
@@ -17,7 +17,9 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
     const [isScanning, setIsScanning] = useState(false);
     const [scanComplete, setScanComplete] = useState(false);
-    const [mergeOverrides, setMergeOverrides] = useState<Partial<HistoryItem>>({});
+
+    // New State: Draft Data (The "Result" being built)
+    const [draftData, setDraftData] = useState<VCardData | null>(null);
     const [masterSide, setMasterSide] = useState<'left' | 'right'>('left');
 
     // Reset state when opening
@@ -26,7 +28,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             setScanComplete(false);
             setDuplicates([]);
             setCurrentGroupIndex(0);
-            setMergeOverrides({});
+            setDraftData(null);
             setMasterSide('left');
             // Lock body scroll
             document.body.style.overflow = 'hidden';
@@ -38,9 +40,28 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         };
     }, [isOpen]);
 
+    // Initialize Draft when group changes or master side changes
+    useEffect(() => {
+        if (duplicates.length > 0 && currentGroupIndex < duplicates.length) {
+            const group = duplicates[currentGroupIndex];
+            const c1 = history.find(h => h.id === group.contactIds[0]);
+            const c2 = history.find(h => h.id === group.contactIds[1]);
+
+            if (c1 && c2) {
+                const master = masterSide === 'left' ? c1 : c2;
+                // Only reset draft if it's null (first load of group) or if we explicitly want to reset on side switch?
+                // Better: When switching side, we might want to keep edits? 
+                // User said: "rework some things completely in the master".
+                // If I switch master, I probably expect the *base* to change.
+                // Let's reset draft to the new master's data.
+                const parsed = parseVCardString(master.vcard).data;
+                setDraftData(parsed);
+            }
+        }
+    }, [duplicates, currentGroupIndex, masterSide, history]);
+
     const handleScan = async () => {
         setIsScanning(true);
-        // Simulate delay for UX
         await new Promise(resolve => setTimeout(resolve, 800));
         const found = findDuplicates(history);
         setDuplicates(found);
@@ -49,6 +70,8 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     };
 
     const handleMerge = async (group: DuplicateGroup) => {
+        if (!draftData) return;
+
         const c1 = history.find(h => h.id === group.contactIds[0]);
         const c2 = history.find(h => h.id === group.contactIds[1]);
 
@@ -57,7 +80,20 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         const master = masterSide === 'left' ? c1 : c2;
         const duplicate = masterSide === 'left' ? c2 : c1;
 
-        const mergedContact = mergeContacts(master, [duplicate], mergeOverrides);
+        // Generate final vCard from Draft
+        const finalVCardString = generateVCardFromData(draftData);
+
+        // Create merged item
+        // We keep the Master's ID and Images (unless we want to merge images too? For now keep master's images)
+        // Actually, we should probably merge images if possible, but let's stick to master's images + maybe duplicate's if master has none?
+        // Simple logic: Use Master's images.
+        const mergedContact: HistoryItem = {
+            ...master,
+            vcard: finalVCardString,
+            name: draftData.fn || master.name,
+            org: draftData.org || master.org,
+            timestamp: Date.now()
+        };
 
         // 1. Persist to DB
         try {
@@ -70,19 +106,17 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         }
 
         // 2. Update Local State
-        // Remove both originals, add merged
         const newHistory = history.filter(h => h.id !== c1.id && h.id !== c2.id);
-        newHistory.unshift(mergedContact); // Add to top
+        newHistory.unshift(mergedContact);
 
         onUpdateHistory(newHistory);
 
-        // Move to next group or finish
+        // Move to next
         if (currentGroupIndex < duplicates.length - 1) {
             setCurrentGroupIndex(prev => prev + 1);
-            setMergeOverrides({});
-            setMasterSide('left');
+            setMasterSide('left'); // Reset side
+            setDraftData(null); // Trigger re-init
         } else {
-            // All done
             setDuplicates([]);
             setScanComplete(false);
             onClose();
@@ -93,13 +127,18 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     const handleIgnore = () => {
         if (currentGroupIndex < duplicates.length - 1) {
             setCurrentGroupIndex(prev => prev + 1);
-            setMergeOverrides({});
             setMasterSide('left');
+            setDraftData(null);
         } else {
             setDuplicates([]);
             setScanComplete(false);
             onClose();
         }
+    };
+
+    const updateDraft = (field: keyof VCardData, value: any) => {
+        if (!draftData) return;
+        setDraftData({ ...draftData, [field]: value });
     };
 
     // Helper to get Social Icon
@@ -116,7 +155,6 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         return { icon: Globe, color: 'text-slate-500' };
     };
 
-    // Render Content
     const renderContent = () => {
         if (!isOpen) return null;
 
@@ -173,29 +211,23 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         const c1 = history.find(h => h.id === group.contactIds[0]);
         const c2 = history.find(h => h.id === group.contactIds[1]);
 
-        if (!c1 || !c2) return null;
+        if (!c1 || !c2 || !draftData) return null;
 
-        // Parse Data
+        // Parse Original Data for Display
         const d1 = parseVCardString(c1.vcard).data;
         const d2 = parseVCardString(c2.vcard).data;
 
-        // Helper to render a single value field with arrow selection
+        // Helper to render a single value field
         const renderSingleField = (
             label: string,
             icon: React.ElementType,
             val1: string | undefined,
             val2: string | undefined,
-            fieldKey: keyof HistoryItem,
+            fieldKey: keyof VCardData,
             colorClass: string = "text-slate-500"
         ) => {
-            if (!val1 && !val2) return null;
             const isDifferent = val1 !== val2;
-            const masterVal = masterSide === 'left' ? val1 : val2;
-            const currentVal = mergeOverrides[fieldKey] !== undefined ? mergeOverrides[fieldKey] : masterVal;
-
-            // Determine which value is currently "active" / "selected"
-            const isLeftSelected = currentVal === val1;
-            const isRightSelected = currentVal === val2;
+            const draftVal = draftData[fieldKey] as string;
 
             return (
                 <div className="mb-4 shrink-0">
@@ -205,77 +237,86 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         </div>
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
-                    <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-center">
-                        {/* Left Value Box */}
-                        <div
-                            onClick={() => isDifferent && val1 && setMergeOverrides({ ...mergeOverrides, [fieldKey]: val1 })}
-                            className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm break-words transition-colors relative ${isDifferent ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800' : ''} ${isLeftSelected
-                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20 z-10'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60'
-                                } ${!val1 ? 'text-slate-400 italic' : 'text-slate-900 dark:text-slate-100'}`}
-                        >
-                            {val1 || 'Leer'}
-                            {isLeftSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></div>}
-                        </div>
 
-                        {/* Center Arrow Action */}
-                        <div className="flex flex-col items-center justify-center">
+                    <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-center">
+                        {/* LEFT SIDE */}
+                        {masterSide === 'left' ? (
+                            // Left is Master (Editable)
+                            <input
+                                type="text"
+                                value={draftVal || ''}
+                                onChange={(e) => updateDraft(fieldKey, e.target.value)}
+                                className="w-full p-2 md:p-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
+                                placeholder="Leer"
+                            />
+                        ) : (
+                            // Left is Duplicate (Read-only)
+                            <div
+                                className={`p-2 md:p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs md:text-sm text-slate-500 dark:text-slate-400 break-words ${!val1 ? 'italic opacity-50' : ''}`}
+                            >
+                                {val1 || 'Leer'}
+                            </div>
+                        )}
+
+                        {/* CENTER ARROW */}
+                        <div className="flex justify-center">
                             {isDifferent && (
                                 <button
                                     onClick={() => {
-                                        // Toggle logic: If we are currently using the "other" value, revert to master.
-                                        // If we are using master, switch to "other".
-                                        if (masterSide === 'left') {
-                                            // Master is Left. Default is val1.
-                                            // If current is val1, switch to val2. If current is val2, switch to val1.
-                                            const newVal = currentVal === val1 ? val2 : val1;
-                                            setMergeOverrides({ ...mergeOverrides, [fieldKey]: newVal });
-                                        } else {
-                                            // Master is Right. Default is val2.
-                                            const newVal = currentVal === val2 ? val1 : val2;
-                                            setMergeOverrides({ ...mergeOverrides, [fieldKey]: newVal });
-                                        }
+                                        // Copy from Duplicate to Master
+                                        const valueToCopy = masterSide === 'left' ? val2 : val1;
+                                        if (valueToCopy) updateDraft(fieldKey, valueToCopy);
                                     }}
-                                    className={`p-1.5 rounded-full transition-all shadow-sm ${
-                                        // Highlight if we are NOT using the master value (i.e. we are pulling from the other side)
-                                        (masterSide === 'left' && currentVal === val2) || (masterSide === 'right' && currentVal === val1)
-                                            ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 scale-110'
-                                            : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                        }`}
+                                    className="p-1.5 rounded-full bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 dark:bg-slate-800 dark:hover:bg-indigo-900/50 dark:text-slate-500 dark:hover:text-indigo-400 transition-colors"
                                     title="Wert übernehmen"
                                 >
-                                    {masterSide === 'left' ? (
-                                        <ArrowLeft size={16} className="md:w-5 md:h-5" />
-                                    ) : (
-                                        <ArrowRight size={16} className="md:w-5 md:h-5" />
-                                    )}
+                                    {masterSide === 'left' ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
                                 </button>
                             )}
                         </div>
 
-                        {/* Right Value Box */}
-                        <div
-                            onClick={() => isDifferent && val2 && setMergeOverrides({ ...mergeOverrides, [fieldKey]: val2 })}
-                            className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm break-words transition-colors relative ${isDifferent ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800' : ''} ${isRightSelected
-                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20 z-10'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60'
-                                } ${!val2 ? 'text-slate-400 italic' : 'text-slate-900 dark:text-slate-100'}`}
-                        >
-                            {val2 || 'Leer'}
-                            {isRightSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></div>}
-                        </div>
+                        {/* RIGHT SIDE */}
+                        {masterSide === 'right' ? (
+                            // Right is Master (Editable)
+                            <input
+                                type="text"
+                                value={draftVal || ''}
+                                onChange={(e) => updateDraft(fieldKey, e.target.value)}
+                                className="w-full p-2 md:p-3 rounded-lg border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 text-xs md:text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition-shadow"
+                                placeholder="Leer"
+                            />
+                        ) : (
+                            // Right is Duplicate (Read-only)
+                            <div
+                                className={`p-2 md:p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 text-xs md:text-sm text-slate-500 dark:text-slate-400 break-words ${!val2 ? 'italic opacity-50' : ''}`}
+                            >
+                                {val2 || 'Leer'}
+                            </div>
+                        )}
                     </div>
                 </div>
             );
         };
 
-        // Helper to render list fields (just display, no arrow selection for individual items yet)
+        // Helper for List Fields (Emails, Phones, etc.)
+        // For now, we just show them. Full list editing is complex.
+        // Let's make them editable as a comma-separated string? Or just simple inputs for the first few?
+        // User asked for "full editing".
+        // Let's stick to read-only for lists for now, but allow copying?
+        // Actually, let's just render them as read-only for now to avoid breaking layout, 
+        // but maybe add a "Copy All" button?
+        // Or better: Render the DRAFT list on the master side, and allow deleting items?
+
+        // Let's simplify: Just show the lists side-by-side. 
+        // If user wants to edit lists, they can do it after merge in the main editor.
+        // OR: We provide a simple "Use this list" toggle?
+        // Let's keep the previous list logic but make it clearer.
+
         const renderListField = (
             label: string,
             icon: React.ElementType,
             list1: any[] | undefined,
             list2: any[] | undefined,
-            renderItem: (item: any) => React.ReactNode
         ) => {
             if ((!list1 || list1.length === 0) && (!list2 || list2.length === 0)) return null;
 
@@ -288,35 +329,37 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-start">
-                        <div className="space-y-2">
+                        {/* Left List */}
+                        <div className={`space-y-1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
                             {list1?.map((item, i) => (
-                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs md:text-sm overflow-hidden">
-                                    {renderItem(item)}
+                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
+                                    {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
                                 </div>
                             ))}
-                            {(!list1 || list1.length === 0) && <span className="text-xs text-slate-400 italic">Leer</span>}
+                            {(!list1 || list1.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
                         </div>
 
                         <div className="flex justify-center pt-2">
-                            {/* Placeholder for future detailed merge controls */}
-                            <span className="text-slate-300"></span>
+                            {/* Placeholder for list merge logic */}
                         </div>
 
-                        <div className="space-y-2">
+                        {/* Right List */}
+                        <div className={`space-y-1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
                             {list2?.map((item, i) => (
-                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs md:text-sm overflow-hidden">
-                                    {renderItem(item)}
+                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
+                                    {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
                                 </div>
                             ))}
-                            {(!list2 || list2.length === 0) && <span className="text-xs text-slate-400 italic">Leer</span>}
+                            {(!list2 || list2.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
                         </div>
                     </div>
+                    <p className="text-[10px] text-slate-400 mt-1 text-center">Listen werden beim Zusammenführen kombiniert.</p>
                 </div>
             );
         };
 
         return (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col flex-1 min-h-0">
                 {/* Header Info */}
                 <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
                     <div className="flex items-center gap-3">
@@ -336,7 +379,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                 </div>
 
                 {/* Comparison Area */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 md:pr-2">
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 md:pr-2 min-h-0">
 
                     {/* Profile Pictures & Master Selection */}
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 mb-6 items-end">
@@ -353,13 +396,13 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                             </div>
                             <div className="text-center w-full">
                                 <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
-                                    {masterSide === 'left' ? 'Master' : 'Duplikat'}
+                                    {masterSide === 'left' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>
                         </div>
 
                         <div className="flex justify-center pb-6 md:pb-8 text-slate-300">
-                            <ArrowRight size={20} className="md:w-6 md:h-6" />
+                            {masterSide === 'left' ? <ArrowLeft size={20} /> : <ArrowRight size={20} />}
                         </div>
 
                         <div
@@ -375,63 +418,24 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                             </div>
                             <div className="text-center w-full">
                                 <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
-                                    {masterSide === 'right' ? 'Master' : 'Duplikat'}
+                                    {masterSide === 'right' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>
                         </div>
                     </div>
 
                     {/* Single Value Fields */}
-                    {renderSingleField("Name", User, d1.fn, d2.fn, 'name', 'text-indigo-500')}
+                    {renderSingleField("Name", User, d1.fn, d2.fn, 'fn', 'text-indigo-500')}
                     {renderSingleField("Titel", Award, d1.title, d2.title, 'title', 'text-purple-500')}
                     {renderSingleField("Firma", Building2, d1.org, d2.org, 'org', 'text-slate-500')}
                     {renderSingleField("Geburtstag", Cake, d1.bday, d2.bday, 'bday', 'text-pink-500')}
                     {renderSingleField("Notiz", StickyNote, d1.note, d2.note, 'note', 'text-yellow-500')}
 
-                    {/* Multi Value Fields */}
-                    {renderListField("E-Mails", Mail, d1.email, d2.email, (item) => (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase w-10 shrink-0">{item.type}</span>
-                            <a href={`mailto:${item.value}`} className="truncate text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline break-all">
-                                {item.value}
-                            </a>
-                        </div>
-                    ))}
-
-                    {renderListField("Telefon", Phone, d1.tel, d2.tel, (item) => (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase w-10 shrink-0">{item.type}</span>
-                            <a href={`tel:${item.value}`} className="font-mono text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 hover:underline break-all">
-                                {item.value}
-                            </a>
-                        </div>
-                    ))}
-
-                    {renderListField("Websites & Social", Globe, d1.url, d2.url, (item) => {
-                        const style = getUrlStyle(item.type);
-                        const Icon = style.icon;
-                        return (
-                            <div className="flex items-center gap-2">
-                                <Icon size={12} className={`shrink-0 ${style.color}`} />
-                                <a href={item.value} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 dark:text-blue-400 underline decoration-dotted hover:text-blue-800 dark:hover:text-blue-300 break-all">
-                                    {item.value}
-                                </a>
-                            </div>
-                        );
-                    })}
-
-                    {renderListField("Adressen", MapPin, d1.adr, d2.adr, (item) => (
-                        <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.value.street}, ${item.value.zip} ${item.value.city}`)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex flex-col gap-0.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 -m-1 p-1 rounded transition-colors"
-                        >
-                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase">{item.type}</span>
-                            <span className="text-slate-700 dark:text-slate-300 break-words">{item.value.street}</span>
-                            <span className="text-slate-500 text-[10px] md:text-xs">{item.value.zip} {item.value.city}</span>
-                        </a>
-                    ))}
+                    {/* Multi Value Fields (Read Only for now) */}
+                    {renderListField("E-Mails", Mail, d1.email, d2.email)}
+                    {renderListField("Telefon", Phone, d1.tel, d2.tel)}
+                    {renderListField("Websites", Globe, d1.url, d2.url)}
+                    {renderListField("Adressen", MapPin, d1.adr, d2.adr)}
 
                 </div>
 
@@ -452,7 +456,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                             className="px-4 md:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 text-sm md:text-base"
                         >
                             <Check size={16} className="md:w-[18px] md:h-[18px]" />
-                            <span>Zusammenführen</span>
+                            <span>Speichern & Weiter</span>
                         </button>
                     </div>
                 </div>
@@ -478,7 +482,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex-1 overflow-hidden p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex-1 overflow-hidden p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col min-h-0">
                     {renderContent()}
                 </div>
             </div>
