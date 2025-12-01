@@ -359,7 +359,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 };
 
 const consumeJobAndTax = (lines: Line[], data: ParserData) => {
-  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|(Inh.)|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer/i;
+  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch/i;
   const re_ustid = /((Ust|Umsatz)\S+(\s|:))(DE(\s)?.*\d{1,9})/i;
   const re_stnr = /(?:Steuer+[-\s|:.A-Za-z]*)\D(.*\d{1,9})/i;
 
@@ -417,24 +417,30 @@ const consumeCompany = (lines: Line[], data: ParserData) => {
 
 const consumeName = (lines: Line[], data: ParserData) => {
   // 1. Contextual (GF: Name)
-  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director)(?:\s*:\s*|\s+)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i;
+  // Allow optional adjectives before title (e.g. "Vertretungsberechtigte Geschäftsführer")
+  // Allow comma separated list, capture first name
+  // Support German characters (Umlauts) in name
+  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director)(?:\s*:\s*|\s+)([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)+)(?:,|$)/i;
 
   for (const line of lines) {
-    if (line.isConsumed && line.type !== 'JOB') continue; // Allow looking at JOB lines if they weren't fully consumed
+    if (line.isConsumed && line.type !== 'JOB') continue;
 
-    const match = line.clean.match(re_context);
-    if (match) {
-      const fullName = match[1];
-      const parts = fullName.split(' ');
-      data.fn = fullName;
-      data.n = `${parts[parts.length - 1]};${parts[0]}`;
+    // Check if line contains any of the keywords
+    if (/Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director/i.test(line.clean)) {
+      const match = line.clean.match(re_context);
+      if (match) {
+        const fullName = match[1].trim();
+        const parts = fullName.split(' ');
+        data.fn = fullName;
+        data.n = `${parts[parts.length - 1]};${parts[0]}`;
 
-      // If this line was NOT consumed yet, consume it now.
-      if (!line.isConsumed) {
-        line.isConsumed = true;
-        line.type = 'NAME';
+        // If this line was NOT consumed yet, consume it now.
+        if (!line.isConsumed) {
+          line.isConsumed = true;
+          line.type = 'NAME';
+        }
+        return;
       }
-      return; // Found a name, stop.
     }
   }
 
@@ -550,9 +556,9 @@ export const parseImpressumToVCard = (text: string): string => {
   consumeMeta(lines);
   consumeEmails(lines, data);
   consumeUrls(lines, data);
+  consumeJobAndTax(lines, data);
   consumePhones(lines, data);
   consumeAddress(lines, data);
-  consumeJobAndTax(lines, data);
   consumeCompany(lines, data); // Look for legal forms
   consumeName(lines, data);    // Look for names
   consumeNameHeuristic(lines, data); // Fallback for names
