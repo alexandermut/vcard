@@ -176,7 +176,7 @@ const consumePhones = (lines: Line[], data: ParserData) => {
 
         // If it looks like a mobile number (starts with +4915, +4916, +4917 or 015, 016, 017)
         // Note: res.number is E.164, so it starts with +
-        if (/^\+491(5|6|7)/.test(number.toString())) {
+        if (/^\+491(5|6|7)/.test(number.number)) {
           if (type === 'WORK,VOICE') type = 'CELL'; // Only override if generic
         }
 
@@ -189,7 +189,7 @@ const consumePhones = (lines: Line[], data: ParserData) => {
         // Let's use the raw number found if we want to preserve input, OR use the formatted one.
         // Let's use the E.164 value for consistency.
 
-        const value = number.toString();
+        const value = res.number.number;
 
         if (!data.tel.some(t => t.value === value)) {
           data.tel.push({ type, value });
