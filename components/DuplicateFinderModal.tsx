@@ -321,6 +321,18 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         // OR: We provide a simple "Use this list" toggle?
         // Let's keep the previous list logic but make it clearer.
 
+        const formatValue = (value: any): string => {
+            if (typeof value === 'object' && value !== null) {
+                // Handle Address Object
+                if ('street' in value || 'city' in value) {
+                    const parts = [value.street, value.zip, value.city, value.country].filter(p => p);
+                    return parts.join(', ');
+                }
+                return JSON.stringify(value);
+            }
+            return String(value);
+        };
+
         const renderListField = (
             label: string,
             icon: React.ElementType,
@@ -339,10 +351,10 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     </div>
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-start">
                         {/* Left List */}
-                        <div className={`space - y - 1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''} `}>
+                        <div className={`space-y-1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
                             {list1?.map((item, i) => (
-                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
-                                    {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate" title={formatValue(item.value)}>
+                                    {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
                                 </div>
                             ))}
                             {(!list1 || list1.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
@@ -353,10 +365,10 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         </div>
 
                         {/* Right List */}
-                        <div className={`space - y - 1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''} `}>
+                        <div className={`space-y-1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
                             {list2?.map((item, i) => (
-                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate">
-                                    {item.value} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate" title={formatValue(item.value)}>
+                                    {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
                                 </div>
                             ))}
                             {(!list2 || list2.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}

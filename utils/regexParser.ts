@@ -1,6 +1,7 @@
 import { CITIES_PATTERN } from './cities';
 import { VCardData } from '../types';
 import { parseGermanAddress } from './addressParser';
+import { findNumbers } from 'libphonenumber-js';
 
 // --- Types ---
 
@@ -145,55 +146,58 @@ const consumeUrls = (lines: Line[], data: ParserData) => {
 };
 
 const consumePhones = (lines: Line[], data: ParserData) => {
-  // Regex for finding numbers that look like phones
-  // Must contain at least 6 digits, maybe spaces, +, (0)
-  const re_phone_loose = /(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4,})(?: *x(\d+))?|\+?\d[\d\s\-\(\)\/]{6,}\d/g;
-
   lines.forEach(line => {
     if (line.isConsumed) return;
 
-    // Heuristic: If line contains "Tel", "Phone", "Mobil", "Fax" it's definitely a phone line
-    const isExplicitPhone = /tel|phone|mobil|cell|handy|fax|büro|office|zentrale/i.test(line.clean);
+    // Use libphonenumber-js to find numbers in the line
+    // We use 'DE' as default country, but it handles international numbers (+...) automatically
+    const foundNumbers = findNumbers(line.clean, { defaultCountry: 'DE', v2: true });
 
-    if (isExplicitPhone) {
-      // Extract all numbers from this line
-      const matches = line.clean.match(re_phone_loose);
-      if (matches) {
-        matches.forEach(num => {
-          const clean = clean_number(num);
-          if (clean.length < 6) return; // Too short
+    if (foundNumbers && foundNumbers.length > 0) {
+      let hasValidNumber = false;
 
-          let type = 'WORK,VOICE';
-          const lowerLine = line.clean.toLowerCase();
+      foundNumbers.forEach(res => {
+        const number = res.number; // E.164 format (e.g. +491711234567)
 
-          if (lowerLine.includes('fax')) type = 'FAX';
-          else if (lowerLine.includes('mobil') || lowerLine.includes('cell') || lowerLine.includes('handy')) type = 'CELL';
-          else if (lowerLine.includes('home') || lowerLine.includes('privat')) type = 'HOME';
+        // Filter out short numbers that might be false positives (like dates or zip codes if they look like phones)
+        // libphonenumber is usually good, but let's be safe.
+        // E.164 for DE is at least +49... (12 chars). 
+        // But local numbers might be shorter.
+        // The library returns structured data.
 
-          // Avoid duplicates
-          if (!data.tel.some(t => t.value === clean)) {
-            data.tel.push({ type, value: clean });
-          }
-        });
-        line.isConsumed = true;
-        line.type = 'PHONE';
-      }
-    } else {
-      // If not explicit, be more strict but allow domestic numbers starting with 0
-      // Must be at least 7 digits long to avoid confusion with zip codes or dates
-      const strictMatch = line.clean.match(/^(\+|00|0)\d[\d\s\-\/]{6,}$/);
-      if (strictMatch) {
-        const clean = clean_number(strictMatch[0]);
-        // Extra check: If it looks like a date (DD.MM.YYYY), ignore
-        if (/\d{2}\.\d{2}\.\d{4}/.test(line.clean)) return;
+        // We trust the library's validation mostly.
 
-        if (!data.tel.some(t => t.value === clean)) {
-          // If it starts with 015, 016, 017, it's likely mobile
-          let type = 'WORK,VOICE';
-          if (/^(015|016|017)/.test(clean)) type = 'CELL';
+        let type = 'WORK,VOICE';
+        const lowerLine = line.clean.toLowerCase();
 
-          data.tel.push({ type, value: clean });
+        if (lowerLine.includes('fax')) type = 'FAX';
+        else if (lowerLine.includes('mobil') || lowerLine.includes('cell') || lowerLine.includes('handy')) type = 'CELL';
+        else if (lowerLine.includes('home') || lowerLine.includes('privat')) type = 'HOME';
+
+        // If it looks like a mobile number (starts with +4915, +4916, +4917 or 015, 016, 017)
+        // Note: res.number is E.164, so it starts with +
+        if (/^\+491(5|6|7)/.test(number.toString())) {
+          if (type === 'WORK,VOICE') type = 'CELL'; // Only override if generic
         }
+
+        // Avoid duplicates
+        // We store the formatted E.164 number or the national format?
+        // Let's store the formatted number from the library to look nice?
+        // Or E.164 for better machine readability?
+        // User wants "robust handling". E.164 is robust.
+        // But for display, maybe we want spaces?
+        // Let's use the raw number found if we want to preserve input, OR use the formatted one.
+        // Let's use the E.164 value for consistency.
+
+        const value = number.toString();
+
+        if (!data.tel.some(t => t.value === value)) {
+          data.tel.push({ type, value });
+          hasValidNumber = true;
+        }
+      });
+
+      if (hasValidNumber) {
         line.isConsumed = true;
         line.type = 'PHONE';
       }

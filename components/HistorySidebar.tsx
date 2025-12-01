@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, LayoutGrid, Search, History, X, Download, Trash2, Image as ImageIcon, Upload, Contact, FileText, Merge, Users, Check } from 'lucide-react';
+import { List, LayoutGrid, Search, History, X, Download, Trash2, Image as ImageIcon, Upload, Contact, FileText, Merge, Users, Check, Loader2 } from 'lucide-react';
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
 import { translations } from '../utils/translations';
@@ -298,6 +298,16 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <Virtuoso
               style={{ height: '100%' }}
               data={history}
+              endReached={() => hasMore && onLoadMore()}
+              components={{
+                Footer: () => {
+                  return hasMore ? (
+                    <div className="flex justify-center py-4">
+                      <Loader2 className="animate-spin text-blue-500" size={24} />
+                    </div>
+                  ) : null;
+                }
+              }}
               itemContent={(index, item) => (
                 <div
                   key={item.id}
@@ -484,14 +494,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           </div>
         )}
 
-        {hasMore && (
-          <button
-            onClick={onLoadMore}
-            className="w-full mt-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-          >
-            {t.loadMore || 'Load More'}
-          </button>
-        )}
+        {/* Load More Button Removed (Infinite Scroll) */}
       </div>
     </>
   );

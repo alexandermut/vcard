@@ -134,7 +134,7 @@ const App: React.FC = () => {
   const [notesCount, setNotesCount] = useState(0);
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null); // Track currently loaded/saved item
   const [notesFilterId, setNotesFilterId] = useState<string | null>(null); // Filter for NotesSidebar
-  const HISTORY_LIMIT = 20;
+  const HISTORY_LIMIT = 50;
 
 
 

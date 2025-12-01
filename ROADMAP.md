@@ -95,7 +95,7 @@ This file tracks the current development status and planned features.
 - [x] **Database Optimization**
     - [x] **Blob Storage:** Enforce `Blob` storage for images (migrate from Base64).
     - [ ] **Direct DB Access:** Refactor Duplicate Finder to query IDB directly (avoid passing full history prop).
-    - [ ] **Pagination:** Ensure `App.tsx` only loads visible subset of history.
+    - [x] **Pagination:** Ensure `App.tsx` only loads visible subset of history.
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).
@@ -107,7 +107,7 @@ This file tracks the current development status and planned features.
 - [ ] **Offline-OCR:** Tesseract.js fallback when offline.
 - [ ] **AI Grounding:** Real web search to complete missing data.
 - [ ] **Voice-to-Contact:** Dictate business cards.
-- [ ] **Better Phone Parsing:** Use `libphonenumber-js` for robust international number handling.
+- [x] **Better Phone Parsing:** Use `libphonenumber-js` for robust international number handling.
 - [ ] **CRM Integration:** HubSpot / Salesforce via API.
 - [ ] **Outlook Add-in:** Direct integration into Microsoft 365.
 - [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.
