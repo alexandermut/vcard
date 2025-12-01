@@ -98,6 +98,7 @@ This file tracks the current development status and planned features.
     - [ ] **Direct DB Access:** Refactor Duplicate Finder to query IDB directly (avoid passing full history prop).
     - [x] **Pagination:** Ensure `App.tsx` only loads visible subset of history.
     - [x] **Persistence:** Keep manual edits in Duplicate Finder when switching Master side.
+    - [x] **List Merging:** Interactive add/remove for emails, phones, etc.
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).

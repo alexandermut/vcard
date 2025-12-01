@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Check, AlertTriangle, ArrowLeft, ArrowRight, User, Building2, Phone, Mail, Globe, MapPin, Cake, StickyNote, Award, Search, ExternalLink, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Merge } from 'lucide-react';
+import { X, Check, AlertTriangle, ArrowLeft, ArrowRight, User, Building2, Phone, Mail, Globe, MapPin, Cake, StickyNote, Award, Search, ExternalLink, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Merge, Plus, Trash2 } from 'lucide-react';
 import { HistoryItem, VCardData } from '../types';
 import { mergeContacts, DuplicateGroup } from '../utils/deduplicationUtils';
 import { parseVCardString, generateVCardFromData } from '../utils/vcardUtils';
@@ -357,10 +357,32 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         const renderListField = (
             label: string,
             icon: React.ElementType,
-            list1: any[] | undefined,
-            list2: any[] | undefined,
+            list1: any[] | undefined, // Original Data 1
+            list2: any[] | undefined, // Original Data 2
+            fieldKey: keyof VCardData
         ) => {
-            if ((!list1 || list1.length === 0) && (!list2 || list2.length === 0)) return null;
+            // Determine which list is Master (Draft) and which is Duplicate (Source)
+            const draftList = (draftData?.[fieldKey] as any[]) || [];
+            const duplicateList = (masterSide === 'left' ? list2 : list1) || [];
+
+            // Helper to check if item exists in draft
+            const isInDraft = (item: any) => {
+                return draftList.some((d: any) => d.value === item.value && d.type === item.type);
+            };
+
+            const addToList = (item: any) => {
+                if (isInDraft(item)) return;
+                const newList = [...draftList, item];
+                updateDraft(fieldKey, newList);
+            };
+
+            const removeFromList = (index: number) => {
+                const newList = [...draftList];
+                newList.splice(index, 1);
+                updateDraft(fieldKey, newList);
+            };
+
+            if (draftList.length === 0 && duplicateList.length === 0) return null;
 
             return (
                 <div className="mb-4">
@@ -371,31 +393,106 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-start">
-                        {/* Left List */}
-                        <div className={`space-y-1 ${masterSide === 'left' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
-                            {list1?.map((item, i) => (
-                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate" title={formatValue(item.value)}>
-                                    {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
-                                </div>
-                            ))}
-                            {(!list1 || list1.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
+
+                        {/* LEFT SIDE */}
+                        {masterSide === 'left' ? (
+                            // Left is Master (Draft - Editable)
+                            <div className="space-y-1 ring-1 ring-indigo-500/30 rounded-lg p-1 min-h-[32px]">
+                                {draftList.map((item: any, i: number) => (
+                                    <div key={i} className="group flex items-center justify-between text-xs p-1.5 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
+                                        <div className="truncate mr-1" title={formatValue(item.value)}>
+                                            {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => removeFromList(i)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                                            title="Entfernen"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {draftList.length === 0 && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
+                            </div>
+                        ) : (
+                            // Left is Duplicate (Source - Addable)
+                            <div className="space-y-1 p-1">
+                                {list1?.map((item, i) => {
+                                    const exists = isInDraft(item);
+                                    return (
+                                        <div key={i} className={`group flex items-center justify-between text-xs p-1.5 rounded border ${exists ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 opacity-50' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                                            <div className="truncate mr-1" title={formatValue(item.value)}>
+                                                {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                            </div>
+                                            {!exists && (
+                                                <button
+                                                    onClick={() => addToList(item)}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-all"
+                                                    title="Hinzufügen"
+                                                >
+                                                    <Plus size={12} />
+                                                </button>
+                                            )}
+                                            {exists && <Check size={12} className="text-green-500" />}
+                                        </div>
+                                    );
+                                })}
+                                {(!list1 || list1.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
+                            </div>
+                        )}
+
+                        {/* CENTER ARROW (Visual Only) */}
+                        <div className="flex justify-center pt-2 text-slate-300">
+                            {masterSide === 'left' ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
                         </div>
 
-                        <div className="flex justify-center pt-2">
-                            {/* Placeholder for list merge logic */}
-                        </div>
-
-                        {/* Right List */}
-                        <div className={`space-y-1 ${masterSide === 'right' ? 'ring-1 ring-indigo-500/30 rounded-lg p-1' : ''}`}>
-                            {list2?.map((item, i) => (
-                                <div key={i} className="text-xs p-1.5 bg-slate-50 dark:bg-slate-800 rounded border border-slate-100 dark:border-slate-700 truncate" title={formatValue(item.value)}>
-                                    {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
-                                </div>
-                            ))}
-                            {(!list2 || list2.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
-                        </div>
+                        {/* RIGHT SIDE */}
+                        {masterSide === 'right' ? (
+                            // Right is Master (Draft - Editable)
+                            <div className="space-y-1 ring-1 ring-indigo-500/30 rounded-lg p-1 min-h-[32px]">
+                                {draftList.map((item: any, i: number) => (
+                                    <div key={i} className="group flex items-center justify-between text-xs p-1.5 bg-white dark:bg-slate-900 rounded border border-indigo-100 dark:border-indigo-900/50 shadow-sm">
+                                        <div className="truncate mr-1" title={formatValue(item.value)}>
+                                            {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                        </div>
+                                        <button
+                                            onClick={() => removeFromList(i)}
+                                            className="opacity-0 group-hover:opacity-100 p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-all"
+                                            title="Entfernen"
+                                        >
+                                            <X size={12} />
+                                        </button>
+                                    </div>
+                                ))}
+                                {draftList.length === 0 && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
+                            </div>
+                        ) : (
+                            // Right is Duplicate (Source - Addable)
+                            <div className="space-y-1 p-1">
+                                {list2?.map((item, i) => {
+                                    const exists = isInDraft(item);
+                                    return (
+                                        <div key={i} className={`group flex items-center justify-between text-xs p-1.5 rounded border ${exists ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 opacity-50' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+                                            <div className="truncate mr-1" title={formatValue(item.value)}>
+                                                {formatValue(item.value)} <span className="text-[10px] text-slate-400 ml-1">{item.type}</span>
+                                            </div>
+                                            {!exists && (
+                                                <button
+                                                    onClick={() => addToList(item)}
+                                                    className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-all"
+                                                    title="Hinzufügen"
+                                                >
+                                                    <Plus size={12} />
+                                                </button>
+                                            )}
+                                            {exists && <Check size={12} className="text-green-500" />}
+                                        </div>
+                                    );
+                                })}
+                                {(!list2 || list2.length === 0) && <span className="text-xs text-slate-400 italic pl-1">Leer</span>}
+                            </div>
+                        )}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1 text-center">Listen werden beim Zusammenführen kombiniert.</p>
                 </div>
             );
         };
@@ -473,11 +570,11 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     {renderSingleField("Geburtstag", Cake, d1.bday, d2.bday, 'bday', 'text-pink-500')}
                     {renderSingleField("Notiz", StickyNote, d1.note, d2.note, 'note', 'text-yellow-500')}
 
-                    {/* Multi Value Fields (Read Only for now) */}
-                    {renderListField("E-Mails", Mail, d1.email, d2.email)}
-                    {renderListField("Telefon", Phone, d1.tel, d2.tel)}
-                    {renderListField("Websites", Globe, d1.url, d2.url)}
-                    {renderListField("Adressen", MapPin, d1.adr, d2.adr)}
+                    {/* Multi Value Fields (Interactive) */}
+                    {renderListField("E-Mails", Mail, d1.email, d2.email, 'email')}
+                    {renderListField("Telefon", Phone, d1.tel, d2.tel, 'tel')}
+                    {renderListField("Websites", Globe, d1.url, d2.url, 'url')}
+                    {renderListField("Adressen", MapPin, d1.adr, d2.adr, 'adr')}
 
                 </div>
 
