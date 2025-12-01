@@ -39,6 +39,15 @@ interface SettingsSidebarProps {
     onImportVCard: (file: File) => void;
     onBackupAll: () => void;
     onRestoreZip: (file: File) => void;
+    history: HistoryItem[];
+    setHistory: (history: HistoryItem[]) => void;
+    clearHistory: () => void;
+    exportToCSV: () => void;
+    exportToJSON: () => void;
+    exportToVCard: () => void;
+    importFromCSV: (file: File) => void;
+    importFromJSON: (file: File) => void;
+    importFromVCard: (file: File) => void;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
@@ -46,7 +55,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip
+    onBackupAll, onRestoreZip, history, setHistory, clearHistory, exportToCSV, exportToJSON, exportToVCard, importFromCSV, importFromJSON, importFromVCard
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -241,6 +250,22 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                 <p className="text-[10px] text-indigo-600/70 dark:text-indigo-400/70 mt-2 text-center">
                                     Speichert Kontakte, Bilder & Listen in einer ZIP-Datei.
                                 </p>
+                            </div>
+
+                            {/* Tools Section */}
+                            <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-800/30">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-1.5 bg-orange-100 dark:bg-orange-900/50 rounded-lg text-orange-600 dark:text-orange-400">
+                                        <Users size={16} />
+                                    </div>
+                                    <span className="text-sm font-bold text-orange-900 dark:text-orange-200">Tools</span>
+                                </div>
+                                <button
+                                    onClick={() => setShowDuplicateFinder(true)}
+                                    className="w-full py-2 px-3 bg-white dark:bg-slate-800 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                                >
+                                    <Merge size={14} /> Dubletten suchen & bereinigen
+                                </button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -454,6 +479,12 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                     </div>
                 </div>
             </div>
+            <DuplicateFinderModal
+                isOpen={showDuplicateFinder}
+                onClose={() => setShowDuplicateFinder(false)}
+                history={history}
+                onUpdateHistory={setHistory}
+            />
         </>
     );
 };
