@@ -24,9 +24,10 @@ import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem } from './utils/db';
+import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { NotesModal } from './components/NotesModal';
+import { FailedScansModal } from './components/FailedScansModal';
 import { QRScannerModal } from './components/QRScannerModal';
 import { ingestStreets } from './utils/streetIngestion';
 import { enrichAddress } from './utils/addressEnricher';
@@ -65,6 +66,8 @@ const App: React.FC = () => {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
+  const [failedScansCount, setFailedScansCount] = useState(0);
 
   // Config State
   const [lang, setLang] = useState<Language>('de');
@@ -208,8 +211,21 @@ const App: React.FC = () => {
       // Load notes count
       const notes = await getNotes();
       setNotesCount(notes.length);
+
+      // Load failed scans count
+      const failed = await getFailedScans();
+      setFailedScansCount(failed.length);
     };
     loadHistory();
+  }, []);
+
+  // Poll for failed scans count (simple way to keep it in sync when queue updates)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const failed = await getFailedScans();
+      setFailedScansCount(failed.length);
+    }, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleLoadMoreHistory = async () => {
@@ -895,9 +911,19 @@ const App: React.FC = () => {
 
       <QueueIndicator
         queue={queue}
+        failedCount={failedScansCount}
         lang={lang}
         onOpenQueue={() => setIsBatchUploadOpen(true)}
         onClearErrors={clearErrors}
+        onOpenFailedScans={() => setIsFailedScansOpen(true)}
+      />
+
+      <FailedScansModal
+        isOpen={isFailedScansOpen}
+        onClose={() => setIsFailedScansOpen(false)}
+        onRetry={(images, mode) => {
+          addJob(images, mode);
+        }}
       />
 
       <QRCodeModal

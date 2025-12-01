@@ -5,18 +5,20 @@ import { translations } from '../utils/translations';
 
 interface QueueIndicatorProps {
   queue: ScanJob[];
+  failedCount: number;
   lang: Language;
   onOpenQueue: () => void;
   onClearErrors: () => void;
+  onOpenFailedScans: () => void;
 }
 
-export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, lang, onOpenQueue, onClearErrors }) => {
+export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, failedCount, lang, onOpenQueue, onClearErrors, onOpenFailedScans }) => {
   const t = translations[lang];
   const pending = queue.filter(j => j.status === 'pending').length;
   const processing = queue.filter(j => j.status === 'processing').length;
   const errors = queue.filter(j => j.status === 'error').length;
 
-  if (queue.length === 0) return null;
+  if (queue.length === 0 && failedCount === 0) return null;
 
   return (
     <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 animate-in slide-in-from-right-4 fade-in">
@@ -32,6 +34,9 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, lang, onO
           {errors > 0 && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse"></div>
           )}
+          {failedCount > 0 && errors === 0 && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full border-2 border-white dark:border-slate-800"></div>
+          )}
         </div>
 
         <div className="flex-1">
@@ -42,6 +47,14 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, lang, onO
             {processing > 0 && <span>{t.processing} (1)</span>}
             {pending > 0 && <span>{t.waiting}: {pending}</span>}
             {errors > 0 && <span className="text-red-500 font-medium">{errors} {t.errors}</span>}
+            {failedCount > 0 && (
+              <span
+                onClick={(e) => { e.stopPropagation(); onOpenFailedScans(); }}
+                className="text-red-600 font-bold hover:underline cursor-pointer"
+              >
+                {failedCount} Fehlgeschlagen
+              </span>
+            )}
           </div>
         </div>
 

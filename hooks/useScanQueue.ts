@@ -5,6 +5,7 @@ import { Language } from '../types';
 import type { LLMConfig } from './useLLMConfig';
 
 import { resizeImage } from '../utils/imageUtils';
+import { addFailedScan } from '../utils/db';
 
 export const useScanQueue = (
   apiKey: string,
@@ -38,6 +39,8 @@ export const useScanQueue = (
     // Update status to processing
     setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'processing' } : j));
 
+    let rawImages: string[] = [];
+
     try {
       // Helper to convert File/String to Base64 (Resized)
       const getBase64 = async (input: string | File): Promise<string> => {
@@ -48,7 +51,8 @@ export const useScanQueue = (
 
       // Load images into memory ONLY NOW
       const images: ImageInput[] = [];
-      const rawImages: string[] = [];
+      // rawImages lifted to outer scope for error handling
+
 
       // Helper to strip data url prefix
       const toInput = (dataUrl: string): ImageInput => {
@@ -92,6 +96,17 @@ export const useScanQueue = (
       } else {
         // Mark as error, keep in queue so user sees it failed
         setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: error.message } : j));
+
+        // Save to Failed Scans DB
+        if (rawImages.length > 0) {
+          addFailedScan({
+            id: job.id,
+            timestamp: Date.now(),
+            images: rawImages,
+            error: error.message || "Unknown Error",
+            mode: job.mode || 'vision'
+          }).catch(e => console.error("Failed to save failed scan", e));
+        }
       }
     } finally {
       setIsProcessing(false);

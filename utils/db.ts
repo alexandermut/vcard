@@ -10,6 +10,14 @@ interface Street {
     city: string;
 }
 
+export interface FailedScan {
+    id: string;
+    timestamp: number;
+    images: string[]; // Base64 or Blob URLs
+    error: string;
+    mode: string;
+}
+
 interface VCardDB extends DBSchema {
     history: {
         key: string;
@@ -36,10 +44,15 @@ interface VCardDB extends DBSchema {
             'by-name': string;
         };
     };
+    failed_scans: {
+        key: string;
+        value: FailedScan;
+        indexes: { 'by-date': number };
+    };
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 6;
+const DB_VERSION = 7;
 const STORE_NAME = 'history';
 const STREETS_STORE = 'streets';
 const GOOGLE_STORE = 'google_contacts';
@@ -100,9 +113,16 @@ export const initDB = () => {
                     if (db.objectStoreNames.contains(GOOGLE_STORE)) {
                         db.deleteObjectStore(GOOGLE_STORE);
                     }
-                    const gStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
-                    // We don't need an index for now as we scan in memory for search
-                    // gStore.createIndex('by-name', 'names.0.displayName'); 
+                    const googleStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
+                    googleStore.createIndex('by-name', 'names.0.displayName');
+                }
+
+                // Version 7: Failed Scans
+                if (oldVersion < 7) {
+                    if (!db.objectStoreNames.contains('failed_scans')) {
+                        const failedStore = db.createObjectStore('failed_scans', { keyPath: 'id' });
+                        failedStore.createIndex('by-date', 'timestamp');
+                    }
                 }
             },
         });
@@ -480,28 +500,37 @@ export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
 export const migrateKeywords = async () => {
     const db = await initDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');
-    const store = tx.objectStore(STORE_NAME);
-    let cursor = await store.openCursor();
-    let count = 0;
+    let cursor = await tx.store.openCursor();
 
     while (cursor) {
         const item = cursor.value;
-        // Always regenerate keywords to ensure new fields are indexed
-        const newKeywords = generateKeywords(item);
-
-        // Only update if changed (simple length check or deep compare could be better, but overwriting is safe)
-        if (JSON.stringify(item.keywords) !== JSON.stringify(newKeywords)) {
-            item.keywords = newKeywords;
+        if (!item.keywords) {
+            item.keywords = generateKeywords(item);
             await cursor.update(item);
-            count++;
         }
         cursor = await cursor.continue();
     }
     await tx.done;
-    if (count > 0) {
-        console.log(`Added search keywords to ${count} items.`);
-    }
 };
+
+// --- Failed Scans Helpers ---
+
+export const addFailedScan = async (scan: FailedScan) => {
+    const db = await initDB();
+    await db.put('failed_scans', scan);
+};
+
+export const getFailedScans = async (): Promise<FailedScan[]> => {
+    const db = await initDB();
+    return db.getAllFromIndex('failed_scans', 'by-date');
+};
+
+export const deleteFailedScan = async (id: string) => {
+    const db = await initDB();
+    await db.delete('failed_scans', id);
+};
+
+
 
 export const countStreets = async (): Promise<number> => {
     const db = await initDB();

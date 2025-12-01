@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Check, AlertTriangle, ArrowLeft, ArrowRight, User, Building2, Phone, Mail, Globe, MapPin, Cake, StickyNote, Award, Search, ExternalLink, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Merge } from 'lucide-react';
 import { HistoryItem, VCardData } from '../types';
-import { findDuplicates, mergeContacts, DuplicateGroup } from '../utils/deduplicationUtils';
+import { mergeContacts, DuplicateGroup } from '../utils/deduplicationUtils';
 import { parseVCardString, generateVCardFromData } from '../utils/vcardUtils';
 import { toast } from 'sonner';
 import { addHistoryItem, deleteHistoryItem } from '../utils/db';
+import DedupWorker from '../workers/dedup.worker?worker';
 
 interface DuplicateFinderModalProps {
     isOpen: boolean;
@@ -61,13 +62,26 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         }
     }, [duplicates, currentGroupIndex, masterSide, history]);
 
-    const handleScan = async () => {
+    const handleScan = () => {
         setIsScanning(true);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const found = findDuplicates(history);
-        setDuplicates(found);
-        setIsScanning(false);
-        setScanComplete(true);
+
+        const worker = new DedupWorker();
+        worker.postMessage({ type: 'findDuplicates' });
+
+        worker.onmessage = (e) => {
+            const { type, groups, error } = e.data;
+            if (type === 'results') {
+                setDuplicates(groups);
+                setIsScanning(false);
+                setScanComplete(true);
+                worker.terminate();
+            } else if (type === 'error') {
+                console.error("Dedup Worker Error:", error);
+                toast.error("Fehler bei der Dublettensuche.");
+                setIsScanning(false);
+                worker.terminate();
+            }
+        };
     };
 
     const handleMerge = async (group: DuplicateGroup) => {
