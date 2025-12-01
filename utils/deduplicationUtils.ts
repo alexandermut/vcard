@@ -409,65 +409,81 @@ export const findDuplicates = (contacts: HistoryItem[]): DuplicateGroup[] => {
 
     // 3. Map by Name (Medium Confidence)
     // Only if not already matched
+    // 3. Map by Name (Medium Confidence)
     const nameMap = new Map<string, string[]>();
     contacts.forEach(c => {
         if (processedIds.has(c.id)) return;
         const name = normalizeName(c.name);
         if (!name) return;
-        if (isCleanGroup) {
-            addGroup(ids, 'medium', `Gleicher Name (${name})`);
-        } else {
-            // Optional: We could add as 'low' confidence or split into subgroups
-            // For safety, let's skip for now or mark as 'low'
-            // addGroup(ids, 'low', `Gleicher Name (${name}), aber unterschiedliche Details`);
-        }
-    }
+        if (!nameMap.has(name)) nameMap.set(name, []);
+        nameMap.get(name)?.push(c.id);
     });
 
-// 4. Fuzzy & Phonetic Matching (Low/Medium Confidence)
-// This is O(n^2), so we must be careful. Limit to reasonable dataset size or optimize.
-// For < 1000 contacts it's fine. For 10k it might be slow.
-// Optimization: Block by first letter or phonetic code.
+    nameMap.forEach((ids, name) => {
+        if (ids.length > 1) {
+            // Check for conflicts
+            const groupContacts = contacts.filter(c => ids.includes(c.id));
+            let isClean = true;
+            for (let i = 0; i < groupContacts.length; i++) {
+                for (let j = i + 1; j < groupContacts.length; j++) {
+                    if (areDifferentPeople(groupContacts[i], groupContacts[j])) {
+                        isClean = false;
+                        break;
+                    }
+                }
+                if (!isClean) break;
+            }
 
-const phoneticMap = new Map<string, string[]>();
-contacts.forEach(c => {
-    if (processedIds.has(c.id)) return;
-    const name = normalizeName(c.name);
-    if (!name || name.length < 3) return;
+            if (isClean) {
+                addGroup(ids, 'medium', `Gleicher Name (${name})`);
+            }
+        }
+    });
 
-    const code = colognePhonetics(name);
-    if (!phoneticMap.has(code)) phoneticMap.set(code, []);
-    phoneticMap.get(code)?.push(c.id);
-});
+    // 4. Fuzzy & Phonetic Matching (Low/Medium Confidence)
+    // This is O(n^2), so we must be careful. Limit to reasonable dataset size or optimize.
+    // For < 1000 contacts it's fine. For 10k it might be slow.
+    // Optimization: Block by first letter or phonetic code.
 
-phoneticMap.forEach((ids, code) => {
-    if (ids.length > 1) {
-        // We have a phonetic match group.
-        // Now check Levenshtein to be sure it's not completely different
-        // e.g. "Maier" vs "Meyer" -> Phonetic match, Levenshtein low -> Good.
+    const phoneticMap = new Map<string, string[]>();
+    contacts.forEach(c => {
+        if (processedIds.has(c.id)) return;
+        const name = normalizeName(c.name);
+        if (!name || name.length < 3) return;
 
-        const groupContacts = contacts.filter(c => ids.includes(c.id));
+        const code = colognePhonetics(name);
+        if (!phoneticMap.has(code)) phoneticMap.set(code, []);
+        phoneticMap.get(code)?.push(c.id);
+    });
 
-        // Compare pairs
-        for (let i = 0; i < groupContacts.length; i++) {
-            for (let j = i + 1; j < groupContacts.length; j++) {
-                const c1 = groupContacts[i];
-                const c2 = groupContacts[j];
+    phoneticMap.forEach((ids, code) => {
+        if (ids.length > 1) {
+            // We have a phonetic match group.
+            // Now check Levenshtein to be sure it's not completely different
+            // e.g. "Maier" vs "Meyer" -> Phonetic match, Levenshtein low -> Good.
 
-                if (processedIds.has(c1.id) && processedIds.has(c2.id)) continue;
-                if (areDifferentPeople(c1, c2)) continue;
+            const groupContacts = contacts.filter(c => ids.includes(c.id));
 
-                const dist = levenshteinDistance(normalizeName(c1.name), normalizeName(c2.name));
-                const maxLen = Math.max(c1.name.length, c2.name.length);
-                const similarity = 1 - (dist / maxLen);
+            // Compare pairs
+            for (let i = 0; i < groupContacts.length; i++) {
+                for (let j = i + 1; j < groupContacts.length; j++) {
+                    const c1 = groupContacts[i];
+                    const c2 = groupContacts[j];
 
-                if (similarity > 0.8) { // > 80% similarity
-                    addGroup([c1.id, c2.id], 'medium', `Ähnlicher Name (${c1.name} / ${c2.name})`);
+                    if (processedIds.has(c1.id) && processedIds.has(c2.id)) continue;
+                    if (areDifferentPeople(c1, c2)) continue;
+
+                    const dist = levenshteinDistance(normalizeName(c1.name), normalizeName(c2.name));
+                    const maxLen = Math.max(c1.name.length, c2.name.length);
+                    const similarity = 1 - (dist / maxLen);
+
+                    if (similarity > 0.8) { // > 80% similarity
+                        addGroup([c1.id, c2.id], 'medium', `Ähnlicher Name (${c1.name} / ${c2.name})`);
+                    }
                 }
             }
         }
-    }
-});
+    });
 
-return groups;
+    return groups;
 };

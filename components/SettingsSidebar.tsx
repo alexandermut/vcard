@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download, Upload } from 'lucide-react';
+import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download, Upload, Users, Merge } from 'lucide-react';
 import { GoogleContactsModal } from './GoogleContactsModal';
+import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
-import { Language } from '../types';
+import { Language, HistoryItem } from '../types';
 import { translations } from '../utils/translations';
 
 interface SettingsSidebarProps {
@@ -42,12 +43,6 @@ interface SettingsSidebarProps {
     history: HistoryItem[];
     setHistory: (history: HistoryItem[]) => void;
     clearHistory: () => void;
-    exportToCSV: () => void;
-    exportToJSON: () => void;
-    exportToVCard: () => void;
-    importFromCSV: (file: File) => void;
-    importFromJSON: (file: File) => void;
-    importFromVCard: (file: File) => void;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
@@ -55,10 +50,11 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip, history, setHistory, clearHistory, exportToCSV, exportToJSON, exportToVCard, importFromCSV, importFromJSON, importFromVCard
+    onBackupAll, onRestoreZip, history, setHistory, clearHistory
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+    const [showDuplicateFinder, setShowDuplicateFinder] = useState(false);
     const { isAuthenticated } = useGoogleContactsAuth();
     const t = translations[lang];
 

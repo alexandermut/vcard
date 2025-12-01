@@ -854,6 +854,9 @@ const App: React.FC = () => {
         onImportVCard={handleImportVCard}
         onBackupAll={handleBackupAll}
         onRestoreZip={handleRestoreZip}
+        history={history}
+        setHistory={setHistory}
+        clearHistory={clearHistory}
       />
 
       <BatchUploadModal
