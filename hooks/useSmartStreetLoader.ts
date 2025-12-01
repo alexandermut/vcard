@@ -11,7 +11,7 @@ export const useSmartStreetLoader = ({
     enabled,
     status,
     onLoad,
-    minFreeSpaceMB = 500
+    minFreeSpaceMB = 50
 }: SmartLoaderOptions) => {
     const hasChecked = useRef(false);
 
@@ -45,9 +45,10 @@ export const useSmartStreetLoader = ({
                         const freeSpaceMB = freeSpaceBytes / (1024 * 1024);
 
                         if (freeSpaceMB < minFreeSpaceMB) {
-                            console.log(`[SmartLoader] Low storage (${Math.round(freeSpaceMB)}MB free). Skipping auto-load.`);
+                            console.warn(`[SmartLoader] Low storage (${Math.round(freeSpaceMB)}MB free). Skipping auto-load.`);
                             return;
                         }
+                        console.log(`[SmartLoader] Storage check passed (${Math.round(freeSpaceMB)}MB free).`);
                     }
                 } catch (e) {
                     console.warn("[SmartLoader] Storage estimate failed", e);
