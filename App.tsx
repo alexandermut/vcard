@@ -39,6 +39,7 @@ import {
 import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
 import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
+import { RegexDebugger } from './components/RegexDebugger';
 
 
 
@@ -1296,6 +1297,7 @@ const App: React.FC = () => {
       </footer>
       <ReloadPrompt />
 
+      <RegexDebugger />
     </div>
   );
 };

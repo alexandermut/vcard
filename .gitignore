@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Testfiles (do not commit)
+src/data/realContacts.js

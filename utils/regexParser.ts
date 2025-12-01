@@ -2,6 +2,9 @@ import { CITIES_PATTERN } from './cities';
 import { VCardData } from '../types';
 import { parseGermanAddress } from './addressParser';
 import { findNumbers } from 'libphonenumber-js';
+import { getMobileRegexPattern } from './mobilePrefixes';
+import { germanLandlinePrefixes } from './landlinePrefixes';
+import { landlineMap, plzMap } from './landlineData';
 
 // --- Types ---
 
@@ -75,7 +78,7 @@ const consumeMeta = (lines: Line[]) => {
 };
 
 const consumeEmails = (lines: Line[], data: ParserData) => {
-  const re_email = /([a-zA-Z0-9_.+-]+)@([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/gi;
+  const re_email = /([a-zA-Z0-9_.+-]+)(?:@|\s*[\(\[]\s*at\s*[\)\]]\s*)([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/gi;
   const genericProviders = [
     'gmail.com', 'googlemail.com', 'gmx.de', 'gmx.net', 'web.de',
     'yahoo.com', 'yahoo.de', 'hotmail.com', 'outlook.com', 'outlook.de',
@@ -88,10 +91,12 @@ const consumeEmails = (lines: Line[], data: ParserData) => {
     const matches = line.clean.match(re_email);
     if (matches) {
       matches.forEach(email => {
-        data.email.push({ type: 'WORK,INTERNET', value: email });
+        // Normalize (at) -> @
+        const cleanEmail = email.replace(/\s*[\(\[]\s*at\s*[\)\]]\s*/i, '@');
+        data.email.push({ type: 'WORK,INTERNET', value: cleanEmail });
 
         // Also extract web from domain if not generic
-        const domain = email.split('@')[1];
+        const domain = cleanEmail.split('@')[1];
         if (!genericProviders.includes(domain.toLowerCase())) {
           // Only add if we don't have a URL yet or it's a new one
           const url = `www.${domain}`;
@@ -153,6 +158,11 @@ const consumePhones = (lines: Line[], data: ParserData) => {
     // We use 'DE' as default country, but it handles international numbers (+...) automatically
     const foundNumbers = findNumbers(line.clean, { defaultCountry: 'DE', v2: true });
 
+    // Filter out Register numbers (HRA, HRB, Amtsgericht)
+    if (/HR[AB]\s*\d+|Amtsgericht|Registergericht/i.test(line.clean)) {
+      return;
+    }
+
     if (foundNumbers && foundNumbers.length > 0) {
       let hasValidNumber = false;
 
@@ -174,11 +184,63 @@ const consumePhones = (lines: Line[], data: ParserData) => {
         else if (lowerLine.includes('mobil') || lowerLine.includes('cell') || lowerLine.includes('handy')) type = 'CELL';
         else if (lowerLine.includes('home') || lowerLine.includes('privat')) type = 'HOME';
 
-        // If it looks like a mobile number (starts with +4915, +4916, +4917 or 015, 016, 017)
-        // Note: res.number is E.164, so it starts with +
-        if (/^\+491(5|6|7)/.test(number.number)) {
-          if (type === 'WORK,VOICE') type = 'CELL'; // Only override if generic
+        // Check for mobile number using the provided list
+        // Normalize number for check: Remove +49, replace with 0
+        let normalizedForCheck: string = number.number; // e.g. +49171...
+        if (normalizedForCheck.startsWith('+49')) {
+          normalizedForCheck = '0' + normalizedForCheck.substring(3);
         }
+
+        const mobilePattern = new RegExp(`^${getMobileRegexPattern()}`);
+
+        // 1. Check Mobile
+        if (mobilePattern.test(normalizedForCheck)) {
+          type = 'CELL';
+        }
+        // 2. Check Landline
+        else if (germanLandlinePrefixes.some(prefix => normalizedForCheck.startsWith(prefix))) {
+          // Sherlock Holmes Logic: Cross-check with ZIP/City in text
+          // 1. Get City from Prefix
+          const prefix = germanLandlinePrefixes.find(p => normalizedForCheck.startsWith(p));
+          const cityFromPrefix = prefix ? landlineMap[prefix as keyof typeof landlineMap] : null;
+
+          if (cityFromPrefix) {
+            // 2. Find ZIPs in text
+            const zipMatches = lines.flatMap(l => l.clean.match(/\b\d{5}\b/g) || []);
+
+            // 3. Check if any ZIP maps to the same City
+            const isConfirmed = zipMatches.some(zip => {
+              const cityFromZip = plzMap[zip as keyof typeof plzMap];
+              // Fuzzy check: does one contain the other? (e.g. "Hamburg" vs "Hamburg-Mitte")
+              return cityFromZip && (cityFromZip.includes(cityFromPrefix) || cityFromPrefix.includes(cityFromZip));
+            });
+
+            if (isConfirmed) {
+              type = 'TEL'; // High confidence
+            } else {
+              type = 'WORK,VOICE'; // Unconfirmed fallback
+            }
+          } else {
+            type = 'WORK,VOICE';
+          }
+        }
+        // 3. Fallback: Starts with 0 but not in any list -> Assume Landline (rare prefix)
+        else if (normalizedForCheck.startsWith('0')) {
+          console.warn(`Unknown phone prefix for number: ${normalizedForCheck}. Assuming Landline.`);
+          type = 'WORK,VOICE';
+        }
+        // 4. Fallback: No valid number format (shouldn't happen with libphonenumber E.164) -> Ignore or keep as is?
+        // User said: "Check 4 (Keine Nummer): Wenn das Feld leer ist oder nur Müll enthält -> """
+        // Since we are iterating over foundNumbers, we have a number.
+        // If it doesn't start with 0 (after +49 replacement), it might be international or special.
+        // We keep the default type (WORK,VOICE) or whatever was inferred from context.
+
+        // Context override: If line said "Mobil" but it's clearly a landline prefix, we trust the prefix?
+        // Or trust the label?
+        // User logic implies strict classification based on prefixes.
+        // "Check 1... Check 2..." implies priority.
+        // So if it matches Landline list, it IS Landline, even if label said "Mobil" (which would be a typo in the contact).
+        // Let's stick to the prefix classification as primary truth for type assignment.
 
         // Avoid duplicates
         // We store the formatted E.164 number or the national format?
@@ -310,13 +372,13 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
       // If the line is JUST the job title, consume it. 
       // If it contains a name (e.g. "Geschäftsführer: Max Mustermann"), we extract the title but leave the name for the Name Extractor.
       if (line.clean.length < jobMatch[0].length + 10) {
-        data.title = line.clean;
+        data.title = line.clean.replace(/:$/, '');
         line.isConsumed = true;
         line.type = 'JOB';
       } else {
         // It's likely "Title: Name". We'll handle this in Name extraction or split it here.
         // Let's just save the title for now.
-        data.title = jobMatch[0];
+        data.title = jobMatch[0].replace(/:$/, '');
         // Don't consume yet, let Name extractor handle the rest
       }
     }
