@@ -58,6 +58,7 @@ This file tracks the current development status and planned features.
 ### Legal
 - [x] Imprint (DDG compliant)
 - [x] Privacy Policy (Google Cloud & AI specific)
+- [x] **Failed Scans Gallery:** View and retry failed scans.
 
 ---
 
@@ -70,7 +71,7 @@ This file tracks the current development status and planned features.
 - [ ] **Photo Sync:** High-res photo upload & sync.
 
 ### 2. Performance & Stability
-- [ ] **Virtualization:** Implement `react-window` for History and Duplicate lists (>1000 contacts).
+- [x] **Virtualization:** Implement `react-virtuoso` for History and Notes lists (>1000 contacts).
 - [ ] **Error Handling:** Replace `alert()` with Toast notifications (Sonner/Hot-Toast).
 - [ ] **Lazy Loading:** Optimize `cities.ts` and large dependencies.
 
@@ -83,13 +84,13 @@ This file tracks the current development status and planned features.
 ## � Phase 4: Scaling & Performance (20k+ Contacts)
 **Goal:** Ensure smooth operation with large datasets (>20,000 contacts).
 
-- [ ] **Virtualization (React Virtuoso)**
-    - [ ] Implement for `HistorySidebar` (replace simple map)
-    - [ ] Implement for `NotesSidebar`
+- [x] **Virtualization (React Virtuoso)**
+    - [x] Implement for `HistorySidebar` (replace simple map)
+    - [x] Implement for `NotesSidebar`
     - [ ] Implement for `DuplicateFinderModal`
-- [ ] **Web Workers (Off-Main-Thread)**
-    - [ ] **Search Worker:** Move fuzzy search logic to a dedicated worker.
-    - [ ] **Deduplication Worker:** Run O(n²) duplicate detection in background.
+- [x] **Web Workers (Off-Main-Thread)**
+    - [x] **Search Worker:** Move fuzzy search logic to a dedicated worker.
+    - [x] **Deduplication Worker:** Run O(n²) duplicate detection in background.
     - [ ] **Import/Export Worker:** Parse vCards and generate ZIPs without freezing UI.
 - [ ] **Database Optimization**
     - [ ] **Blob Storage:** Enforce `Blob` storage for images (migrate from Base64).
@@ -107,15 +108,24 @@ This file tracks the current development status and planned features.
 - [ ] **Outlook Add-in:** Direct integration into Microsoft 365.
 - [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.
 
-### Features
-- [ ] **Team Mode:** Sharing scanned contacts within a team (encrypted).
-- [ ] **Digital Wallet:** Export as `.pkpass` for Apple Wallet & Google Wallet.
-- [ ] **NFC Writer:** Write vCards to NFC tags (via WebNFC API).
-- [ ] **Map View:** Visualize all contacts on an interactive map.
-- [ ] **Calendar Export:** Export birthdays as `.ics` calendar subscription.
-- [ ] **Label Printing:** PDF export for address labels.
+### 🧠 AI & Intelligence
+- [ ] **Follow-up Assistant:** AI drafts personalized follow-up emails based on scan context & notes.
+- [ ] **Relationship Graph:** Visualize connections between contacts (Who knows who?).
+- [ ] **Smart Grouping:** Auto-categorize contacts by industry, location, or role.
+- [ ] **Voice Memos:** Record audio notes for contacts, auto-transcribed by AI.
 
-### Research
-- [ ] **Offline-OCR:** Tesseract.js fallback when offline.
-- [ ] **AI Grounding:** Real web search to complete missing data.
-- [ ] **Voice-to-Contact:** Dictate business cards.
+### 🤝 Networking & Events
+- [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
+- [ ] **Digital Business Card:** Public profile page (QR/NFC) for the user to share their own info.
+- [ ] **Team Sharing:** Share specific contact lists or folders with colleagues (E2E Encrypted).
+
+### 🔒 Security & Privacy
+- [ ] **Local Encryption:** Encrypt IndexedDB at rest with a user password/key.
+- [ ] **Biometric Lock:** Require FaceID/TouchID to open the app.
+- [ ] **Audit Log:** Track who accessed/exported which contacts.
+
+### 🛠️ Integrations & Automation
+- [ ] **Zapier / Make Webhooks:** Trigger workflows when a contact is added.
+- [ ] **Email Signature Parser:** Paste an email signature to create a contact instantly.
+- [ ] **Calendar Integration:** Show "Last Met" date and upcoming birthdays in dashboard.
+
