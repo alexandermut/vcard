@@ -12,6 +12,7 @@ import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
 import { DuplicateFinderModal } from './DuplicateFinderModal';
 import { toast } from 'sonner';
+import { Virtuoso } from 'react-virtuoso';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -224,7 +225,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
           {history.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
               <History size={48} className="mb-4 opacity-20" />
@@ -232,12 +233,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <p className="text-xs mt-2">{t.noHistoryHint}</p>
             </div>
           ) : (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-2 gap-3' : 'space-y-3'}>
-              {history.map((item) => (
+            <Virtuoso
+              style={{ height: '100%' }}
+              data={history}
+              itemContent={(index, item) => (
                 <div
                   key={item.id}
                   onClick={() => { onLoad(item); onClose(); }}
-                  className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer relative overflow-hidden ${viewMode === 'grid' ? 'flex flex-col h-40' : 'p-3'}`}
+                  className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer relative overflow-hidden mb-3 ${viewMode === 'grid' ? 'flex flex-col h-40' : 'p-3'}`}
                 >
                   {viewMode === 'grid' ? (
                     // GRID ITEM
@@ -334,8 +337,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     </>
                   )}
                 </div>
-              ))}
-            </div>
+              )}
+            />
           )}
         </div>
 

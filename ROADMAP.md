@@ -80,7 +80,26 @@ This file tracks the current development status and planned features.
 
 ---
 
-## 🔮 Future Vision (Backlog)
+## � Phase 4: Scaling & Performance (20k+ Contacts)
+**Goal:** Ensure smooth operation with large datasets (>20,000 contacts).
+
+- [ ] **Virtualization (React Virtuoso)**
+    - [ ] Implement for `HistorySidebar` (replace simple map)
+    - [ ] Implement for `NotesSidebar`
+    - [ ] Implement for `DuplicateFinderModal`
+- [ ] **Web Workers (Off-Main-Thread)**
+    - [ ] **Search Worker:** Move fuzzy search logic to a dedicated worker.
+    - [ ] **Deduplication Worker:** Run O(n²) duplicate detection in background.
+    - [ ] **Import/Export Worker:** Parse vCards and generate ZIPs without freezing UI.
+- [ ] **Database Optimization**
+    - [ ] **Blob Storage:** Enforce `Blob` storage for images (migrate from Base64).
+    - [ ] **Direct DB Access:** Refactor Duplicate Finder to query IDB directly (avoid passing full history prop).
+    - [ ] **Pagination:** Ensure `App.tsx` only loads visible subset of history.
+- [ ] **Google Sync Optimization**
+    - [ ] Implement Batch API for Create/Update/Delete.
+    - [ ] Implement Incremental Sync (Sync Tokens).
+
+## 🔮 Future / Ideas
 
 ### Integrations
 - [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud).
