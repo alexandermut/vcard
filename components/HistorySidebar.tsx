@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { List, LayoutGrid, Search, History, X, Download, Trash2, Image as ImageIcon, Upload, Contact, FileText } from 'lucide-react';
+import { List, LayoutGrid, Search, History, X, Download, Trash2, Image as ImageIcon, Upload, Contact, FileText, Merge, Users } from 'lucide-react';
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
 import { translations } from '../utils/translations';
@@ -10,6 +10,7 @@ import { combineImages } from '../utils/imageUtils';
 import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
+import { DuplicateFinderModal } from './DuplicateFinderModal';
 
 interface HistorySidebarProps {
   isOpen: boolean;
@@ -23,14 +24,16 @@ interface HistorySidebarProps {
   onSearch: (query: string) => void;
   onRestore: (file: File) => Promise<void>;
   lang: Language;
+  onUpdateHistory: (history: HistoryItem[]) => void;
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
-  isOpen, onClose, history, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang
+  isOpen, onClose, history, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
 }) => {
   const t = translations[lang];
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showDuplicateFinder, setShowDuplicateFinder] = useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { token } = useGoogleContactsAuth();
 
@@ -161,6 +164,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
   return (
     <>
+      <DuplicateFinderModal
+        isOpen={showDuplicateFinder}
+        onClose={() => setShowDuplicateFinder(false)}
+        history={history}
+        onUpdateHistory={onUpdateHistory}
+      />
+
       {isOpen && (
         <div
           className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
@@ -331,6 +341,15 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         {/* Footer Actions */}
         {history.length > 0 && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
+
+            {/* Duplicate Finder Button */}
+            <button
+              onClick={() => setShowDuplicateFinder(true)}
+              className="w-full py-2 px-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <Merge size={14} /> Dubletten suchen & bereinigen
+            </button>
+
             <div className="grid grid-cols-4 gap-2">
               <button
                 onClick={handleExportAllVCF}
@@ -362,7 +381,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               </button>
             </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2">
               <input
                 type="file"
                 ref={fileInputRef}
@@ -372,18 +391,20 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               />
               <button
                 onClick={handleRestoreClick}
-                className="w-full flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors mb-2"
+                className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors"
+                title={t.restoreBackup || "Restore Backup"}
               >
                 <Upload size={14} />
-                {t.restoreBackup || "Restore Backup"}
+                <span className="truncate">{t.restoreBackup || "Restore"}</span>
               </button>
 
               <button
                 onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
-                className="w-full flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
+                className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
+                title={t.clearHistory}
               >
                 <Trash2 size={14} />
-                {t.clearHistory}
+                <span className="truncate">{t.clearHistory}</span>
               </button>
             </div>
           </div>

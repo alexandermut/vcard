@@ -854,8 +854,7 @@ const App: React.FC = () => {
         onImportVCard={handleImportVCard}
         onBackupAll={handleBackupAll}
         onRestoreZip={handleRestoreZip}
-        history={history}
-        setHistory={setHistory}
+
         clearHistory={clearHistory}
       />
 
@@ -929,6 +928,7 @@ const App: React.FC = () => {
         onSearch={handleSearchHistory}
         onRestore={handleRestoreBackup}
         lang={lang}
+        onUpdateHistory={setHistory}
       />
 
       <NotesSidebar
