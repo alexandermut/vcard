@@ -4,6 +4,7 @@ import { parseVCardString } from './vcardUtils';
 export const generateCSV = (history: HistoryItem[]): string => {
   // Outlook / Google Contacts compatible headers
   const headers = [
+    'ID',
     'First Name',
     'Middle Name',
     'Last Name',
@@ -27,7 +28,8 @@ export const generateCSV = (history: HistoryItem[]): string => {
     'LinkedIn URL',
     'Xing URL',
     'Notes',
-    'Birthday'
+    'Birthday',
+    'Image Files'
   ];
 
   const escapeCsv = (str: string | undefined | null) => {
@@ -94,7 +96,17 @@ export const generateCSV = (history: HistoryItem[]): string => {
       !u.value.toLowerCase().includes('facebook')
     )?.value;
 
+    // --- Image Filenames ---
+    let imageFiles = '';
+    if (item.images && item.images.length > 0) {
+      imageFiles = item.images.map((_, i) => {
+        const suffix = i === 0 ? 'front' : i === 1 ? 'back' : `img${i + 1}`;
+        return `${item.id}_${suffix}.jpg`;
+      }).join(';');
+    }
+
     return [
+      escapeCsv(item.id),
       escapeCsv(firstName),
       escapeCsv(middleName),
       escapeCsv(lastName),
@@ -118,7 +130,8 @@ export const generateCSV = (history: HistoryItem[]): string => {
       escapeCsv(linkedIn),
       escapeCsv(xing),
       escapeCsv(data.note),
-      escapeCsv(data.bday)
+      escapeCsv(data.bday),
+      escapeCsv(imageFiles)
     ].join(',');
   });
 

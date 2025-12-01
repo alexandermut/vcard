@@ -9,8 +9,8 @@ export const generateBackupZip = async (history: HistoryItem[]): Promise<Blob> =
     const zip = new JSZip();
     const timestamp = getTimestamp();
 
-    // 1. Generate JSON Backup (Complete Data)
-    const jsonContent = await generateJSON(history);
+    // 1. Generate JSON Backup (Lightweight - No Base64 Images)
+    const jsonContent = await generateJSON(history, true); // excludeImages = true
     zip.file(`kontakte_backup_${timestamp}.json`, jsonContent);
 
     // 2. Generate CSV Export (Excel/Outlook)
@@ -21,15 +21,11 @@ export const generateBackupZip = async (history: HistoryItem[]): Promise<Blob> =
     const vcardContent = history.map(item => item.vcard).join('\n');
     zip.file(`kontakte_all_${timestamp}.vcf`, vcardContent);
 
-    // 4. Export Images
+    // 4. Export Images (ID-based naming)
     const imgFolder = zip.folder("images");
     if (imgFolder) {
         history.forEach(item => {
             if (item.images && item.images.length > 0) {
-                // Parse vCard to get a nice filename
-                const parsed = parseVCardString(item.vcard);
-                const baseName = generateContactFilename(parsed.data);
-
                 item.images.forEach((img, index) => {
                     try {
                         let blob: Blob | null = null;
@@ -40,10 +36,11 @@ export const generateBackupZip = async (history: HistoryItem[]): Promise<Blob> =
                         }
 
                         if (blob) {
-                            const suffix = index === 0 ? 'Front' : index === 1 ? 'Back' : `Img${index + 1}`;
+                            const suffix = index === 0 ? 'front' : index === 1 ? 'back' : `img${index + 1}`;
                             // Assume JPEG for now as most scans are
                             const ext = blob.type === 'image/png' ? 'png' : 'jpg';
-                            imgFolder.file(`${baseName}_${suffix}.${ext}`, blob);
+                            // Use ID for robust matching
+                            imgFolder.file(`${item.id}_${suffix}.${ext}`, blob);
                         }
                     } catch (e) {
                         console.warn(`Failed to export image for ${item.name}`, e);
@@ -67,7 +64,71 @@ export const restoreBackupZip = async (file: File): Promise<number> => {
 
         if (jsonFile) {
             const content = await jsonFile.async('string');
-            return await restoreJSON(content);
+            const data = JSON.parse(content);
+
+            // We need to manually handle the restore here to link images
+            // We can't use restoreJSON directly because it expects Base64 in the JSON
+            // So we iterate and reconstruct the HistoryItems
+
+            if (!data.contacts || !Array.isArray(data.contacts)) {
+                // Try legacy restore if format is old
+                return await restoreJSON(content);
+            }
+
+            const { addHistoryItem } = await import('./db'); // Dynamic import to avoid circular deps if any
+            let count = 0;
+
+            for (const contact of data.contacts) {
+                if (!contact.rawVCard || !contact.timestamp) continue;
+
+                let images: Blob[] = [];
+
+                // 1. Try to load images from Base64 (Legacy Backup)
+                if (contact.images && contact.images.length > 0) {
+                    // Convert base64 strings to Blobs
+                    images = contact.images.map((b64: string) => base64ToBlob(b64));
+                }
+
+                // 2. Try to load images from ZIP folder (New ID-based Backup)
+                if (contact.imageRefs && Array.isArray(contact.imageRefs)) {
+                    const zipImages = await Promise.all(contact.imageRefs.map(async (ref: string) => {
+                        // Try exact match first
+                        let imgFile = loadedZip.file(`images/${ref}`);
+
+                        // If not found, try to find by ID prefix (robustness)
+                        if (!imgFile) {
+                            const id = contact.id;
+                            // Look for files starting with ID in images/
+                            const match = Object.values(loadedZip.files).find(f => f.name.includes(`images/${id}_`));
+                            if (match) imgFile = match;
+                        }
+
+                        if (imgFile) {
+                            return await imgFile.async('blob');
+                        }
+                        return null;
+                    }));
+
+                    const foundImages = zipImages.filter(i => i !== null) as Blob[];
+                    if (foundImages.length > 0) {
+                        images = foundImages;
+                    }
+                }
+
+                const item: HistoryItem = {
+                    id: contact.id || crypto.randomUUID(),
+                    timestamp: contact.timestamp,
+                    name: contact.name || 'Unknown',
+                    org: contact.organization,
+                    vcard: contact.rawVCard,
+                    images: images,
+                    keywords: []
+                };
+
+                await addHistoryItem(item);
+                count++;
+            }
+            return count;
         }
 
         // Fallback: Check for vCard file

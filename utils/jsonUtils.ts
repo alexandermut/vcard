@@ -3,33 +3,40 @@ import { parseVCardString } from './vcardUtils';
 import { blobToBase64 } from './imageUtils';
 import { addHistoryItem } from './db';
 
-export const generateJSON = async (history: HistoryItem[]): Promise<string> => {
+export const generateJSON = async (history: HistoryItem[], excludeImages: boolean = false): Promise<string> => {
     const contacts = await Promise.all(history.map(async (item) => {
         const parsed = parseVCardString(item.vcard);
 
-        // Convert images to Base64 for export
+        // Convert images to Base64 for export (only if not excluded)
         let imagesBase64: string[] = [];
+        let imageRefs: string[] = [];
+
         if (item.images && item.images.length > 0) {
-            imagesBase64 = await Promise.all(item.images.map(async (img: any) => {
-                if (img instanceof Blob) {
-                    return await blobToBase64(img);
-                }
-                if (typeof img === 'string' && img.startsWith('blob:')) {
-                    // If it's a blob URL, we can't easily get the blob back synchronously without fetching
-                    // But in our app, item.images in memory are ObjectURLs (strings) or Blobs?
-                    // In getHistoryPaged, we convert Blob -> ObjectURL.
-                    // So here 'img' is likely a blob: URL.
-                    try {
-                        const res = await fetch(img);
-                        const blob = await res.blob();
-                        return await blobToBase64(blob);
-                    } catch (e) {
-                        console.error("Failed to fetch blob for export", e);
-                        return null;
+            if (excludeImages) {
+                // Just generate refs, don't convert to base64
+                imageRefs = item.images.map((_, index) => {
+                    const suffix = index === 0 ? 'front' : index === 1 ? 'back' : `img${index + 1}`;
+                    // Assume jpg for now, zipUtils will handle the actual file extension matching
+                    return `${item.id}_${suffix}.jpg`;
+                });
+            } else {
+                imagesBase64 = await Promise.all(item.images.map(async (img: any) => {
+                    if (img instanceof Blob) {
+                        return await blobToBase64(img);
                     }
-                }
-                return img; // Already base64 or unknown
-            }));
+                    if (typeof img === 'string' && img.startsWith('blob:')) {
+                        try {
+                            const res = await fetch(img);
+                            const blob = await res.blob();
+                            return await blobToBase64(blob);
+                        } catch (e) {
+                            console.error("Failed to fetch blob for export", e);
+                            return null;
+                        }
+                    }
+                    return img; // Already base64 or unknown
+                }));
+            }
         }
 
         return {
@@ -38,7 +45,8 @@ export const generateJSON = async (history: HistoryItem[]): Promise<string> => {
             organization: item.org,
             vcardData: parsed.data,
             rawVCard: item.vcard,
-            images: imagesBase64.filter(i => i), // Filter nulls
+            images: excludeImages ? [] : imagesBase64.filter(i => i), // Filter nulls
+            imageRefs: excludeImages ? imageRefs : undefined,
             source: item.images && item.images.length > 0 ? 'scan' : 'manual',
             timestamp: item.timestamp,
             createdAt: new Date(item.timestamp).toISOString()
@@ -46,7 +54,7 @@ export const generateJSON = async (history: HistoryItem[]): Promise<string> => {
     }));
 
     const exportData = {
-        version: "1.0",
+        version: "1.1", // Bump version for ID-based support
         exportedAt: new Date().toISOString(),
         contacts: contacts
     };
