@@ -37,6 +37,10 @@ export interface HistoryItem {
   timestamp: number;
   name: string;
   org?: string;
+  title?: string;
+  role?: string;
+  note?: string;
+  bday?: string;
   vcard: string;
   images?: string[]; // Array of Base64 strings (Front/Back)
   keywords?: string[]; // For search indexing
