@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
-import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD } from './utils/vcardUtils';
+import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD, getTimestamp } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
 import { useScanQueue } from './hooks/useScanQueue';
 import { translations } from './utils/translations';
-import { generateCSV, downloadCSV } from './utils/csvUtils';
+import { generateCSV, downloadCSV, parseCSV, csvToVCard } from './utils/csvUtils';
 import { generateJSON, downloadJSON, restoreJSON } from './utils/jsonUtils';
+import { generateBackupZip, restoreBackupZip, downloadZip } from './utils/zipUtils';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SettingsSidebar } from './components/SettingsSidebar';
 import { BatchUploadModal } from './components/BatchUploadModal';
@@ -642,7 +643,7 @@ const App: React.FC = () => {
 
   const isAIReady = !!apiKey || hasSystemKey;
 
-  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number; status?: string } | null>(null);
 
   const handleImportGoogleContacts = async (vcards: string[]) => {
     if (vcards.length === 0) return;
@@ -694,6 +695,106 @@ const App: React.FC = () => {
     alert(`${vcards.length} Kontakte erfolgreich importiert!`);
   };
 
+  // --- EXPORT HANDLERS ---
+  const handleExportCSV = async () => {
+    const items = await getHistory(); // Get all items
+    const csv = generateCSV(items);
+    downloadCSV(csv, `kontakte_export_${getTimestamp()}.csv`);
+  };
+
+  const handleExportJSON = async () => {
+    const items = await getHistory();
+    const json = await generateJSON(items);
+    downloadJSON(json, `kontakte_backup_${getTimestamp()}.json`);
+  };
+
+  const handleExportVCard = async () => {
+    const items = await getHistory();
+    const allVcards = items.map(i => i.vcard).join('\n');
+    downloadVCard(allVcards, `kontakte_all_${getTimestamp()}.vcf`);
+  };
+
+  // --- IMPORT HANDLERS ---
+  const handleImportCSV = async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = parseCSV(text);
+      const vcards = csvToVCard(data);
+      if (vcards.length > 0) {
+        await handleImportGoogleContacts(vcards); // Reuse logic
+      } else {
+        alert("Keine gültigen Kontakte in der CSV gefunden.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("CSV Import fehlgeschlagen: " + (e as Error).message);
+    }
+  };
+
+  const handleImportJSON = async (file: File) => {
+    await handleRestoreBackup(file);
+  };
+
+  const handleImportVCard = async (file: File) => {
+    try {
+      const text = await file.text();
+      // Split by END:VCARD
+      const rawVcards = text.split('END:VCARD').map(v => v.trim() + '\nEND:VCARD').filter(v => v.includes('BEGIN:VCARD'));
+
+      if (rawVcards.length > 0) {
+        await handleImportGoogleContacts(rawVcards); // Reuse logic
+      } else {
+        alert("Keine vCards in der Datei gefunden.");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("vCard Import fehlgeschlagen: " + (e as Error).message);
+    }
+  };
+
+  // --- ZIP BACKUP HANDLERS ---
+  const handleBackupAll = async () => {
+    try {
+      const items = await getHistory();
+      const blob = await generateBackupZip(items);
+      downloadZip(blob, `kontakte_full_backup_${getTimestamp()}.zip`);
+    } catch (e) {
+      console.error(e);
+      alert("Backup fehlgeschlagen: " + (e as Error).message);
+    }
+  };
+
+  const handleRestoreZip = async (file: File) => {
+    // Manually handle loading state since we can't easily reuse handleRestoreBackup's internal logic without refactoring
+    // But we can reuse the setImportProgress if we expose it or just use a simple alert for now if complex.
+    // Actually, App.tsx has importProgress state.
+
+    // Let's just use the existing handleRestoreBackup if it supports zip? No, it expects JSON.
+    // So we implement the logic here.
+
+    // We need to access setImportProgress. It is defined in App.tsx?
+    // Looking at previous context, yes.
+
+    // Wait, the error said "Cannot find name 'setIsImporting'". 
+    // Let's check if setIsImporting exists in App.tsx. 
+    // It seems I might have assumed it exists.
+    // Let's check the file content or just remove the loading state for now to be safe and use simple alerts/toasts.
+    // OR better: use the existing `setImportProgress` which IS in App.tsx (based on previous edits).
+
+    setImportProgress({ current: 0, total: 100, status: 'Backup wird analysiert...' });
+
+    try {
+      const count = await restoreBackupZip(file);
+      setHistory(await getHistoryPaged(1, 50)); // Refresh
+      alert(`${count} Kontakte erfolgreich aus Backup wiederhergestellt!`);
+    } catch (e) {
+      console.error(e);
+      alert("Restore fehlgeschlagen: " + (e as Error).message);
+    } finally {
+      setImportProgress(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative overflow-x-hidden">
       {/* Import Progress Overlay */}
@@ -712,9 +813,10 @@ const App: React.FC = () => {
                 style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
               />
             </div>
-            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              {importProgress.current} von {importProgress.total}
-            </p>
+            <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <span>{importProgress.status || 'Importiere...'}</span>
+              <span>{importProgress.current} von {importProgress.total}</span>
+            </div>
           </div>
         </div>
       )}
@@ -744,6 +846,14 @@ const App: React.FC = () => {
         streetDbError={streetDbError}
         onLoadStreetDb={handleLoadStreetDb}
         onImportGoogleContacts={handleImportGoogleContacts}
+        onExportCSV={handleExportCSV}
+        onExportJSON={handleExportJSON}
+        onExportVCard={handleExportVCard}
+        onImportCSV={handleImportCSV}
+        onImportJSON={handleImportJSON}
+        onImportVCard={handleImportVCard}
+        onBackupAll={handleBackupAll}
+        onRestoreZip={handleRestoreZip}
       />
 
       <BatchUploadModal

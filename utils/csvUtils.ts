@@ -137,3 +137,89 @@ export const downloadCSV = (content: string, filename: string = 'kontakte_export
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 };
+
+export const parseCSV = (csvContent: string): any[] => {
+  const lines = csvContent.split(/\r\n|\n/);
+  const headers = lines[0].split(',').map(h => h.replace(/^"|"$/g, '').trim().toLowerCase());
+
+  const contacts: any[] = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+
+    // Handle quoted values correctly (simple regex approach)
+    const matches = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+    // Fallback if regex fails or simple split is needed (CSV parsing is hard without a lib)
+    // Let's use a simpler split but respect quotes
+
+    const row: string[] = [];
+    let inQuote = false;
+    let currentCell = '';
+
+    for (let char of lines[i]) {
+      if (char === '"') {
+        inQuote = !inQuote;
+      } else if (char === ',' && !inQuote) {
+        row.push(currentCell);
+        currentCell = '';
+      } else {
+        currentCell += char;
+      }
+    }
+    row.push(currentCell); // Last cell
+
+    // Clean quotes
+    const cleanRow = row.map(cell => cell.replace(/^"|"$/g, '').replace(/""/g, '"').trim());
+
+    if (cleanRow.length < headers.length) continue; // Skip malformed
+
+    const contact: any = {};
+
+    headers.forEach((header, index) => {
+      if (cleanRow[index]) {
+        contact[header] = cleanRow[index];
+      }
+    });
+
+    contacts.push(contact);
+  }
+
+  return contacts;
+};
+
+export const csvToVCard = (csvData: any[]): string[] => {
+  return csvData.map(row => {
+    // Mapping Logic (Best Effort)
+    const fn = row['first name'] || row['given name'] || '';
+    const ln = row['last name'] || row['family name'] || '';
+    const name = `${fn} ${ln}`.trim() || row['name'] || 'Unbekannt';
+
+    const org = row['company'] || row['organization'] || '';
+    const title = row['title'] || row['job title'] || '';
+
+    const email = row['email address'] || row['email'] || row['e-mail 1 - value'] || '';
+    const phoneWork = row['business phone'] || row['work phone'] || '';
+    const phoneMobile = row['mobile phone'] || row['mobile'] || '';
+
+    const street = row['business street'] || row['street'] || '';
+    const city = row['business city'] || row['city'] || '';
+    const zip = row['business postal code'] || row['postal code'] || row['zip'] || '';
+    const country = row['business country'] || row['country'] || '';
+
+    const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+    lines.push(`N:;${name};;;`);
+    lines.push(`FN:${name}`);
+    if (org) lines.push(`ORG:${org}`);
+    if (title) lines.push(`TITLE:${title}`);
+    if (email) lines.push(`EMAIL;TYPE=WORK:${email}`);
+    if (phoneWork) lines.push(`TEL;TYPE=WORK:${phoneWork}`);
+    if (phoneMobile) lines.push(`TEL;TYPE=CELL:${phoneMobile}`);
+
+    if (street || city) {
+      lines.push(`ADR;TYPE=WORK:;;${street};${city};;${zip};${country}`);
+    }
+
+    lines.push('END:VCARD');
+    return lines.join('\n');
+  });
+};

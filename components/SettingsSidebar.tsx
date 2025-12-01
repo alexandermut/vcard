@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download } from 'lucide-react';
+import { X, Check, ExternalLink, Settings2, Moon, Sun, Languages, Database, AlertTriangle, Download, Upload } from 'lucide-react';
 import { GoogleContactsModal } from './GoogleContactsModal';
 import { useGoogleContactsAuth } from '../auth/useGoogleContactsAuth';
 import { Language } from '../types';
@@ -31,12 +31,22 @@ interface SettingsSidebarProps {
     streetDbError?: string | null;
     onLoadStreetDb: () => void;
     onImportGoogleContacts: (vcards: string[]) => void;
+    onExportCSV: () => void;
+    onExportJSON: () => void;
+    onExportVCard: () => void;
+    onImportCSV: (file: File) => void;
+    onImportJSON: (file: File) => void;
+    onImportVCard: (file: File) => void;
+    onBackupAll: () => void;
+    onRestoreZip: (file: File) => void;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isOpen, onClose, onSave, apiKey, lang, setLang, isDarkMode, setIsDarkMode, errorMessage,
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
-    isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts
+    isInstallable, onInstall, streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
+    onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
+    onBackupAll, onRestoreZip
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -202,6 +212,85 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                             {streetDbError && streetDbStatus === 'error' && (
                                 <p className="text-[10px] text-red-500 mt-1 px-1">{streetDbError}</p>
                             )}
+                        </div>
+
+                        {/* Data Management (Import/Export) */}
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Import & Export</h3>
+
+                            {/* One-Click Backup */}
+                            <div className="mb-4 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/50 rounded-lg text-indigo-600 dark:text-indigo-400">
+                                        <Database size={16} />
+                                    </div>
+                                    <span className="text-sm font-bold text-indigo-900 dark:text-indigo-200">One-Click Backup</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={onBackupAll}
+                                        className="py-2 px-3 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs font-bold text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                                    >
+                                        <Download size={14} /> Backup erstellen
+                                    </button>
+                                    <label className="py-2 px-3 bg-indigo-600 hover:bg-indigo-700 border border-transparent rounded-lg text-xs font-bold text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer">
+                                        <Upload size={14} /> Backup einspielen
+                                        <input type="file" accept=".zip" className="hidden" onChange={(e) => e.target.files?.[0] && onRestoreZip(e.target.files[0])} />
+                                    </label>
+                                </div>
+                                <p className="text-[10px] text-indigo-600/70 dark:text-indigo-400/70 mt-2 text-center">
+                                    Speichert Kontakte, Bilder & Listen in einer ZIP-Datei.
+                                </p>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Export Group */}
+                                <div className="col-span-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">Export</label>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={onExportCSV}
+                                            className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                            title="Für Excel / Outlook"
+                                        >
+                                            <Download size={14} /> CSV
+                                        </button>
+                                        <button
+                                            onClick={onExportVCard}
+                                            className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                            title="Alle Kontakte als eine .vcf Datei"
+                                        >
+                                            <Download size={14} /> vCard
+                                        </button>
+                                        <button
+                                            onClick={onExportJSON}
+                                            className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1"
+                                            title="Vollständiges Backup inkl. Bilder"
+                                        >
+                                            <Download size={14} /> Backup
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Import Group */}
+                                <div className="col-span-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">Import</label>
+                                    <div className="flex gap-2">
+                                        <label className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                            <Upload size={14} /> CSV
+                                            <input type="file" accept=".csv" className="hidden" onChange={(e) => e.target.files?.[0] && onImportCSV(e.target.files[0])} />
+                                        </label>
+                                        <label className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                            <Upload size={14} /> vCard
+                                            <input type="file" accept=".vcf,.vcard" className="hidden" onChange={(e) => e.target.files?.[0] && onImportVCard(e.target.files[0])} />
+                                        </label>
+                                        <label className="flex-1 py-2 px-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                            <Upload size={14} /> Backup
+                                            <input type="file" accept=".json" className="hidden" onChange={(e) => e.target.files?.[0] && onImportJSON(e.target.files[0])} />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <hr className="border-slate-100 dark:border-slate-800" />
