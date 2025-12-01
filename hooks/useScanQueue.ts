@@ -152,10 +152,15 @@ export const useScanQueue = (
     setQueue(prev => prev.filter(j => j.status !== 'completed'));
   };
 
+  const clearErrors = () => {
+    setQueue(prev => prev.filter(j => j.status !== 'error'));
+  };
+
   return {
     queue,
     addJob,
     removeJob,
-    clearCompleted
+    clearCompleted,
+    clearErrors
   };
 };

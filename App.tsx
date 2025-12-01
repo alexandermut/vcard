@@ -80,7 +80,7 @@ const App: React.FC = () => {
     hasSystemKey
   } = useLLMConfig();
 
-  const { queue, addJob, removeJob } = useScanQueue(
+  const { queue, addJob, removeJob, clearErrors } = useScanQueue(
     getKeyToUse() || '',
     lang,
     llmConfig,
@@ -772,7 +772,12 @@ const App: React.FC = () => {
         lang={lang}
       />
 
-      <QueueIndicator queue={queue} lang={lang} />
+      <QueueIndicator
+        queue={queue}
+        lang={lang}
+        onOpenQueue={() => setIsBatchUploadOpen(true)}
+        onClearErrors={clearErrors}
+      />
 
       <QRCodeModal
         isOpen={isQROpen}
