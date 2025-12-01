@@ -41,7 +41,7 @@ export const useGoogleContacts = () => {
         return {
             login: () => {
                 console.warn("Google Login attempted but Provider is missing (likely missing VITE_GOOGLE_CLIENT_ID).");
-                alert("Google Integration ist nicht konfiguriert (fehlende Client ID).");
+                toast.error("Google Integration ist nicht konfiguriert (fehlende Client ID).");
             },
             token: null,
             isAuthenticated: false

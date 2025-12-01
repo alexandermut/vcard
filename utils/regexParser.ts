@@ -147,7 +147,7 @@ const consumeUrls = (lines: Line[], data: ParserData) => {
 const consumePhones = (lines: Line[], data: ParserData) => {
   // Regex for finding numbers that look like phones
   // Must contain at least 6 digits, maybe spaces, +, (0)
-  const re_phone_loose = /(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})(?: *x(\d+))?|\+?\d[\d\s\-\(\)\/]{6,}\d/g;
+  const re_phone_loose = /(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4,})(?: *x(\d+))?|\+?\d[\d\s\-\(\)\/]{6,}\d/g;
 
   lines.forEach(line => {
     if (line.isConsumed) return;

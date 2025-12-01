@@ -135,7 +135,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             setDuplicates([]);
             setScanComplete(false);
             onClose();
-            alert("Alle Dubletten erfolgreich bearbeitet!");
+            toast.success("Alle Dubletten erfolgreich bearbeitet!");
         }
     };
 

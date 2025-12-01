@@ -111,7 +111,7 @@ const App: React.FC = () => {
         await addToHistory(finalVCard, undefined, images, mode);
       } catch (err) {
         console.error("Failed to save to history:", err);
-        alert("Fehler beim Speichern im Verlauf: " + (err as Error).message);
+        toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
       }
     }
   );

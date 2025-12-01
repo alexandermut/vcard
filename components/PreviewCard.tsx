@@ -87,9 +87,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
       // Fallback: Copy to clipboard
       try {
         await navigator.clipboard.writeText(generateVCardFromData(localData));
-        alert(t.shareError + " (Copied to Clipboard)");
+        toast.error(t.shareError + " (Copied to Clipboard)");
       } catch (e) {
-        alert(t.shareError);
+        toast.error(t.shareError);
       }
     }
   };

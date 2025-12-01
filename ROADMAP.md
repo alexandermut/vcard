@@ -72,7 +72,7 @@ This file tracks the current development status and planned features.
 
 ### 2. Performance & Stability
 - [x] **Virtualization:** Implement `react-virtuoso` for History and Notes lists (>1000 contacts).
-- [ ] **Error Handling:** Replace `alert()` with Toast notifications (Sonner/Hot-Toast).
+- [x] **Error Handling:** Replace `alert()` with Toast notifications (Sonner/Hot-Toast).
 - [ ] **Lazy Loading:** Optimize `cities.ts` and large dependencies.
 
 ### 3. AI Enrichment (Phase 3)
@@ -104,6 +104,10 @@ This file tracks the current development status and planned features.
 
 ### Integrations
 - [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud).
+- [ ] **Offline-OCR:** Tesseract.js fallback when offline.
+- [ ] **AI Grounding:** Real web search to complete missing data.
+- [ ] **Voice-to-Contact:** Dictate business cards.
+- [ ] **Better Phone Parsing:** Use `libphonenumber-js` for robust international number handling.
 - [ ] **CRM Integration:** HubSpot / Salesforce via API.
 - [ ] **Outlook Add-in:** Direct integration into Microsoft 365.
 - [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.

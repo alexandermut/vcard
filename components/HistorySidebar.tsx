@@ -159,7 +159,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     const itemsWithImages = history.filter(item => item.images && item.images.length > 0);
 
     if (itemsWithImages.length === 0) {
-      alert("Keine Bilder zum Exportieren gefunden.");
+      toast.error("Keine Bilder zum Exportieren gefunden.");
       return;
     }
 
