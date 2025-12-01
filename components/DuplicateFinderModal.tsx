@@ -186,50 +186,76 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             const masterVal = masterSide === 'left' ? val1 : val2;
             const currentVal = mergeOverrides[fieldKey] !== undefined ? mergeOverrides[fieldKey] : masterVal;
 
+            // Determine which value is currently "active" / "selected"
+            const isLeftSelected = currentVal === val1;
+            const isRightSelected = currentVal === val2;
+
             return (
-                <div className="mb-4">
+                <div className="mb-4 shrink-0">
                     <div className="flex items-center gap-2 mb-1">
                         <div className={`p-1 rounded-md bg-slate-100 dark:bg-slate-800 ${colorClass}`}>
                             {React.createElement(icon, { size: 14 })}
                         </div>
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
-                    <div className="grid grid-cols-[1fr_40px_1fr] gap-2 items-center">
+                    <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-center">
+                        {/* Left Value Box */}
                         <div
-                            className={`p-3 rounded-lg border text-sm break-words ${masterSide === 'left' && currentVal === val1
-                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                            onClick={() => isDifferent && val1 && setMergeOverrides({ ...mergeOverrides, [fieldKey]: val1 })}
+                            className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm break-words transition-colors relative ${isDifferent ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800' : ''} ${isLeftSelected
+                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20 z-10'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60'
                                 } ${!val1 ? 'text-slate-400 italic' : 'text-slate-900 dark:text-slate-100'}`}
                         >
                             {val1 || 'Leer'}
+                            {isLeftSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></div>}
                         </div>
 
-                        <div className="flex flex-col items-center justify-center gap-1">
+                        {/* Center Arrow Action */}
+                        <div className="flex flex-col items-center justify-center">
                             {isDifferent && (
-                                <>
-                                    <button
-                                        onClick={() => setMergeOverrides({ ...mergeOverrides, [fieldKey]: val1 })}
-                                        className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentVal === val1 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}`}
-                                    >
-                                        <ArrowLeft size={16} />
-                                    </button>
-                                    <button
-                                        onClick={() => setMergeOverrides({ ...mergeOverrides, [fieldKey]: val2 })}
-                                        className={`p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${currentVal === val2 ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-300 dark:text-slate-600'}`}
-                                    >
-                                        <ArrowRight size={16} />
-                                    </button>
-                                </>
+                                <button
+                                    onClick={() => {
+                                        // Toggle logic: If we are currently using the "other" value, revert to master.
+                                        // If we are using master, switch to "other".
+                                        if (masterSide === 'left') {
+                                            // Master is Left. Default is val1.
+                                            // If current is val1, switch to val2. If current is val2, switch to val1.
+                                            const newVal = currentVal === val1 ? val2 : val1;
+                                            setMergeOverrides({ ...mergeOverrides, [fieldKey]: newVal });
+                                        } else {
+                                            // Master is Right. Default is val2.
+                                            const newVal = currentVal === val2 ? val1 : val2;
+                                            setMergeOverrides({ ...mergeOverrides, [fieldKey]: newVal });
+                                        }
+                                    }}
+                                    className={`p-1.5 rounded-full transition-all shadow-sm ${
+                                        // Highlight if we are NOT using the master value (i.e. we are pulling from the other side)
+                                        (masterSide === 'left' && currentVal === val2) || (masterSide === 'right' && currentVal === val1)
+                                            ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/50 dark:text-indigo-400 scale-110'
+                                            : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                        }`}
+                                    title="Wert übernehmen"
+                                >
+                                    {masterSide === 'left' ? (
+                                        <ArrowLeft size={16} className="md:w-5 md:h-5" />
+                                    ) : (
+                                        <ArrowRight size={16} className="md:w-5 md:h-5" />
+                                    )}
+                                </button>
                             )}
                         </div>
 
+                        {/* Right Value Box */}
                         <div
-                            className={`p-3 rounded-lg border text-sm break-words ${masterSide === 'right' && currentVal === val2
-                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20'
-                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+                            onClick={() => isDifferent && val2 && setMergeOverrides({ ...mergeOverrides, [fieldKey]: val2 })}
+                            className={`p-2 md:p-3 rounded-lg border text-xs md:text-sm break-words transition-colors relative ${isDifferent ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800' : ''} ${isRightSelected
+                                ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800 ring-1 ring-indigo-500/20 z-10'
+                                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-60'
                                 } ${!val2 ? 'text-slate-400 italic' : 'text-slate-900 dark:text-slate-100'}`}
                         >
                             {val2 || 'Leer'}
+                            {isRightSelected && <div className="absolute top-1 right-1 w-2 h-2 bg-indigo-500 rounded-full"></div>}
                         </div>
                     </div>
                 </div>
@@ -254,10 +280,10 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         </div>
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{label}</span>
                     </div>
-                    <div className="grid grid-cols-[1fr_40px_1fr] gap-2 items-start">
+                    <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 items-start">
                         <div className="space-y-2">
                             {list1?.map((item, i) => (
-                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-sm">
+                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs md:text-sm overflow-hidden">
                                     {renderItem(item)}
                                 </div>
                             ))}
@@ -271,7 +297,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
                         <div className="space-y-2">
                             {list2?.map((item, i) => (
-                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-sm">
+                                <div key={i} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs md:text-sm overflow-hidden">
                                     {renderItem(item)}
                                 </div>
                             ))}
@@ -287,61 +313,61 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                 {/* Header Info */}
                 <div className="flex items-center justify-between mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full text-blue-600 dark:text-blue-300">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-800 rounded-full text-blue-600 dark:text-blue-300 shrink-0">
                             <AlertTriangle size={20} />
                         </div>
-                        <div>
-                            <h4 className="font-bold text-slate-900 dark:text-white">Dublette gefunden ({currentGroupIndex + 1}/{duplicates.length})</h4>
-                            <p className="text-xs text-slate-600 dark:text-slate-400">
-                                {group.reason} • {group.confidence === 'high' ? 'Hohe Wahrscheinlichkeit' : 'Mittlere Wahrscheinlichkeit'}
+                        <div className="overflow-hidden">
+                            <h4 className="font-bold text-slate-900 dark:text-white text-sm md:text-base truncate">Dublette ({currentGroupIndex + 1}/{duplicates.length})</h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 truncate">
+                                {group.reason}
                             </p>
                         </div>
                     </div>
-                    <div className="text-xs font-mono text-slate-400">
+                    <div className="text-xs font-mono text-slate-400 hidden sm:block">
                         ID: {group.id.slice(0, 8)}
                     </div>
                 </div>
 
                 {/* Comparison Area */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+                <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 md:pr-2">
 
                     {/* Profile Pictures & Master Selection */}
-                    <div className="grid grid-cols-[1fr_40px_1fr] gap-2 mb-6 items-end">
+                    <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 mb-6 items-end">
                         <div
                             onClick={() => setMasterSide('left')}
-                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
-                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c1.images && c1.images.length > 0 ? (
                                     <img src={c1.images[0]} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
-                                    <User size={32} />
+                                    <User size={24} className="md:w-8 md:h-8" />
                                 )}
                             </div>
-                            <div className="text-center">
-                                <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                            <div className="text-center w-full">
+                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
                                     {masterSide === 'left' ? 'Master' : 'Duplikat'}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="flex justify-center pb-8 text-slate-300">
-                            <ArrowRight size={24} />
+                        <div className="flex justify-center pb-6 md:pb-8 text-slate-300">
+                            <ArrowRight size={20} className="md:w-6 md:h-6" />
                         </div>
 
                         <div
                             onClick={() => setMasterSide('right')}
-                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'}`}
                         >
-                            <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
+                            <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c2.images && c2.images.length > 0 ? (
                                     <img src={c2.images[0]} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
-                                    <User size={32} />
+                                    <User size={24} className="md:w-8 md:h-8" />
                                 )}
                             </div>
-                            <div className="text-center">
-                                <span className={`text-xs font-bold uppercase px-2 py-1 rounded-full ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
+                            <div className="text-center w-full">
+                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'}`}>
                                     {masterSide === 'right' ? 'Master' : 'Duplikat'}
                                 </span>
                             </div>
@@ -357,18 +383,18 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
                     {/* Multi Value Fields */}
                     {renderListField("E-Mails", Mail, d1.email, d2.email, (item) => (
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-400 uppercase w-10">{item.type}</span>
-                            <a href={`mailto:${item.value}`} className="truncate text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase w-10 shrink-0">{item.type}</span>
+                            <a href={`mailto:${item.value}`} className="truncate text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline break-all">
                                 {item.value}
                             </a>
                         </div>
                     ))}
 
                     {renderListField("Telefon", Phone, d1.tel, d2.tel, (item) => (
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-slate-400 uppercase w-10">{item.type}</span>
-                            <a href={`tel:${item.value}`} className="font-mono text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 hover:underline">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase w-10 shrink-0">{item.type}</span>
+                            <a href={`tel:${item.value}`} className="font-mono text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 hover:underline break-all">
                                 {item.value}
                             </a>
                         </div>
@@ -379,8 +405,8 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         const Icon = style.icon;
                         return (
                             <div className="flex items-center gap-2">
-                                <Icon size={12} className={style.color} />
-                                <a href={item.value} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 dark:text-blue-400 underline decoration-dotted hover:text-blue-800 dark:hover:text-blue-300">
+                                <Icon size={12} className={`shrink-0 ${style.color}`} />
+                                <a href={item.value} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 dark:text-blue-400 underline decoration-dotted hover:text-blue-800 dark:hover:text-blue-300 break-all">
                                     {item.value}
                                 </a>
                             </div>
@@ -394,32 +420,32 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                             rel="noopener noreferrer"
                             className="flex flex-col gap-0.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 -m-1 p-1 rounded transition-colors"
                         >
-                            <span className="text-xs font-bold text-slate-400 uppercase">{item.type}</span>
-                            <span className="text-slate-700 dark:text-slate-300">{item.value.street}</span>
-                            <span className="text-slate-500 text-xs">{item.value.zip} {item.value.city}</span>
+                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase">{item.type}</span>
+                            <span className="text-slate-700 dark:text-slate-300 break-words">{item.value.street}</span>
+                            <span className="text-slate-500 text-[10px] md:text-xs">{item.value.zip} {item.value.city}</span>
                         </a>
                     ))}
 
                 </div>
 
                 {/* Footer Actions */}
-                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 -mx-6 -mb-6 p-6">
+                <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50 -mx-6 -mb-6 p-4 md:p-6">
                     <button
                         onClick={handleIgnore}
-                        className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors"
+                        className="px-3 py-2 text-sm md:text-base text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg font-medium transition-colors"
                     >
                         Ignorieren
                     </button>
-                    <div className="flex gap-3">
-                        <div className="text-xs text-slate-400 flex items-center px-2">
+                    <div className="flex gap-2 md:gap-3 items-center">
+                        <div className="text-xs text-slate-400 hidden sm:flex items-center px-2">
                             {duplicates.length - currentGroupIndex - 1} verbleibend
                         </div>
                         <button
                             onClick={() => handleMerge(group)}
-                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all active:scale-95 flex items-center gap-2"
+                            className="px-4 md:px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition-all active:scale-95 flex items-center gap-2 text-sm md:text-base"
                         >
-                            <Check size={18} />
-                            Zusammenführen
+                            <Check size={16} className="md:w-[18px] md:h-[18px]" />
+                            <span>Zusammenführen</span>
                         </button>
                     </div>
                 </div>
@@ -430,11 +456,11 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-0 md:p-4">
+            <div className="bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl w-full max-w-4xl h-full md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden border-0 md:border border-slate-200 dark:border-slate-800">
 
                 {/* Modal Header */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <Merge size={20} className="text-indigo-500" />
                         Dubletten-Finder
@@ -445,7 +471,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex-1 overflow-hidden p-6 bg-slate-50/50 dark:bg-slate-900/50">
+                <div className="flex-1 overflow-hidden p-4 md:p-6 bg-slate-50/50 dark:bg-slate-900/50">
                     {renderContent()}
                 </div>
             </div>

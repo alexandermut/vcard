@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ParsedVCard, VCardData, Language, VCardAddress } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Edit2, X } from 'lucide-react';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { translations } from '../utils/translations';
 
@@ -21,11 +21,9 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
-  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setLocalData(parsed.data);
-    setIsEditing(false); // Reset to view mode on new contact load
   }, [parsed]);
 
   const updateField = (field: keyof VCardData, value: string) => {
@@ -48,11 +46,6 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     const newData = { ...localData, adr: newAdr };
     setLocalData(newData);
     onUpdate(generateVCardFromData(newData));
-  };
-
-  const handleSave = () => {
-    onSave();
-    setIsEditing(false);
   };
 
   const getUrlStyle = (type: string, value: string) => {
@@ -101,67 +94,43 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden h-full flex flex-col transition-colors duration-200 relative">
       <div className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 relative shrink-0 flex justify-end items-center px-4 gap-2">
         <div className="flex items-center gap-1">
-          {!isEditing ? (
-            <>
-              {onViewNotes && (
-                <button
-                  onClick={onViewNotes}
-                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                  title={t.notes || "Notes"}
-                >
-                  <StickyNote size={18} />
-                </button>
-              )}
-              <button
-                onClick={onShowQR}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title={t.showQR}
-              >
-                <QrCode size={18} />
-              </button>
-              <button
-                onClick={handleShare}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title={t.share}
-              >
-                <Share2 size={18} />
-              </button>
-              <button
-                onClick={onDownload}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title={t.export}
-              >
-                <Download size={18} />
-              </button>
-              <div className="w-px h-6 bg-white/20 mx-1"></div>
-              <button
-                onClick={() => setIsEditing(true)}
-                className="p-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white transition-colors font-bold flex items-center gap-2 px-3"
-                title="Edit"
-              >
-                <Edit2 size={16} />
-                <span className="text-xs">Bearbeiten</span>
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title="Cancel"
-              >
-                <X size={18} />
-              </button>
-              <button
-                onClick={handleSave}
-                className="p-1.5 rounded-lg bg-white text-blue-600 hover:bg-slate-100 transition-colors font-bold flex items-center gap-2 px-3 shadow-sm"
-                title={t.saveHistory}
-              >
-                <Save size={16} />
-                <span className="text-xs">{t.saveHistory}</span>
-              </button>
-            </>
+          {onViewNotes && (
+            <button
+              onClick={onViewNotes}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+              title={t.notes || "Notes"}
+            >
+              <StickyNote size={18} />
+            </button>
           )}
+          <button
+            onClick={onShowQR}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title={t.showQR}
+          >
+            <QrCode size={18} />
+          </button>
+          <button
+            onClick={onSave}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title={t.saveHistory}
+          >
+            <Save size={18} />
+          </button>
+          <button
+            onClick={handleShare}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title={t.share}
+          >
+            <Share2 size={18} />
+          </button>
+          <button
+            onClick={onDownload}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            title={t.export}
+          >
+            <Download size={18} />
+          </button>
         </div>
 
         <div className="absolute -bottom-8 left-6">
@@ -180,45 +149,31 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
       <div className="pt-10 px-6 pb-6 flex-1 overflow-y-auto custom-scrollbar">
         <div className="mb-6">
           <div className="flex flex-col gap-1">
-            {isEditing ? (
-              <input
-                value={localData.fn || ''}
-                onChange={(e) => updateField('fn', e.target.value)}
-                className="text-xl font-bold text-slate-900 dark:text-white leading-tight bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300 dark:placeholder-slate-600 w-full"
-                placeholder={t.fullName}
-              />
-            ) : (
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
-                {localData.fn || <span className="text-slate-300 italic">{t.fullName}</span>}
-              </h2>
-            )}
+            <input
+              value={localData.fn || ''}
+              onChange={(e) => updateField('fn', e.target.value)}
+              className="text-xl font-bold text-slate-900 dark:text-white leading-tight bg-transparent border-none p-0 focus:ring-0 placeholder-slate-300 dark:placeholder-slate-600 w-full"
+              placeholder={t.fullName}
+            />
 
             <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mt-1 font-medium text-sm">
               <Award size={14} className="text-indigo-500 dark:text-indigo-400 shrink-0" />
-              {isEditing ? (
-                <input
-                  value={localData.title || ''}
-                  onChange={(e) => updateField('title', e.target.value)}
-                  className="bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300 dark:placeholder-slate-600"
-                  placeholder={t.title}
-                />
-              ) : (
-                <span>{localData.title || <span className="text-slate-300 italic">{t.title}</span>}</span>
-              )}
+              <input
+                value={localData.title || ''}
+                onChange={(e) => updateField('title', e.target.value)}
+                className="bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300 dark:placeholder-slate-600"
+                placeholder={t.title}
+              />
             </div>
 
             <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 mt-1 text-sm">
               <Building2 size={14} className="shrink-0" />
-              {isEditing ? (
-                <input
-                  value={localData.org || ''}
-                  onChange={(e) => updateField('org', e.target.value)}
-                  className="bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300 dark:placeholder-slate-600"
-                  placeholder={t.company}
-                />
-              ) : (
-                <span>{localData.org || <span className="text-slate-300 italic">{t.company}</span>}</span>
-              )}
+              <input
+                value={localData.org || ''}
+                onChange={(e) => updateField('org', e.target.value)}
+                className="bg-transparent border-none p-0 focus:ring-0 w-full placeholder-slate-300 dark:placeholder-slate-600"
+                placeholder={t.company}
+              />
             </div>
           </div>
 
@@ -251,17 +206,11 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 </a>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{e.type}</p>
-                  {isEditing ? (
-                    <input
-                      value={e.value}
-                      onChange={(ev) => updateArrayField('email', i, 'value', ev.target.value)}
-                      className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
-                    />
-                  ) : (
-                    <a href={`mailto:${e.value}`} className="text-sm text-slate-800 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 hover:underline block truncate">
-                      {e.value}
-                    </a>
-                  )}
+                  <input
+                    value={e.value}
+                    onChange={(ev) => updateArrayField('email', i, 'value', ev.target.value)}
+                    className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
+                  />
                 </div>
               </div>
             ))}
@@ -273,17 +222,11 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 </a>
                 <div className="flex-1 overflow-hidden">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{telItem.type}</p>
-                  {isEditing ? (
-                    <input
-                      value={telItem.value}
-                      onChange={(ev) => updateArrayField('tel', i, 'value', ev.target.value)}
-                      className="text-sm text-slate-800 dark:text-slate-200 font-mono w-full bg-transparent border-none p-0 focus:ring-0"
-                    />
-                  ) : (
-                    <a href={`tel:${telItem.value}`} className="text-sm text-slate-800 dark:text-slate-200 font-mono hover:text-green-600 dark:hover:text-green-400 hover:underline block truncate">
-                      {telItem.value}
-                    </a>
-                  )}
+                  <input
+                    value={telItem.value}
+                    onChange={(ev) => updateArrayField('tel', i, 'value', ev.target.value)}
+                    className="text-sm text-slate-800 dark:text-slate-200 font-mono w-full bg-transparent border-none p-0 focus:ring-0"
+                  />
                 </div>
               </div>
             ))}
@@ -294,18 +237,12 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               </div>
               <div className="flex-1 overflow-hidden">
                 <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{t.birthday}</p>
-                {isEditing ? (
-                  <input
-                    value={localData.bday || ''}
-                    onChange={(ev) => updateField('bday', ev.target.value)}
-                    className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
-                    placeholder="YYYY-MM-DD"
-                  />
-                ) : (
-                  <span className="text-sm text-slate-800 dark:text-slate-200">
-                    {localData.bday || <span className="text-slate-300 italic">-</span>}
-                  </span>
-                )}
+                <input
+                  value={localData.bday || ''}
+                  onChange={(ev) => updateField('bday', ev.target.value)}
+                  className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
+                  placeholder="YYYY-MM-DD"
+                />
               </div>
             </div>
 
@@ -320,38 +257,28 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                   <div className="flex-1 overflow-hidden">
                     <div className="flex justify-between items-center">
                       <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{style.label}</p>
-                      {!isEditing && (
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => onSocialSearch(u.type)} className="text-slate-400 hover:text-blue-500">
-                            <Search size={12} />
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => onSocialSearch(u.type)} className="text-slate-400 hover:text-blue-500">
+                          <Search size={12} />
+                        </button>
+                      </div>
                     </div>
                     <div className="flex items-center">
-                      {isEditing ? (
-                        <>
-                          <input
-                            value={u.value}
-                            onChange={(ev) => updateArrayField('url', i, 'value', ev.target.value)}
-                            className="text-sm text-blue-600 dark:text-blue-400 w-full bg-transparent border-none p-0 focus:ring-0 hover:underline"
-                          />
-                          <a href={u.value} target="_blank" rel="noopener noreferrer" className="ml-1 text-slate-400 hover:text-blue-500">
-                            <ExternalLink size={12} />
-                          </a>
-                        </>
-                      ) : (
-                        <a href={u.value} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 dark:text-blue-400 hover:underline block truncate">
-                          {u.value}
-                        </a>
-                      )}
+                      <input
+                        value={u.value}
+                        onChange={(ev) => updateArrayField('url', i, 'value', ev.target.value)}
+                        className="text-sm text-blue-600 dark:text-blue-400 w-full bg-transparent border-none p-0 focus:ring-0 hover:underline"
+                      />
+                      <a href={u.value} target="_blank" rel="noopener noreferrer" className="ml-1 text-slate-400 hover:text-blue-500">
+                        <ExternalLink size={12} />
+                      </a>
                     </div>
                   </div>
                 </div>
               );
             })}
 
-            {isEditing && IMPORTANT_SOCIALS.map(platform => {
+            {IMPORTANT_SOCIALS.map(platform => {
               if (existingUrlTypes.includes(platform)) return null;
               const style = getUrlStyle(platform, '');
               const Icon = style.icon;
@@ -388,47 +315,32 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 <div className="flex-1 overflow-hidden space-y-1">
                   <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{a.type}</p>
 
-                  {isEditing ? (
-                    <>
-                      <input
-                        value={a.value.street}
-                        onChange={(ev) => updateAddressField(i, 'street', ev.target.value)}
-                        className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
-                        placeholder={t.street}
-                      />
-                      <div className="flex gap-2">
-                        <input
-                          value={a.value.zip}
-                          onChange={(ev) => updateAddressField(i, 'zip', ev.target.value)}
-                          className="text-sm text-slate-800 dark:text-slate-200 w-20 bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
-                          placeholder={t.zip}
-                        />
-                        <input
-                          value={a.value.city}
-                          onChange={(ev) => updateAddressField(i, 'city', ev.target.value)}
-                          className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
-                          placeholder={t.city}
-                        />
-                      </div>
-                      <input
-                        value={a.value.country}
-                        onChange={(ev) => updateAddressField(i, 'country', ev.target.value)}
-                        className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
-                        placeholder={t.country}
-                      />
-                    </>
-                  ) : (
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.value.street}, ${a.value.zip} ${a.value.city}, ${a.value.country}`)}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block hover:bg-slate-100 dark:hover:bg-slate-700/50 -m-1 p-1 rounded transition-colors"
-                    >
-                      <div className="text-sm text-slate-800 dark:text-slate-200">{a.value.street}</div>
-                      <div className="text-sm text-slate-500">{a.value.zip} {a.value.city}</div>
-                      {a.value.country && <div className="text-sm text-slate-500">{a.value.country}</div>}
-                    </a>
-                  )}
+                  <input
+                    value={a.value.street}
+                    onChange={(ev) => updateAddressField(i, 'street', ev.target.value)}
+                    className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
+                    placeholder={t.street}
+                  />
+                  <div className="flex gap-2">
+                    <input
+                      value={a.value.zip}
+                      onChange={(ev) => updateAddressField(i, 'zip', ev.target.value)}
+                      className="text-sm text-slate-800 dark:text-slate-200 w-20 bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
+                      placeholder={t.zip}
+                    />
+                    <input
+                      value={a.value.city}
+                      onChange={(ev) => updateAddressField(i, 'city', ev.target.value)}
+                      className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
+                      placeholder={t.city}
+                    />
+                  </div>
+                  <input
+                    value={a.value.country}
+                    onChange={(ev) => updateAddressField(i, 'country', ev.target.value)}
+                    className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0 placeholder-slate-400"
+                    placeholder={t.country}
+                  />
                 </div>
               </div>
             ))}
@@ -436,19 +348,13 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-900/30">
             <p className="text-xs font-bold text-yellow-800 dark:text-yellow-500 mb-1">{t.noteLabel}</p>
-            {isEditing ? (
-              <textarea
-                value={localData.note || ''}
-                onChange={(e) => updateField('note', e.target.value)}
-                className="text-sm text-yellow-900 dark:text-yellow-200 w-full bg-transparent border-none p-0 focus:ring-0 resize-none"
-                placeholder={t.notes}
-                rows={3}
-              />
-            ) : (
-              <p className="text-sm text-yellow-900 dark:text-yellow-200 whitespace-pre-wrap">
-                {localData.note || <span className="text-yellow-900/50 italic">-</span>}
-              </p>
-            )}
+            <textarea
+              value={localData.note || ''}
+              onChange={(e) => updateField('note', e.target.value)}
+              className="text-sm text-yellow-900 dark:text-yellow-200 w-full bg-transparent border-none p-0 focus:ring-0 resize-none"
+              placeholder={t.notes}
+              rows={3}
+            />
           </div>
 
           {/* Images Section */}
