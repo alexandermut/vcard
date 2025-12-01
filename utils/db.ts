@@ -258,7 +258,6 @@ export const addHistoryItem = async (item: HistoryItem) => {
     // Convert Base64 images to Blobs for storage efficiency
     // DISABLED: Causing "Error preparing Blob/File data" on some browsers (Safari/Mac).
     // Reverting to Base64 string storage for stability.
-    /*
     if (item.images && item.images.length > 0) {
         const blobImages = item.images.map(img => {
             if (typeof img === 'string' && img.startsWith('data:image')) {
@@ -271,13 +270,12 @@ export const addHistoryItem = async (item: HistoryItem) => {
             }
             return img;
         }).filter(img => img !== null); // Remove failed conversions
-        
+
         // We need to cast because HistoryItem type definition might still say string[]
         // In a real app, we should update the type definition to string | Blob
         // For now, IDB handles mixed types fine.
         item.images = blobImages as any;
     }
-    */
 
     return db.put(STORE_NAME, item);
 };
