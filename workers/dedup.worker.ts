@@ -1,6 +1,5 @@
 import { initDB } from '../utils/db';
-import { findDuplicates } from '../utils/deduplicationUtils';
-import { HistoryItem } from '../types';
+import { DedupIndexer } from '../utils/deduplicationUtils';
 
 const STORE_NAME = 'history';
 
@@ -9,19 +8,31 @@ self.onmessage = async (e: MessageEvent) => {
 
     if (type === 'findDuplicates') {
         try {
-            // 1. Fetch all contacts from DB
+            // 1. Initialize DB and Indexer
             const db = await initDB();
             const tx = db.transaction(STORE_NAME, 'readonly');
-            // Use getAll to fetch all items. For 20k items, this might be memory intensive but manageable in a worker.
-            // Optimization: We could stream with cursor if findDuplicates was streaming-aware.
-            // For now, we load all.
-            const contacts = await tx.store.getAll();
+            const indexer = new DedupIndexer();
 
-            // 2. Run deduplication logic
-            // This is the heavy O(n^2) part
-            const groups = findDuplicates(contacts);
+            // 2. Stream contacts using Cursor
+            let cursor = await tx.store.openCursor();
+            let count = 0;
 
-            // 3. Send back results
+            while (cursor) {
+                indexer.add(cursor.value);
+                count++;
+
+                // Optional: Report progress every 1000 items
+                if (count % 1000 === 0) {
+                    // self.postMessage({ type: 'progress', count });
+                }
+
+                cursor = await cursor.continue();
+            }
+
+            // 3. Get Results
+            const groups = indexer.getResults();
+
+            // 4. Send back results
             self.postMessage({ type: 'results', groups });
         } catch (error: any) {
             self.postMessage({ type: 'error', error: error.message });

@@ -99,6 +99,7 @@ This file tracks the current development status and planned features.
     - [x] **Pagination:** Ensure `App.tsx` only loads visible subset of history.
     - [x] **Persistence:** Keep manual edits in Duplicate Finder when switching Master side.
     - [x] **List Merging:** Interactive add/remove for emails, phones, etc.
+    - [x] **Streaming:** Process contacts in chunks to support 20k+ items.
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).

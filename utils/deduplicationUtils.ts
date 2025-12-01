@@ -8,6 +8,14 @@ export interface DuplicateGroup {
     reason: string; // e.g. "Same Email", "Same Phone"
 }
 
+export interface LightContact {
+    id: string;
+    name: string;
+    org?: string;
+    emails: string[];
+    phones: string[];
+}
+
 /**
  * Normalizes a string for comparison (lowercase, trim, remove special chars).
  */
@@ -160,7 +168,11 @@ const isNameInEmail = (name: string, email: string): boolean => {
  * Checks if two contacts are likely different people despite having the same name.
  * Returns true if they have conflicting Organizations, Emails, or Phones.
  */
-const areDifferentPeople = (c1: HistoryItem, c2: HistoryItem): boolean => {
+/**
+ * Checks if two contacts are likely different people despite having the same name.
+ * Returns true if they have conflicting Organizations, Emails, or Phones.
+ */
+const areDifferentPeople = (c1: LightContact, c2: LightContact): boolean => {
     // 1. Check Organization Conflict
     // If both have an org, and they are different -> Different People
     if (c1.org && c2.org) {
@@ -169,8 +181,8 @@ const areDifferentPeople = (c1: HistoryItem, c2: HistoryItem): boolean => {
 
     // 2. Check Email Conflict
     // If both have emails, and they share NO common email -> Different People
-    const emails1 = (c1.vcard.match(/EMAIL[^:]*:(.*)/gi) || []).map(l => normalizeString(l.split(':')[1]));
-    const emails2 = (c2.vcard.match(/EMAIL[^:]*:(.*)/gi) || []).map(l => normalizeString(l.split(':')[1]));
+    const emails1 = c1.emails.map(e => normalizeString(e));
+    const emails2 = c2.emails.map(e => normalizeString(e));
 
     if (emails1.length > 0 && emails2.length > 0) {
         const hasCommonEmail = emails1.some(e1 => emails2.includes(e1));
@@ -188,8 +200,8 @@ const areDifferentPeople = (c1: HistoryItem, c2: HistoryItem): boolean => {
 
     // 3. Check Phone Conflict
     // If both have phones, and they share NO common phone -> Different People
-    const phones1 = (c1.vcard.match(/TEL[^:]*:(.*)/gi) || []).map(l => clean_number(l.split(':')[1]));
-    const phones2 = (c2.vcard.match(/TEL[^:]*:(.*)/gi) || []).map(l => clean_number(l.split(':')[1]));
+    const phones1 = c1.phones.map(p => clean_number(p));
+    const phones2 = c2.phones.map(p => clean_number(p));
 
     if (phones1.length > 0 && phones2.length > 0) {
         const hasCommonPhone = phones1.some(p1 => phones2.includes(p1));
@@ -312,178 +324,168 @@ export const mergeContacts = (
 /**
  * Checks if two contacts are duplicates based on strict criteria.
  */
-export const findDuplicates = (contacts: HistoryItem[]): DuplicateGroup[] => {
-    const groups: DuplicateGroup[] = [];
-    const processedIds = new Set<string>();
+export class DedupIndexer {
+    private contacts: Map<string, LightContact> = new Map();
+    private emailMap: Map<string, string[]> = new Map();
+    private phoneMap: Map<string, string[]> = new Map();
+    private nameMap: Map<string, string[]> = new Map();
+    private phoneticMap: Map<string, string[]> = new Map();
+    private processedIds: Set<string> = new Set();
+    private groups: DuplicateGroup[] = [];
 
-    // Helper to add a group
-    const addGroup = (ids: string[], confidence: 'high' | 'medium', reason: string) => {
-        // Filter out already processed IDs
-        const newIds = ids.filter(id => !processedIds.has(id));
-        if (newIds.length < 2 && ids.length < 2) return; // Need at least 2 to be a duplicate pair
+    add(contact: HistoryItem) {
+        // Extract LightContact
+        const emails = (contact.vcard.match(/EMAIL[^:]*:(.*)/gi) || [])
+            .map(line => normalizeString(line.split(':')[1])).filter(Boolean);
+        const phones = (contact.vcard.match(/TEL[^:]*:(.*)/gi) || [])
+            .map(line => clean_number(line.split(':')[1])).filter(p => p && p.length >= 6);
 
-        // If we have some new IDs but some old, we might be merging clusters.
-        // For simplicity in Phase 1, we just ignore already processed ones to avoid overlaps.
-        // A more advanced algo would merge clusters.
+        const light: LightContact = {
+            id: contact.id,
+            name: contact.name || '',
+            org: contact.org || undefined,
+            emails,
+            phones
+        };
 
-        if (newIds.length > 0) {
-            // Mark all as processed
-            ids.forEach(id => processedIds.add(id));
+        this.contacts.set(light.id, light);
 
-            groups.push({
-                id: crypto.randomUUID(),
-                contactIds: ids,
-                confidence,
-                reason
-            });
-        }
-    };
-
-    // Helper to check for generic emails
-    const isGenericEmail = (email: string): boolean => {
-        const genericPrefixes = ['info', 'contact', 'kontakt', 'office', 'admin', 'sales', 'support', 'hello', 'mail', 'team', 'service', 'buchhaltung', 'invoice'];
-        const prefix = email.split('@')[0];
-        return genericPrefixes.includes(prefix);
-    };
-
-    // 1. Map by Email
-    const emailMap = new Map<string, string[]>();
-    contacts.forEach(c => {
-        const emails = (c.vcard.match(/EMAIL[^:]*:(.*)/gi) || [])
-            .map(line => normalizeString(line.split(':')[1]));
-
+        // Indexing
+        // 1. Email
         emails.forEach(email => {
-            if (!email) return;
-            if (!emailMap.has(email)) emailMap.set(email, []);
-            emailMap.get(email)?.push(c.id);
+            if (!this.emailMap.has(email)) this.emailMap.set(email, []);
+            this.emailMap.get(email)?.push(light.id);
         });
-    });
 
-    emailMap.forEach((ids, email) => {
-        if (ids.length > 1) {
-            if (isGenericEmail(email)) {
-                // Generic Email (e.g. info@) -> Requires additional Name or Phone match
-                const groupContacts = contacts.filter(c => ids.includes(c.id));
-
-                // Check if names are similar
-                let nameMatch = true;
-                const baseName = normalizeName(groupContacts[0].name);
-                for (let i = 1; i < groupContacts.length; i++) {
-                    if (normalizeName(groupContacts[i].name) !== baseName) {
-                        nameMatch = false;
-                        break;
-                    }
-                }
-
-                if (nameMatch) {
-                    addGroup(ids, 'medium', `Gleiche Info-Mail (${email}) & gleicher Name`);
-                } else {
-                    // Ignore generic email match if names differ
-                    // (e.g. "Max @ info.de" vs "Moritz @ info.de")
-                }
-            } else {
-                // Personal Email -> High Confidence
-                addGroup(ids, 'high', `Gleiche E-Mail (${email})`);
-            }
-        }
-    });
-
-    // 2. Map by Phone (High Confidence)
-    const phoneMap = new Map<string, string[]>();
-    contacts.forEach(c => {
-        const phones = (c.vcard.match(/TEL[^:]*:(.*)/gi) || [])
-            .map(line => clean_number(line.split(':')[1]));
-
+        // 2. Phone
         phones.forEach(phone => {
-            if (!phone || phone.length < 6) return; // Ignore short numbers
-            if (!phoneMap.has(phone)) phoneMap.set(phone, []);
-            phoneMap.get(phone)?.push(c.id);
+            if (!this.phoneMap.has(phone)) this.phoneMap.set(phone, []);
+            this.phoneMap.get(phone)?.push(light.id);
         });
-    });
 
-    phoneMap.forEach((ids, phone) => {
-        if (ids.length > 1) {
-            addGroup(ids, 'high', `Gleiche Telefonnummer (${phone})`);
-        }
-    });
+        // 3. Name
+        const name = normalizeName(light.name);
+        if (name) {
+            if (!this.nameMap.has(name)) this.nameMap.set(name, []);
+            this.nameMap.get(name)?.push(light.id);
 
-    // 3. Map by Name (Medium Confidence)
-    // Only if not already matched
-    // 3. Map by Name (Medium Confidence)
-    const nameMap = new Map<string, string[]>();
-    contacts.forEach(c => {
-        if (processedIds.has(c.id)) return;
-        const name = normalizeName(c.name);
-        if (!name) return;
-        if (!nameMap.has(name)) nameMap.set(name, []);
-        nameMap.get(name)?.push(c.id);
-    });
-
-    nameMap.forEach((ids, name) => {
-        if (ids.length > 1) {
-            // Check for conflicts
-            const groupContacts = contacts.filter(c => ids.includes(c.id));
-            let isClean = true;
-            for (let i = 0; i < groupContacts.length; i++) {
-                for (let j = i + 1; j < groupContacts.length; j++) {
-                    if (areDifferentPeople(groupContacts[i], groupContacts[j])) {
-                        isClean = false;
-                        break;
-                    }
-                }
-                if (!isClean) break;
-            }
-
-            if (isClean) {
-                addGroup(ids, 'medium', `Gleicher Name (${name})`);
+            // 4. Phonetic
+            if (name.length >= 3) {
+                const code = colognePhonetics(name);
+                if (!this.phoneticMap.has(code)) this.phoneticMap.set(code, []);
+                this.phoneticMap.get(code)?.push(light.id);
             }
         }
-    });
+    }
 
-    // 4. Fuzzy & Phonetic Matching (Low/Medium Confidence)
-    // This is O(n^2), so we must be careful. Limit to reasonable dataset size or optimize.
-    // For < 1000 contacts it's fine. For 10k it might be slow.
-    // Optimization: Block by first letter or phonetic code.
+    getResults(): DuplicateGroup[] {
+        // Helper to add a group
+        const addGroup = (ids: string[], confidence: 'high' | 'medium', reason: string) => {
+            const newIds = ids.filter(id => !this.processedIds.has(id));
+            if (newIds.length < 2 && ids.length < 2) return;
 
-    const phoneticMap = new Map<string, string[]>();
-    contacts.forEach(c => {
-        if (processedIds.has(c.id)) return;
-        const name = normalizeName(c.name);
-        if (!name || name.length < 3) return;
+            if (newIds.length > 0) {
+                ids.forEach(id => this.processedIds.add(id));
+                this.groups.push({
+                    id: crypto.randomUUID(),
+                    contactIds: ids,
+                    confidence,
+                    reason
+                });
+            }
+        };
 
-        const code = colognePhonetics(name);
-        if (!phoneticMap.has(code)) phoneticMap.set(code, []);
-        phoneticMap.get(code)?.push(c.id);
-    });
+        // Helper for generic emails
+        const isGenericEmail = (email: string): boolean => {
+            const genericPrefixes = ['info', 'contact', 'kontakt', 'office', 'admin', 'sales', 'support', 'hello', 'mail', 'team', 'service', 'buchhaltung', 'invoice'];
+            const prefix = email.split('@')[0];
+            return genericPrefixes.includes(prefix);
+        };
 
-    phoneticMap.forEach((ids, code) => {
-        if (ids.length > 1) {
-            // We have a phonetic match group.
-            // Now check Levenshtein to be sure it's not completely different
-            // e.g. "Maier" vs "Meyer" -> Phonetic match, Levenshtein low -> Good.
-
-            const groupContacts = contacts.filter(c => ids.includes(c.id));
-
-            // Compare pairs
-            for (let i = 0; i < groupContacts.length; i++) {
-                for (let j = i + 1; j < groupContacts.length; j++) {
-                    const c1 = groupContacts[i];
-                    const c2 = groupContacts[j];
-
-                    if (processedIds.has(c1.id) && processedIds.has(c2.id)) continue;
-                    if (areDifferentPeople(c1, c2)) continue;
-
-                    const dist = levenshteinDistance(normalizeName(c1.name), normalizeName(c2.name));
-                    const maxLen = Math.max(c1.name.length, c2.name.length);
-                    const similarity = 1 - (dist / maxLen);
-
-                    if (similarity > 0.8) { // > 80% similarity
-                        addGroup([c1.id, c2.id], 'medium', `Ähnlicher Name (${c1.name} / ${c2.name})`);
+        // 1. Process Emails
+        this.emailMap.forEach((ids, email) => {
+            if (ids.length > 1) {
+                if (isGenericEmail(email)) {
+                    const groupContacts = ids.map(id => this.contacts.get(id)!);
+                    let nameMatch = true;
+                    const baseName = normalizeName(groupContacts[0].name);
+                    for (let i = 1; i < groupContacts.length; i++) {
+                        if (normalizeName(groupContacts[i].name) !== baseName) {
+                            nameMatch = false;
+                            break;
+                        }
                     }
+                    if (nameMatch) {
+                        addGroup(ids, 'medium', `Gleiche Info-Mail (${email}) & gleicher Name`);
+                    }
+                } else {
+                    addGroup(ids, 'high', `Gleiche E-Mail (${email})`);
                 }
             }
-        }
-    });
+        });
 
-    return groups;
+        // 2. Process Phones
+        this.phoneMap.forEach((ids, phone) => {
+            if (ids.length > 1) {
+                addGroup(ids, 'high', `Gleiche Telefonnummer (${phone})`);
+            }
+        });
+
+        // 3. Process Names
+        this.nameMap.forEach((ids, name) => {
+            if (ids.length > 1) {
+                const groupContacts = ids.map(id => this.contacts.get(id)!);
+                let isClean = true;
+                for (let i = 0; i < groupContacts.length; i++) {
+                    for (let j = i + 1; j < groupContacts.length; j++) {
+                        if (areDifferentPeople(groupContacts[i], groupContacts[j])) {
+                            isClean = false;
+                            break;
+                        }
+                    }
+                    if (!isClean) break;
+                }
+
+                if (isClean) {
+                    addGroup(ids, 'medium', `Gleicher Name (${name})`);
+                }
+            }
+        });
+
+        // 4. Process Phonetics
+        this.phoneticMap.forEach((ids, code) => {
+            if (ids.length > 1) {
+                const groupContacts = ids.map(id => this.contacts.get(id)!);
+                for (let i = 0; i < groupContacts.length; i++) {
+                    for (let j = i + 1; j < groupContacts.length; j++) {
+                        const c1 = groupContacts[i];
+                        const c2 = groupContacts[j];
+
+                        if (this.processedIds.has(c1.id) && this.processedIds.has(c2.id)) continue;
+                        if (areDifferentPeople(c1, c2)) continue;
+
+                        const dist = levenshteinDistance(normalizeName(c1.name), normalizeName(c2.name));
+                        const maxLen = Math.max(c1.name.length, c2.name.length);
+                        const similarity = 1 - (dist / maxLen);
+
+                        if (similarity > 0.8) {
+                            addGroup([c1.id, c2.id], 'medium', `Ähnlicher Name (${c1.name} / ${c2.name})`);
+                        }
+                    }
+                }
+            }
+        });
+
+        return this.groups;
+    }
+}
+
+/**
+ * Legacy wrapper for backward compatibility if needed, 
+ * but we should use DedupIndexer directly in the worker.
+ */
+export const findDuplicates = (contacts: HistoryItem[]): DuplicateGroup[] => {
+    const indexer = new DedupIndexer();
+    contacts.forEach(c => indexer.add(c));
+    return indexer.getResults();
 };
