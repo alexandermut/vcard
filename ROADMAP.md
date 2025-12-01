@@ -149,3 +149,6 @@ This file tracks the current development status and planned features.
 - [ ] **Email Signature Parser:** Paste an email signature to create a contact instantly.
 - [ ] **Calendar Integration:** Show "Last Met" date and upcoming birthdays in dashboard.
 
+### unsortiert
+- [ ] 
+- [ ] 
