@@ -65,7 +65,7 @@ This file tracks the current development status and planned features.
 ## 🚧 In Progress / Next Up
 
 ### 1. Google Integration Phase 2 (Sync & Management)
-- [ ] **Sync Status:** Visual indicator for contacts already in Google.
+- [x] **Sync Status:** Visual indicator for contacts already in Google.
 - [ ] **Two-Way Sync:** Track changes (ETags) to prevent overwriting.
 - [ ] **Group Management:** Import/Manage Google Contact Groups as Tags.
 - [ ] **Photo Sync:** High-res photo upload & sync.

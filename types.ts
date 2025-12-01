@@ -44,6 +44,7 @@ export interface HistoryItem {
   vcard: string;
   images?: string[]; // Array of Base64 strings (Front/Back)
   keywords?: string[]; // For search indexing
+  googleResourceName?: string; // Linked Google Contact ID
 }
 
 export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';
