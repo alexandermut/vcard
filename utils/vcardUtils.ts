@@ -27,124 +27,14 @@ ADR;WORK:;;Kamekestrasse 2-8;Koeln;;50672;Deutschland
 ADR;OTHER:;;Bramfelder Strasse 110a;Hamburg;;22305;Deutschland
 END:VCARD`;
 
+import { VCardParser } from './vcardParser';
+
 // A simple, robust regex-based parser for display purposes
 export const parseVCardString = (vcard: string): ParsedVCard => {
-  const data: VCardData = {
-    email: [],
-    tel: [],
-    adr: [],
-    url: [],
-  };
-
-  // Handle line unfolding (lines starting with space/tab are continuations)
-  const unfoldedVcard = vcard.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '').replace(/\r[ \t]/g, '');
-  const lines = unfoldedVcard.split(/\r\n|\r|\n/);
-
-  let isValid = false;
-
-  lines.forEach((line) => {
-    if (line.trim().toUpperCase() === 'BEGIN:VCARD') isValid = true;
-    if (!line.includes(':')) return;
-
-    const splitIndex = line.indexOf(':');
-    let keyPart = line.substring(0, splitIndex);
-    const value = line.substring(splitIndex + 1).trim();
-
-    // Clean up key part (remove params for simple matching, but keep them if needed later)
-    const key = keyPart.split(';')[0].toUpperCase();
-    const params = keyPart.split(';').slice(1);
-
-    const getType = () => {
-      // Try to find TYPE=...
-      const typeParam = params.find(p => p.toUpperCase().startsWith('TYPE='));
-      if (typeParam) {
-        return typeParam.replace(/TYPE=/i, '').split(',')[0];
-      }
-
-      // Fallback: Check for implicit types (e.g., TEL;WORK)
-      // Filter out CHARSET, ENCODING, etc.
-      const implicitType = params.find(p => {
-        const upper = p.toUpperCase();
-        return !upper.includes('=') &&
-          !['CHARSET', 'ENCODING', 'QUOTED-PRINTABLE', 'UTF-8'].some(ignored => upper.includes(ignored));
-      });
-
-      return implicitType ? implicitType : 'Standard';
-    };
-
-    switch (key) {
-      case 'FN':
-        data.fn = value;
-        break;
-      case 'N':
-        // N:Family;Given;Middle;Prefix;Suffix
-        data.n = value; // Store raw value to preserve structure
-
-        if (!data.fn) {
-          // Fallback: Construct FN from N if FN is missing
-          const parts = value.split(';');
-          const family = parts[0] || '';
-          const given = parts[1] || '';
-          const middle = parts[2] || '';
-          const prefix = parts[3] || '';
-          const suffix = parts[4] || '';
-
-          // Simple construction: Given Middle Family
-          const nameParts = [prefix, given, middle, family, suffix].filter(p => p);
-          data.fn = nameParts.join(' ').trim();
-        }
-        break;
-      case 'ORG':
-        // Support for ORG:Company;Department
-        data.org = value.replace(/;/g, ' ').trim();
-        break;
-      case 'TITLE':
-        data.title = value;
-        break;
-      case 'ROLE':
-        data.role = value;
-        break;
-      case 'EMAIL':
-        data.email?.push({ type: getType(), value });
-        break;
-      case 'TEL':
-        data.tel?.push({ type: getType(), value });
-        break;
-      case 'URL':
-        data.url?.push({ type: getType(), value });
-        break;
-      case 'ADR':
-        // ADR:PO Box;Extended Address;Street;City;Region;Zip;Country
-        const adrParts = value.split(';');
-        const address: VCardAddress = {
-          street: adrParts[2] || '',
-          city: adrParts[3] || '',
-          region: adrParts[4] || '',
-          zip: adrParts[5] || '',
-          country: adrParts[6] || ''
-        };
-        data.adr?.push({ type: getType(), value: address });
-        break;
-      case 'NOTE':
-        data.note = value.replace(/\\n/g, '\n');
-        break;
-      case 'PHOTO':
-        // Simple URI handling
-        data.photo = value;
-        break;
-      case 'BDAY':
-        data.bday = value;
-        break;
-      case 'UID':
-        data.uid = value;
-        break;
-    }
-  });
-
+  const result = VCardParser.parse(vcard);
   return {
-    raw: vcard,
-    data,
-    isValid: isValid && (vcard.toUpperCase().includes('END:VCARD')),
+    ...result,
+    raw: vcard
   };
 };
 

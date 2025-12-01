@@ -144,55 +144,83 @@ const parseJSONResponse = (response: string): ContactData => {
     }
 };
 
+const safeString = (val: any): string => {
+    if (!val) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'object') {
+        // Try to find a likely value property
+        return val.value || val.number || val.text || JSON.stringify(val);
+    }
+    return String(val);
+};
+
 const convertToVCard = (data: ContactData): string => {
     const lines: string[] = ['BEGIN:VCARD', 'VERSION:3.0'];
 
     // Generate FN and N
-    const fullName = [data.firstName, data.lastName].filter(Boolean).join(' ') || data.company || 'Unknown';
+    const firstName = safeString(data.firstName);
+    const lastName = safeString(data.lastName);
+    const company = safeString(data.company);
+
+    const fullName = [firstName, lastName].filter(Boolean).join(' ') || company || 'Unknown';
     lines.push(`FN:${fullName}`);
 
-    if (data.firstName || data.lastName) {
-        const n = `${data.lastName || ''};${data.firstName || ''};;;`;
+    if (firstName || lastName) {
+        const n = `${lastName};${firstName};;;`;
         lines.push(`N:${n}`);
     }
 
     // Company and role
-    if (data.company) {
-        lines.push(`ORG:${data.company}`);
+    if (company) {
+        lines.push(`ORG:${company}`);
     }
 
-    if (data.role) {
-        lines.push(`TITLE:${data.role}`);
+    const role = safeString(data.role);
+    if (role) {
+        lines.push(`TITLE:${role}`);
     }
 
     // Contact info
-    if (data.email) {
-        lines.push(`EMAIL;TYPE=WORK:${data.email}`);
+    const email = safeString(data.email);
+    if (email) {
+        lines.push(`EMAIL;TYPE=WORK:${email}`);
     }
 
-    if (data.phone) {
-        lines.push(`TEL;TYPE=WORK:${data.phone}`);
+    const phone = safeString(data.phone);
+    if (phone) {
+        lines.push(`TEL;TYPE=WORK:${phone}`);
     }
 
-    if (data.mobile) {
-        lines.push(`TEL;TYPE=CELL:${data.mobile}`);
+    const mobile = safeString(data.mobile);
+    if (mobile) {
+        lines.push(`TEL;TYPE=CELL:${mobile}`);
     }
 
-    if (data.website) {
-        lines.push(`URL:${data.website}`);
+    const website = safeString(data.website);
+    if (website) {
+        lines.push(`URL:${website}`);
     }
 
     // Address
-    if (data.address && (data.address.street || data.address.city || data.address.zip || data.address.country)) {
-        const adr = `;;${data.address.street || ''};${data.address.city || ''};${data.address.zip || ''};${data.address.country || ''}`;
-        lines.push(`ADR;TYPE=WORK:${adr}`);
+    if (data.address) {
+        const street = safeString(data.address.street);
+        const city = safeString(data.address.city);
+        const zip = safeString(data.address.zip);
+        const country = safeString(data.address.country);
+
+        if (street || city || zip || country) {
+            const adr = `;;${street};${city};${zip};${country}`;
+            lines.push(`ADR;TYPE=WORK:${adr}`);
+        }
     }
 
     // Social media
-    if (data.socialMedia && data.socialMedia.length > 0) {
+    if (data.socialMedia && Array.isArray(data.socialMedia)) {
         data.socialMedia.forEach(url => {
-            if (url) {
-                lines.push(`URL:${url}`);
+            const u = safeString(url);
+            if (u) {
+                lines.push(`URL:${u}`);
             }
         });
     }

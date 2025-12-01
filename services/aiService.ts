@@ -348,6 +348,7 @@ const cleanResponse = (text: string): string => {
   let cleaned = text
     .replace(/```vcard/gi, '')
     .replace(/```/g, '')
+    .replace(/\[object Object\]/g, '') // Remove accidental stringified objects
     .trim();
 
   if (cleaned.toLowerCase().startsWith('vcard:')) {

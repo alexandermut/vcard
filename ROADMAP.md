@@ -102,6 +102,11 @@ This file tracks the current development status and planned features.
     - [x] **Streaming:** Process contacts in chunks to support 20k+ items.
     - [x] **Fuzzy Search:** Find typos and phonetic matches (Cologne Phonetics).
     - [x] **Import/Export Worker:** Prevent UI freeze during large file operations.
+    - [x] **Robust vCard Parsing:**
+        - [x] Implement proper line unfolding (RFC 6350).
+        - [x] Handle complex parameters (quoted-printable, charset).
+        - [x] Support multi-line values (e.g. notes).
+        - [x] Add validation for mandatory fields.
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).
