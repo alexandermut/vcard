@@ -462,9 +462,17 @@ const consumeLeftovers = (lines: Line[], data: ParserData) => {
 
 // --- Main Parser ---
 
+const sanitizeText = (text: string): string => {
+  return text
+    .replace(/\u00A0/g, ' ') // Non-breaking space
+    .replace(/[\u2000-\u200B]/g, ' ') // Zero-width spaces
+    .replace(/\t/g, ' ');
+};
+
 export const parseImpressumToVCard = (text: string): string => {
   // 1. Prepare Lines
-  const rawLines = text.split(/\r\n|\r|\n/);
+  const cleanText = sanitizeText(text);
+  const rawLines = cleanText.split(/\r\n|\r|\n/);
   const lines: Line[] = rawLines
     .map(l => ({ original: l, clean: l.trim(), isConsumed: false }))
     .filter(l => l.clean.length > 0);

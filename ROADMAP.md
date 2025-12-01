@@ -110,6 +110,10 @@ This file tracks the current development status and planned features.
 - [ ] **Google Sync Optimization**
     - [ ] Implement Batch API for Create/Update/Delete.
     - [ ] Implement Incremental Sync (Sync Tokens).
+- [ ] **Advanced vCard Parsing (Backlog):**
+    - [ ] Support `X-` Properties (Preserve unknown fields).
+    - [ ] RFC-Compliant Generator (Escaping, Folding).
+    - [ ] Robust PHOTO Handling (Base64).
 
 ## 🔮 Future / Ideas
 
