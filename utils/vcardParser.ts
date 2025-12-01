@@ -169,24 +169,54 @@ export class VCardParser {
         // 1. Handle Quoted-Printable
         const encoding = this.getParam(params, 'ENCODING');
         if (encoding === 'QUOTED-PRINTABLE') {
-            value = this.decodeQuotedPrintable(value);
+            return this.decodeQuotedPrintable(value);
         }
 
-        // 2. Handle Charset (usually handled by JS strings if UTF-8, but QP might need it)
-        // We assume UTF-8 output from QP decoder.
+        // Note: We DO NOT unescape here anymore. 
+        // Unescaping must happen AFTER splitting for structured fields.
+        // For unstructured fields, we call unescape() explicitly in mapToData.
+        return value.trim();
+    }
 
-        // 3. Unescape characters (\, \;, \n)
-        // Only unescape if NOT Quoted-Printable (QP handles its own decoding usually, but vCard escaping applies on top?)
-        // RFC 6350 says: "The value is then unescaped".
-        // But QP decodes to bytes, then to string.
-
-        // Simple unescape
-        value = value.replace(/\\n/gi, '\n')
+    private static unescape(value: string): string {
+        return value.replace(/\\n/gi, '\n')
             .replace(/\\,/g, ',')
             .replace(/\\;/g, ';')
             .replace(/\\\\/g, '\\');
+    }
 
-        return value.trim();
+    /**
+     * Splits a structured value by delimiter (usually ';') respecting escapes.
+     */
+    private static splitStructured(value: string, delimiter: string = ';'): string[] {
+        const parts: string[] = [];
+        let current = '';
+
+        for (let i = 0; i < value.length; i++) {
+            const char = value[i];
+            if (char === '\\' && i + 1 < value.length) {
+                // Escaped character, keep it for now (unescape later)
+                current += char + value[i + 1];
+                i++; // Skip next char
+            } else if (char === delimiter) {
+                parts.push(current);
+                current = '';
+            } else {
+                current += char;
+            }
+        }
+        parts.push(current);
+        return parts;
+    }
+
+    private static normalizeDate(value: string): string {
+        // Try to parse YYYYMMDD or YYYY-MM-DD
+        const clean = value.replace(/-/g, '');
+        if (clean.length === 8) {
+            // YYYYMMDD -> YYYY-MM-DD
+            return `${clean.substring(0, 4)}-${clean.substring(4, 6)}-${clean.substring(6, 8)}`;
+        }
+        return value;
     }
 
     private static decodeQuotedPrintable(input: string): string {
@@ -228,40 +258,45 @@ export class VCardParser {
 
             switch (key) {
                 case 'FN':
-                    data.fn = value;
+                    data.fn = this.unescape(value);
                     break;
                 case 'N':
+                    // Structured: Family;Given;Middle;Prefix;Suffix
+                    const nParts = this.splitStructured(value, ';').map(p => this.unescape(p));
                     data.n = value;
+
                     if (!data.fn) {
-                        const parts = value.split(';');
-                        const family = parts[0] || '';
-                        const given = parts[1] || '';
-                        const middle = parts[2] || '';
-                        const prefix = parts[3] || '';
-                        const suffix = parts[4] || '';
+                        const family = nParts[0] || '';
+                        const given = nParts[1] || '';
+                        const middle = nParts[2] || '';
+                        const prefix = nParts[3] || '';
+                        const suffix = nParts[4] || '';
                         data.fn = [prefix, given, middle, family, suffix].filter(p => p).join(' ').trim();
                     }
                     break;
                 case 'ORG':
-                    data.org = value.replace(/;/g, ' ').trim();
+                    // Structured: Company;Unit
+                    const orgParts = this.splitStructured(value, ';').map(p => this.unescape(p));
+                    data.org = orgParts.join(' ').trim();
                     break;
                 case 'TITLE':
-                    data.title = value;
+                    data.title = this.unescape(value);
                     break;
                 case 'ROLE':
-                    data.role = value;
+                    data.role = this.unescape(value);
                     break;
                 case 'EMAIL':
-                    data.email?.push({ type: String(type), value });
+                    data.email?.push({ type: String(type), value: this.unescape(value) });
                     break;
                 case 'TEL':
-                    data.tel?.push({ type: String(type), value });
+                    data.tel?.push({ type: String(type), value: this.unescape(value) });
                     break;
                 case 'URL':
-                    data.url?.push({ type: String(type), value });
+                    data.url?.push({ type: String(type), value: this.unescape(value) });
                     break;
                 case 'ADR':
-                    const adrParts = value.split(';');
+                    // Structured: PO;Ext;Street;City;Region;Zip;Country
+                    const adrParts = this.splitStructured(value, ';').map(p => this.unescape(p));
                     const address: VCardAddress = {
                         street: adrParts[2] || '',
                         city: adrParts[3] || '',
@@ -272,16 +307,16 @@ export class VCardParser {
                     data.adr?.push({ type: String(type), value: address });
                     break;
                 case 'NOTE':
-                    data.note = value;
+                    data.note = this.unescape(value);
                     break;
                 case 'PHOTO':
-                    data.photo = value;
+                    data.photo = this.unescape(value);
                     break;
                 case 'BDAY':
-                    data.bday = value;
+                    data.bday = this.normalizeDate(this.unescape(value));
                     break;
                 case 'UID':
-                    data.uid = value;
+                    data.uid = this.unescape(value);
                     break;
             }
         }
