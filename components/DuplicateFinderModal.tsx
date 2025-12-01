@@ -23,6 +23,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     // New State: Draft Data (The "Result" being built)
     const [draftData, setDraftData] = useState<VCardData | null>(null);
     const [masterSide, setMasterSide] = useState<'left' | 'right'>('left');
+    const [dirtyFields, setDirtyFields] = useState<Set<keyof VCardData>>(new Set());
 
     // Reset state when opening
     useEffect(() => {
@@ -32,6 +33,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
             setCurrentGroupIndex(0);
             setDraftData(null);
             setMasterSide('left');
+            setDirtyFields(new Set());
             // Lock body scroll
             document.body.style.overflow = 'hidden';
         } else {
@@ -42,7 +44,14 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         };
     }, [isOpen]);
 
-    // Initialize Draft when group changes or master side changes
+    // Initialize Draft when group changes
+    useEffect(() => {
+        setMasterSide('left');
+        setDirtyFields(new Set());
+        setDraftData(null);
+    }, [currentGroupIndex]);
+
+    // Update Draft when Master Side changes (preserving dirty fields)
     useEffect(() => {
         if (duplicates.length > 0 && currentGroupIndex < duplicates.length) {
             const group = duplicates[currentGroupIndex];
@@ -51,16 +60,25 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
             if (c1 && c2) {
                 const master = masterSide === 'left' ? c1 : c2;
-                // Only reset draft if it's null (first load of group) or if we explicitly want to reset on side switch?
-                // Better: When switching side, we might want to keep edits? 
-                // User said: "rework some things completely in the master".
-                // If I switch master, I probably expect the *base* to change.
-                // Let's reset draft to the new master's data.
                 const parsed = parseVCardString(master.vcard).data;
-                setDraftData(parsed);
+
+                setDraftData(prev => {
+                    if (!prev) return parsed; // First load for this group
+
+                    // Merge: Use new master's data, but override with dirty fields from prev
+                    const newData = { ...parsed };
+                    dirtyFields.forEach(field => {
+                        // @ts-ignore
+                        if (prev[field] !== undefined) {
+                            // @ts-ignore
+                            newData[field] = prev[field];
+                        }
+                    });
+                    return newData;
+                });
             }
         }
-    }, [duplicates, currentGroupIndex, masterSide, history]);
+    }, [duplicates, currentGroupIndex, masterSide, history]); // dirtyFields is used in callback but not dependency to avoid loops
 
     const handleScan = () => {
         setIsScanning(true);
@@ -129,8 +147,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
         // Move to next
         if (currentGroupIndex < duplicates.length - 1) {
             setCurrentGroupIndex(prev => prev + 1);
-            setMasterSide('left'); // Reset side
-            setDraftData(null); // Trigger re-init
+            // Side reset and dirty fields reset handled by useEffect on currentGroupIndex
         } else {
             setDuplicates([]);
             setScanComplete(false);
@@ -142,8 +159,7 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     const handleIgnore = () => {
         if (currentGroupIndex < duplicates.length - 1) {
             setCurrentGroupIndex(prev => prev + 1);
-            setMasterSide('left');
-            setDraftData(null);
+            // Side reset and dirty fields reset handled by useEffect on currentGroupIndex
         } else {
             setDuplicates([]);
             setScanComplete(false);
@@ -154,6 +170,11 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
     const updateDraft = (field: keyof VCardData, value: any) => {
         if (!draftData) return;
         setDraftData({ ...draftData, [field]: value });
+        setDirtyFields(prev => {
+            const next = new Set(prev);
+            next.add(field);
+            return next;
+        });
     };
 
     // Helper to get Social Icon
