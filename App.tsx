@@ -1061,14 +1061,7 @@ const App: React.FC = () => {
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
               title={t.notes}
             >
-              <div className="relative">
-                <StickyNote size={20} />
-                {notesCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[10px] font-bold px-1 min-w-[16px] h-4 rounded-full flex items-center justify-center">
-                    {notesCount}
-                  </span>
-                )}
-              </div>
+              <StickyNote size={20} />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                 {t.notes}
               </span>

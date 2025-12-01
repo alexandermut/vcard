@@ -17,7 +17,7 @@ export const translations = {
     qrScanSuccess: "vCard erfolgreich gescannt!",
     loadMore: "Mehr laden",
     searchPlaceholder: "Verlauf durchsuchen...",
-    restoreBackup: "Backup wiederherstellen",
+    restoreBackup: "Backup laden",
 
 
 
