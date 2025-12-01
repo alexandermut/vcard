@@ -359,14 +359,18 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     {renderListField("E-Mails", Mail, d1.email, d2.email, (item) => (
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-slate-400 uppercase w-10">{item.type}</span>
-                            <span className="truncate text-slate-700 dark:text-slate-300">{item.value}</span>
+                            <a href={`mailto:${item.value}`} className="truncate text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                                {item.value}
+                            </a>
                         </div>
                     ))}
 
                     {renderListField("Telefon", Phone, d1.tel, d2.tel, (item) => (
                         <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-slate-400 uppercase w-10">{item.type}</span>
-                            <span className="font-mono text-slate-700 dark:text-slate-300">{item.value}</span>
+                            <a href={`tel:${item.value}`} className="font-mono text-slate-700 dark:text-slate-300 hover:text-green-600 dark:hover:text-green-400 hover:underline">
+                                {item.value}
+                            </a>
                         </div>
                     ))}
 
@@ -376,17 +380,24 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                         return (
                             <div className="flex items-center gap-2">
                                 <Icon size={12} className={style.color} />
-                                <span className="truncate text-blue-600 dark:text-blue-400 underline decoration-dotted">{item.value}</span>
+                                <a href={item.value} target="_blank" rel="noopener noreferrer" className="truncate text-blue-600 dark:text-blue-400 underline decoration-dotted hover:text-blue-800 dark:hover:text-blue-300">
+                                    {item.value}
+                                </a>
                             </div>
                         );
                     })}
 
                     {renderListField("Adressen", MapPin, d1.adr, d2.adr, (item) => (
-                        <div className="flex flex-col gap-0.5">
+                        <a
+                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${item.value.street}, ${item.value.zip} ${item.value.city}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex flex-col gap-0.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 -m-1 p-1 rounded transition-colors"
+                        >
                             <span className="text-xs font-bold text-slate-400 uppercase">{item.type}</span>
                             <span className="text-slate-700 dark:text-slate-300">{item.value.street}</span>
                             <span className="text-slate-500 text-xs">{item.value.zip} {item.value.city}</span>
-                        </div>
+                        </a>
                     ))}
 
                 </div>
