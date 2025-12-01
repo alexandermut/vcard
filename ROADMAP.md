@@ -132,6 +132,7 @@ This file tracks the current development status and planned features.
 - [ ] **Relationship Graph:** Visualize connections between contacts (Who knows who?).
 - [ ] **Smart Grouping:** Auto-categorize contacts by industry, location, or role.
 - [ ] **Voice Memos:** Record audio notes for contacts, auto-transcribed by AI.
+- [ ] **NLP Integration:** Use `compromise.js` (or similar) for smarter offline parsing of natural text (e.g. email signatures).
 
 ### 🤝 Networking & Events
 - [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
