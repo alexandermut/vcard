@@ -1297,7 +1297,9 @@ const App: React.FC = () => {
       </footer>
       <ReloadPrompt />
 
-      <RegexDebugger />
+      {new URLSearchParams(window.location.search).get('debug_regex') === 'true' && (
+        <RegexDebugger />
+      )}
     </div>
   );
 };

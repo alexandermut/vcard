@@ -59,6 +59,11 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
     ```
 4.  Open App: `http://localhost:5173`
 
+### 🔧 Regex Debugger
+The application includes a built-in Regex Debugger for testing and refining parsing logic. By default, this tool is hidden.
+To access it, append `?debug_regex=true` to the URL:
+`http://localhost:5173/?debug_regex=true`
+
 ### ⚠️ Important Note on Local LLMs (Ollama)
 If you want to use **local models (e.g., Ollama)**, you **must** use the app via `http://localhost:5173` (the dev server).
 *   The server includes a **Proxy** that forwards requests to `/ollama` automatically to `http://127.0.0.1:11434`.
