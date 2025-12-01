@@ -24,6 +24,7 @@ if (!clientId) {
 }
 
 import { GoogleContactsProvider } from './auth/GoogleContactsContext';
+import { LoggerProvider } from './components/LoggerProvider';
 
 const root = ReactDOM.createRoot(rootElement);
 
@@ -33,11 +34,15 @@ root.render(
       {clientId ? (
         <GoogleOAuthProvider clientId={clientId}>
           <GoogleContactsProvider>
-            <App />
+            <LoggerProvider>
+              <App />
+            </LoggerProvider>
           </GoogleContactsProvider>
         </GoogleOAuthProvider>
       ) : (
-        <App />
+        <LoggerProvider>
+          <App />
+        </LoggerProvider>
       )}
     </ErrorBoundary>
   </React.StrictMode>

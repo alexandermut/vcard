@@ -65,7 +65,8 @@ This file tracks the current development status and planned features.
 ## 🚧 In Progress / Next Up
 
 ### 1. Google Integration Phase 2 (Sync & Management)
-- [x] **Sync Status:** Visual indicator for contacts already in Google.
+- [x] Add "Sync Status" Indicator in Google Modal (Visual feedback for existing contacts)
+- [x] **Debug Logger:** Capture clicks/errors/logs for analysis (Settings -> Debug).
 - [ ] **Two-Way Sync:** Track changes (ETags) to prevent overwriting.
 - [ ] **Group Management:** Import/Manage Google Contact Groups as Tags.
 - [ ] **Photo Sync:** High-res photo upload & sync.
