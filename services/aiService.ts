@@ -394,3 +394,41 @@ export const generateContent = async (
     throw e;
   }
 };
+
+export const detectCardBounds = async (
+  image: string,
+  apiKey: string,
+  llmConfig?: LLMConfig
+): Promise<{ ymin: number; xmin: number; ymax: number; xmax: number } | null> => {
+  const prompt = `
+    Identify the bounding box of the business card in this image.
+    Ignore the background (table, fingers, etc.).
+    Return ONLY a JSON object with normalized coordinates (0-100 scale):
+    { "ymin": number, "xmin": number, "ymax": number, "xmax": number }
+    Example: { "ymin": 10, "xmin": 15, "ymax": 90, "xmax": 85 }
+    If no card is found, return null.
+  `;
+
+  try {
+    // We reuse generateContent but need to parse JSON
+    // Note: generateContent returns string. We need to ensure it returns JSON.
+    // Let's call callGeminiWithRetry directly or similar if possible, but generateContent is cleaner if we pass image.
+
+    // We need to construct ImageInput
+    const mimeType = image.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+    const base64 = image.split(',')[1];
+
+    const response = await generateContent(apiKey, prompt, { base64, mimeType }, llmConfig);
+
+    const jsonStr = response.replace(/```json/g, '').replace(/```/g, '').trim();
+    const bounds = JSON.parse(jsonStr);
+
+    if (bounds && typeof bounds.ymin === 'number') {
+      return bounds;
+    }
+    return null;
+  } catch (e) {
+    console.error("Smart Crop Detection Failed:", e);
+    return null;
+  }
+};

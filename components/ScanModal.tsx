@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText, RotateCcw } from 'lucide-react';
 import { convertPdfToImages } from '../utils/pdfUtils';
-import { scanBusinessCard, ImageInput } from '../services/aiService';
+import { scanBusinessCard, ImageInput, detectCardBounds } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
-import { autoCropImage } from '../utils/cropUtils';
+import { autoCropImage, cropImageByBounds } from '../utils/cropUtils';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -71,6 +71,29 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     }
   };
 
+  const handleSmartCrop = async (
+    image: string,
+    setImg: (s: string) => void,
+    setOriginal: (s: string) => void
+  ) => {
+    try {
+      setIsProcessingImage(true);
+      const bounds = await detectCardBounds(image, apiKey);
+      if (bounds) {
+        const cropped = await cropImageByBounds(image, bounds);
+        setOriginal(image);
+        setImg(cropped);
+      } else {
+        setError("Keine Visitenkarte erkannt.");
+      }
+    } catch (err) {
+      console.error("Smart Crop failed", err);
+      setError("Smart Crop fehlgeschlagen.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && initialFile) {
       processFile(initialFile, setFrontImage);
@@ -114,20 +137,6 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     if (!frontImage) return;
 
     if (onAddToQueue) {
-      // Pass the selected mode to the queue handler (which calls scanBusinessCard)
-      // Note: We need to update the onAddToQueue signature or handle it here.
-      // Actually, ScanModal usually calls onScanComplete or onAddToQueue.
-      // Let's assume onAddToQueue takes the images, but we need to pass the mode too.
-      // Since we can't easily change the prop signature without breaking other things,
-      // let's check how onAddToQueue is used.
-      // It seems onAddToQueue is just for the queue UI. The actual scanning happens in App.tsx's queue processor.
-      // We might need to pass the mode as metadata.
-
-      // For now, let's just pass it. If onAddToQueue doesn't support it, we might need to refactor.
-      // Wait, onAddToQueue signature is (front, back) -> void.
-      // We should probably update the App.tsx to accept mode.
-
-      // Let's modify the onAddToQueue prop to accept mode.
       onAddToQueue(frontImage, backImage, scanMode);
 
       // Instant Reset for next card
@@ -204,26 +213,39 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                         Undo
                       </button>
                     ) : (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            setIsProcessingImage(true);
-                            const cropped = await autoCropImage(frontImage);
-                            setOriginalFrontImage(frontImage);
-                            setFrontImage(cropped);
-                          } catch (err) {
-                            console.error("Auto-crop failed", err);
-                          } finally {
-                            setIsProcessingImage(false);
-                          }
-                        }}
-                        className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                        title="Automatisch zuschneiden"
-                      >
-                        <Sparkles size={12} />
-                        Auto-Crop
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              setIsProcessingImage(true);
+                              const cropped = await autoCropImage(frontImage);
+                              setOriginalFrontImage(frontImage);
+                              setFrontImage(cropped);
+                            } catch (err) {
+                              console.error("Auto-crop failed", err);
+                            } finally {
+                              setIsProcessingImage(false);
+                            }
+                          }}
+                          className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                          title="Schneller lokaler Zuschnitt"
+                        >
+                          <Sparkles size={12} />
+                          Fast
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSmartCrop(frontImage, setFrontImage, setOriginalFrontImage);
+                          }}
+                          className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline"
+                          title="Präziser AI Zuschnitt"
+                        >
+                          <Sparkles size={12} />
+                          Smart
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -274,26 +296,39 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                         Undo
                       </button>
                     ) : (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            setIsProcessingImage(true);
-                            const cropped = await autoCropImage(backImage);
-                            setOriginalBackImage(backImage);
-                            setBackImage(cropped);
-                          } catch (err) {
-                            console.error("Auto-crop failed", err);
-                          } finally {
-                            setIsProcessingImage(false);
-                          }
-                        }}
-                        className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                        title="Automatisch zuschneiden"
-                      >
-                        <Sparkles size={12} />
-                        Auto-Crop
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              setIsProcessingImage(true);
+                              const cropped = await autoCropImage(backImage);
+                              setOriginalBackImage(backImage);
+                              setBackImage(cropped);
+                            } catch (err) {
+                              console.error("Auto-crop failed", err);
+                            } finally {
+                              setIsProcessingImage(false);
+                            }
+                          }}
+                          className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                          title="Schneller lokaler Zuschnitt"
+                        >
+                          <Sparkles size={12} />
+                          Fast
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSmartCrop(backImage, setBackImage, setOriginalBackImage);
+                          }}
+                          className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline"
+                          title="Präziser AI Zuschnitt"
+                        >
+                          <Sparkles size={12} />
+                          Smart
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}

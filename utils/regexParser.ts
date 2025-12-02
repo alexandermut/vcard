@@ -167,7 +167,21 @@ const consumePhones = (lines: Line[], data: ParserData) => {
       let hasValidNumber = false;
 
       foundNumbers.forEach(res => {
-        const number = res.number; // E.164 format (e.g. +491711234567)
+        const numberObj = res.number; // E.164 format (e.g. +491711234567)
+        const rawNumber = line.clean.substring(res.startsAt, res.endsAt);
+
+        // REGRESSION FIX: Check if this "number" is actually a PLZ followed by a City
+        // PLZ is 5 digits.
+        const cleanRaw = rawNumber.replace(/\D/g, '');
+        if (cleanRaw.length === 5) {
+          // Check what comes AFTER this number
+          const remainder = line.clean.substring(res.endsAt).trim();
+          const cityRegex = new RegExp(`^(${CITIES_PATTERN})`, 'i');
+          if (cityRegex.test(remainder)) {
+            // It's a PLZ followed by a City! Ignore this as a phone number.
+            return;
+          }
+        }
 
         // Filter out short numbers that might be false positives (like dates or zip codes if they look like phones)
         // libphonenumber is usually good, but let's be safe.
@@ -186,7 +200,7 @@ const consumePhones = (lines: Line[], data: ParserData) => {
 
         // Check for mobile number using the provided list
         // Normalize number for check: Remove +49, replace with 0
-        let normalizedForCheck: string = number.number; // e.g. +49171...
+        let normalizedForCheck: string = numberObj.number; // e.g. +49171...
         if (normalizedForCheck.startsWith('+49')) {
           normalizedForCheck = '0' + normalizedForCheck.substring(3);
         }

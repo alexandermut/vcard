@@ -117,3 +117,37 @@ export const autoCropImage = (base64: string, threshold = 30): Promise<string> =
         img.src = base64;
     });
 };
+
+export const cropImageByBounds = (base64: string, bounds: { ymin: number; xmin: number; ymax: number; xmax: number }): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error("No canvas context"));
+                return;
+            }
+
+            // Convert normalized bounds (0-100) to pixels
+            const x = Math.floor((bounds.xmin / 100) * img.width);
+            const y = Math.floor((bounds.ymin / 100) * img.height);
+            const w = Math.floor(((bounds.xmax - bounds.xmin) / 100) * img.width);
+            const h = Math.floor(((bounds.ymax - bounds.ymin) / 100) * img.height);
+
+            // Safety check
+            if (w <= 0 || h <= 0) {
+                resolve(base64); // Return original if invalid
+                return;
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
+
+            resolve(canvas.toDataURL('image/jpeg', 0.9));
+        };
+        img.onerror = reject;
+        img.src = base64;
+    });
+};
