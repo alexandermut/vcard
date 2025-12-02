@@ -82,11 +82,22 @@ This file tracks the current development status and planned features.
 
 ### 3. AI Enrichment (Phase 3)
 - [ ] **Health Check:** AI scans for missing country codes, formatting errors.
-- [ ] **Enrichment:** "Update from Signature" (Paste text -> Update Contact).
+- [ ] **Enrichment:** "Update from Signature" (Paste text → Update Contact).
+- [ ] ⚡ **Phone Number False Positives:** Improve regex parser to distinguish phone numbers from VAT/UST/IBAN/HR numbers
+  - **Problem:** Parser currently misidentifies non-phone numbers (USt-ID, IBAN, Handelsregister, etc.) as phone numbers
+  - **Solution:** Implement negative lookahead with prefix blacklist
+  - **Prefix Catalog (Numbers to EXCLUDE):**
+    - **Tax/Registration:** `USt-ID`, `USt.ID`, `Umsatzsteuer-ID`, `VAT`, `VAT-ID`, `VAT No`, `UID`, `Steuernummer`, `St.-Nr.`, `Steuer-Nr.`
+    - **Trade Registry:** `Handelsregister`, `HRB`, `HRA`, `HR`, `Registernummer`, `Reg.-Nr.`, `Firmenbuchnummer`, `FN`
+    - **Banking:** `IBAN`, `BIC`, `SWIFT`, `Kontonummer`, `Konto-Nr.`, `Bankleitzahl`, `BLZ`
+    - **Business IDs:** `Artikelnummer`, `Art.-Nr.`, `Bestellnummer`, `Best.-Nr.`, `Kundennummer`, `Kd.-Nr.`, `Rechnungsnummer`, `Rechn.-Nr.`
+    - **Personal IDs:** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
+    - **Dates:** `geb.`, `geboren`, `Geburtsdatum` (to avoid date patterns like `01.01.1990`)
+  - **Implementation:** Add to `safeParser.ts` with case-insensitive regex
 
 ---
 
-## � Phase 4: Scaling & Performance (20k+ Contacts)
+##  Phase 4: Scaling & Performance (20k+ Contacts)
 **Goal:** Ensure smooth operation with large datasets (>20,000 contacts).
 
 - [x] **Virtualization (React Virtuoso)**
