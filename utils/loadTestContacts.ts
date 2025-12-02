@@ -6,28 +6,37 @@ export interface TestContact {
 
 export const getTestContacts = async (): Promise<TestContact[]> => {
     // Use Vite's import.meta.glob to find the files
-    const modules = import.meta.glob('../data/realContacts.js');
+    const syntheticModules = import.meta.glob('../data/syntheticEdgeCases.js');
+    const realModules = import.meta.glob('../data/realContacts.js');
     const exampleModules = import.meta.glob('../data/realContacts.example.js');
 
+    let syntheticContacts: TestContact[] = [];
+    let realContacts: TestContact[] = [];
+
+    // 1. Load Synthetic Edge Cases (Always)
     try {
-        // Try to load realContacts.js first
-        if (modules['../data/realContacts.js']) {
-            const mod = await modules['../data/realContacts.js']() as { difficultContacts: TestContact[] };
-            return mod.difficultContacts || [];
+        if (syntheticModules['../data/syntheticEdgeCases.js']) {
+            const mod = await syntheticModules['../data/syntheticEdgeCases.js']() as { syntheticEdgeCases: TestContact[] };
+            syntheticContacts = mod.syntheticEdgeCases || [];
         }
     } catch (e) {
-        console.warn("Could not load realContacts.js", e);
+        console.warn("Could not load syntheticEdgeCases.js", e);
     }
 
-    // Fallback to example
+    // 2. Load Real Contacts (Local override) or Fallback to Example
     try {
-        if (exampleModules['../data/realContacts.example.js']) {
+        if (realModules['../data/realContacts.js']) {
+            const mod = await realModules['../data/realContacts.js']() as { difficultContacts: TestContact[] };
+            realContacts = mod.difficultContacts || [];
+        } else if (exampleModules['../data/realContacts.example.js']) {
+            // Fallback to example if real is missing (optional, but good for dev)
             const mod = await exampleModules['../data/realContacts.example.js']() as { difficultContacts: TestContact[] };
-            return mod.difficultContacts || [];
+            realContacts = mod.difficultContacts || [];
         }
     } catch (e) {
-        console.warn("Could not load realContacts.example.js", e);
+        console.warn("Could not load realContacts.js or example", e);
     }
 
-    return [];
+    // Merge: Synthetic first, then Real
+    return [...syntheticContacts, ...realContacts];
 };

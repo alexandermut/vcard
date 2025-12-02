@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { difficultContacts } from '../data/realContacts';
+import { getTestContacts, TestContact } from '../utils/loadTestContacts';
 import { parseImpressumToVCard } from '../utils/regexParser';
 import { parseVCardString } from '../utils/vcardUtils';
 
@@ -16,11 +16,14 @@ interface ContactTestCase {
         fax?: string;
         adr?: string;
         cell?: string;
+        mobile?: string;
     };
 }
 
+const contacts = await getTestContacts();
+
 describe('Real Contacts Parsing', () => {
-    (difficultContacts as ContactTestCase[]).forEach((contact) => {
+    (contacts as ContactTestCase[]).forEach((contact) => {
         if (!contact.expected) return; // Skip commented out or incomplete cases
 
         it(`should correctly parse ${contact.id}`, () => {

@@ -154,12 +154,25 @@ const consumePhones = (lines: Line[], data: ParserData) => {
   lines.forEach(line => {
     if (line.isConsumed) return;
 
+    // OCR Correction for Phone Numbers
+    // If line looks like phone (has "Tel", "Fax", "Mobil" or +), try to fix common OCR errors
+    let lineForPhone = line.clean;
+    if (/Tel|Fax|Mobil|Phon|Cell|\+/i.test(lineForPhone)) {
+      // Replace 'l' or 'I' with '1' inside potential number blocks
+      // This is risky, so we only do it if we see other digits
+      lineForPhone = lineForPhone.replace(/([0-9\s\+])([lI])([0-9\s])/g, '$11$3');
+      // Replace 'O' with '0'
+      lineForPhone = lineForPhone.replace(/([0-9\s\+])(O)([0-9\s])/g, '$10$3');
+    }
+
     // Use libphonenumber-js to find numbers in the line
     // We use 'DE' as default country, but it handles international numbers (+...) automatically
-    const foundNumbers = findNumbers(line.clean, { defaultCountry: 'DE', v2: true });
+    const foundNumbers = findNumbers(lineForPhone, { defaultCountry: 'DE', v2: true });
 
     // Filter out Register numbers (HRA, HRB, Amtsgericht)
     if (/HR[AB]\s*\d+|Amtsgericht|Registergericht/i.test(line.clean)) {
+      line.isConsumed = true;
+      line.type = 'META';
       return;
     }
 
@@ -174,11 +187,17 @@ const consumePhones = (lines: Line[], data: ParserData) => {
         // PLZ is 5 digits.
         const cleanRaw = rawNumber.replace(/\D/g, '');
         if (cleanRaw.length === 5) {
-          // Check what comes AFTER this number
+          // Check what comes AFTER this number (German Format: PLZ City)
           const remainder = line.clean.substring(res.endsAt).trim();
           const cityRegex = new RegExp(`^(${CITIES_PATTERN})`, 'i');
           if (cityRegex.test(remainder)) {
-            // It's a PLZ followed by a City! Ignore this as a phone number.
+            return;
+          }
+
+          // Check what comes BEFORE this number (US Format: State ZIP)
+          // e.g. "NY 10001"
+          const preceeding = line.clean.substring(0, res.startsAt).trim();
+          if (/[A-Z]{2}$/.test(preceeding)) {
             return;
           }
         }
@@ -329,11 +348,26 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
           switch (prefix) {
             case 'A': country = 'Österreich'; break;
             case 'CH': country = 'Schweiz'; break;
+            case 'D': country = 'Deutschland'; break;
             default:
               if (line.clean.includes('Schweiz')) country = 'Schweiz';
               else if (line.clean.includes('Österreich')) country = 'Österreich';
+              else if (line.clean.includes('USA') || line.clean.includes('United States')) country = 'USA';
               else country = 'Deutschland';
           }
+        }
+      }
+
+      // 3. Try US/International Format: City, State ZIP (e.g. New York, NY 10001)
+      if (!zip) {
+        const re_us = /([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})/;
+        const matchUS = line.clean.match(re_us);
+        if (matchUS) {
+          city = matchUS[1].trim();
+          zip = matchUS[3];
+          country = "USA";
+          line.isConsumed = true;
+          line.type = 'ADDRESS';
         }
       }
     }
@@ -373,7 +407,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 };
 
 const consumeJobAndTax = (lines: Line[], data: ParserData) => {
-  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch|Mittelstandsberater|Berater/i;
+  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch|Mittelstandsberater|Berater|Vorstandsvorsitzender/i;
   const re_ustid = /((Ust|Umsatz)\S+(\s|:))(DE(\s)?.*\d{1,9})/i;
   const re_stnr = /(?:Steuer+[-\s|:.A-Za-z]*)\D(.*\d{1,9})/i;
 
@@ -385,15 +419,47 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
     if (jobMatch) {
       // If the line is JUST the job title, consume it. 
       // If it contains a name (e.g. "Geschäftsführer: Max Mustermann"), we extract the title but leave the name for the Name Extractor.
-      if (line.clean.length < jobMatch[0].length + 10) {
-        data.title = line.clean.replace(/:$/, '');
+
+      // FIX: If the line also looks like an Organization (e.g. "Universität Musterstadt"), be careful!
+      // But "Vorstandsvorsitzender & CEO" is a valid complex title.
+      // "Universität Musterstadt" does NOT match re_job.
+      // The issue in "syn_multi_role" is:
+      // Line: "Vorstandsvorsitzender & CEO" -> Matches re_job. Consumed as Title.
+      // Line: "Universität Musterstadt" -> Not consumed yet.
+      // Wait, why did the test fail saying "Received: Vorstandsvorsitzender & CEO"?
+      // Ah, the test expects Org: "Universität Musterstadt".
+      // If "Vorstandsvorsitzender & CEO" was set as Org, that means consumeLeftovers took it?
+      // No, consumeJobAndTax runs BEFORE consumeLeftovers.
+      // If consumeJobAndTax took it as Title, then data.title = "Vorstandsvorsitzender & CEO".
+      // Then "Universität Musterstadt" is left. consumeLeftovers should take it as Org.
+
+      // Debugging logic:
+      // If data.title is set, we are good.
+      // If data.org is NOT set, consumeLeftovers looks for first unconsumed line > 2 chars.
+      // If "Universität Musterstadt" is unconsumed, it should be Org.
+
+      // Maybe the test failure means data.org was WRONGLY set to "Vorstandsvorsitzender & CEO"?
+      // That would happen if consumeJobAndTax DID NOT consume it, and consumeLeftovers took it.
+      // So re_job match failed?
+      // "Vorstandsvorsitzender & CEO"
+      // re_job has "Vorstandsvorsitzender".
+      // It should match.
+
+      // Let's ensure we capture the FULL title if it's a complex one.
+      // The current logic: data.title = line.clean.replace(/:$/, '');
+      // This sets title to the whole line.
+
+      if (line.clean.length < 100) { // Reasonable length
+        // Only set title if empty (prioritize top-most title)
+        if (!data.title) {
+          // Strip "Vertreten durch den" or "Geschäftsführer:" prefixes
+          let title = line.clean;
+          title = title.replace(/^(?:Vertreten durch (?:den|die)?\s*)/i, '');
+          title = title.replace(/:$/, '');
+          data.title = title.trim();
+        }
         line.isConsumed = true;
         line.type = 'JOB';
-      } else {
-        // It's likely "Title: Name". We'll handle this in Name extraction or split it here.
-        // Let's just save the title for now.
-        data.title = jobMatch[0].replace(/:$/, '');
-        // Don't consume yet, let Name extractor handle the rest
       }
     }
 
@@ -416,7 +482,7 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
 };
 
 const consumeCompany = (lines: Line[], data: ParserData) => {
-  const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited)(?:$|\s|[.,])/i;
+  const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited|Support|Hotline|Service|Praxis|Kanzlei|Agentur)(?:$|\s|[.,])/i;
 
   lines.forEach(line => {
     if (line.isConsumed) return;
@@ -434,7 +500,8 @@ const consumeName = (lines: Line[], data: ParserData) => {
   // Allow optional adjectives before title (e.g. "Vertretungsberechtigte Geschäftsführer")
   // Allow comma separated list, capture first name
   // Support German characters (Umlauts) in name
-  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director)(?:\s*:\s*|\s+)([A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+(?:\s+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)+)(?:,|$)/i;
+  // Support academic titles in name (Prof. Dr. Max Mustermann)
+  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director|Vorstandsvorsitzender)(?:\s*:\s*|\s+&?\s*CEO\s*|\s+)((?:Prof\.|Dr\.|h\.c\.|mult\.|Dipl\.-|Mag\.|[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+\.?\s+)+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)(?:,|$)/i;
 
   for (const line of lines) {
     if (line.isConsumed && line.type !== 'JOB') continue;
@@ -458,25 +525,35 @@ const consumeName = (lines: Line[], data: ParserData) => {
     }
   }
 
-  // 2. Database Match
-  const re_names = new RegExp(VORNAMEN_PATTERN, 'i');
+  // 2. Database Match (or Academic Title Match)
+  // Expanded pattern to include academic titles at the start
+  const VORNAMEN_PATTERN_EXT = `(?:(?:Prof\\.|Dr\\.|Dipl\\.-|Mag\\.|h\\.c\\.|mult\\.|Med\\.)\\s+)*${VORNAMEN_PATTERN}`;
+  const re_names = new RegExp(VORNAMEN_PATTERN_EXT, 'i');
 
   for (const line of lines) {
     if (line.isConsumed) continue;
 
     const match = line.clean.match(re_names);
+    if (line.clean.includes('Max')) {
+      console.error('DEBUG consumeName:', { line: line.clean, match: match ? match[0] : 'null' });
+    }
     if (match) {
-      // Found a firstname. Check if there is a lastname following.
+      // Found a firstname (potentially with titles). Check if there is a lastname following.
       const nameIndex = match.index!;
       const remainder = line.clean.substring(nameIndex + match[0].length).trim();
       const nextWord = remainder.split(' ')[0];
 
       if (nextWord && /^[A-Z]/.test(nextWord)) {
         // Looks like a name!
-        const vorname = match[0];
+        // match[0] contains titles + firstname (e.g. "Prof. Dr. Max")
+        // nextWord is Lastname (e.g. "Mustermann")
+
+        const prefix = match[0].substring(0, match[0].lastIndexOf(' ')).trim(); // "Prof. Dr."
+        const vorname = match[0].split(' ').pop(); // "Max"
         const nachname = nextWord;
-        data.fn = `${vorname} ${nachname}`;
-        data.n = `${nachname};${vorname}`;
+
+        data.fn = prefix ? `${prefix} ${vorname} ${nachname}` : `${vorname} ${nachname}`;
+        data.n = `${nachname};${vorname};;${prefix};`; // Store prefix in N field correctly
 
         line.isConsumed = true;
         line.type = 'NAME';
@@ -520,7 +597,12 @@ const consumeLeftovers = (lines: Line[], data: ParserData) => {
   if (!data.org) {
     const firstUnconsumed = lines.find(l => !l.isConsumed && l.clean.length > 2);
     if (firstUnconsumed) {
-      data.org = firstUnconsumed.clean;
+      let org = firstUnconsumed.clean;
+      // Strip "Ihr Team von" or "Your Team from" prefixes
+      org = org.replace(/^(?:Ihr Team von|Your Team from|Dein Team von)\s*/i, '');
+      // Strip trailing punctuation
+      org = org.replace(/[.,;:]+$/, '');
+      data.org = org;
       firstUnconsumed.isConsumed = true;
       firstUnconsumed.type = 'ORG';
     }
@@ -553,13 +635,84 @@ const sanitizeText = (text: string): string => {
 
 export const parseImpressumToVCard = (text: string): string => {
   // 1. Prepare Lines
-  const cleanText = sanitizeText(text);
+  let cleanText = sanitizeText(text);
+
+  // PRE-PROCESSING: Fix "Newlines Mess"
+  // Replace | with newline if it looks like a separator
+  cleanText = cleanText.replace(/\s+\|\s+/g, '\n');
+
+  // PRE-PROCESSING: Fix "Sticky Text"
+  // 1. LowercaseUppercase -> Lowercase Uppercase (e.g. MaxMustermann -> Max Mustermann)
+  // BUT avoid breaking "GmbH" (bH) or "pH" (pH-Wert) or similar common patterns if possible.
+  // We can use a negative lookahead for "bH" (GmbH)
+  cleanText = cleanText.replace(/([a-zäöüß])(?<!m)(?<!b)([A-ZÄÖÜ])/g, '$1 $2');
+
+  // Actually, "GmbH" is "Gmb H" if we split bH.
+  // "b" is lowercase, "H" is uppercase.
+  // So we want to avoid splitting "bH".
+  // Let's just explicitly fix "Gmb H" back to "GmbH" after splitting, it's safer than complex regex.
+  cleanText = cleanText.replace(/Gmb H/g, 'GmbH');
+  cleanText = cleanText.replace(/m b H/g, 'mbH'); // For "mbH" suffix
+
+
+
+  // PRE-PROCESSING: OCR Corrections (Global)
+
+  // 1. Fix Spaced Numbers (e.g. "+ 4 9 ( 0 ) 1 2 3")
+  // Look for sequences of single digits separated by spaces/tabs (NOT newlines)
+  cleanText = cleanText.replace(/(?:^|[ \t])(\+\s*)?(\d[ \t]+){3,}\d/gm, (match) => {
+    return match.replace(/[ \t]+/g, '');
+  });
+
+  // 2. Fix Dots/Slashes in potential phone numbers
+  // e.g. 040.123.45.67 -> 040 123 45 67
+  cleanText = cleanText.replace(/(\d)[\.\/](\d)/g, '$1 $2');
+
+  // Fix common label typos
+  cleanText = cleanText.replace(/Emial:/gi, 'Email:');
+  cleanText = cleanText.replace(/Te1:/gi, 'Tel:');
+  cleanText = cleanText.replace(/Te[lI1\|]:/gi, 'Tel:'); // Aggressive Tel fix
+  cleanText = cleanText.replace(/Telephon:/gi, 'Telefon:');
+  cleanText = cleanText.replace(/Mobi[lI1]:/gi, 'Mobil:');
+  cleanText = cleanText.replace(/Natel:/gi, 'Mobil:');
+
+  // Ensure space after labels (e.g. Tel.040 -> Tel. 040)
+  cleanText = cleanText.replace(/(Tel|Fax|Mobil|Telefon|Handy|Cell|Phon)\.?\s*(\d)/gi, '$1: $2');
+
+  // Fix leetspeak/OCR: 4 -> a (e.g. M4x -> Max)
+  cleanText = cleanText.replace(/([a-zA-Z])4([a-zA-Z])/g, '$1a$2');
+
+  // Fix OCR: 0 -> O in phone context (Line-based)
+  // e.g. "T: O3O" -> "T: 030"
+  // Only match if we see at least one digit or it looks like a number pattern
+  cleanText = cleanText.replace(/((?:Tel|Fax|Mobil|T|F|M)[:\.]?[ \t]*)([O0-9\/\-\+\(\)[ \t]+)/gi, (match, labelPart, numberPart) => {
+    // Only replace if it contains at least one digit to avoid false positives
+    if (/\d/.test(numberPart)) {
+      return labelPart + numberPart.replace(/O/g, '0');
+    }
+    return match;
+  });
+
+  // Fix OCR: l -> 1 in phone context (Line-based)
+  cleanText = cleanText.replace(/((?:Tel|Fax|Mobil|T|F|M)[:\.]?[ \t]*)([lI10-9\/\-\+\(\)[ \t]+)/gi, (match, labelPart, numberPart) => {
+    // Only replace if it contains at least one digit
+    if (/\d/.test(numberPart)) {
+      return labelPart + numberPart.replace(/[lI]/g, '1');
+    }
+    return match;
+  });
+
+  // 2. DigitLetter -> Digit Letter (e.g. 10115Berlin -> 10115 Berlin)
+  // Run this AFTER OCR corrections so we don't split Te1 -> Te 1 before fixing it
+  cleanText = cleanText.replace(/(\d)([a-zA-ZÄÖÜäöü])/g, '$1 $2');
+  // 3. LetterDigit -> Letter Digit (e.g. Musterstraße1 -> Musterstraße 1)
+  cleanText = cleanText.replace(/([a-zA-ZÄÖÜäöü])(\d)/g, '$1 $2');
+
   const rawLines = cleanText.split(/\r\n|\r|\n/);
   const lines: Line[] = rawLines
     .map(l => ({ original: l, clean: l.trim(), isConsumed: false }))
     .filter(l => l.clean.length > 0);
 
-  // 2. Initialize Data
   // 2. Initialize Data
   const data: ParserData = {
     fn: "", n: "", org: "", title: "",
@@ -576,9 +729,38 @@ export const parseImpressumToVCard = (text: string): string => {
   consumeCompany(lines, data); // Look for legal forms
   consumeName(lines, data);    // Look for names
   consumeNameHeuristic(lines, data); // Fallback for names
+
+  // 5. Cleanup: If we have a Name, check if there are unconsumed lines that match the Name exactly
+  if (data.fn) {
+    lines.forEach(l => {
+      if (!l.isConsumed && l.clean === data.fn) {
+        l.isConsumed = true;
+        l.type = 'NAME';
+      }
+    });
+  }
+
   consumeLeftovers(lines, data); // Fallbacks
 
-  // 4. Construct vCard
+  // 4. Fallback: Org from Email Domain (After Leftovers)
+  if (!data.org && data.email.length > 0) {
+    // Try to find a non-generic domain
+    const genericProviders = [
+      'gmail.com', 'googlemail.com', 'gmx.de', 'gmx.net', 'web.de',
+      'yahoo.com', 'yahoo.de', 'hotmail.com', 'outlook.com', 'outlook.de',
+      'live.com', 'icloud.com', 'me.com', 't-online.de', 'aol.com', 'protonmail.com'
+    ];
+
+    for (const email of data.email) {
+      const domain = email.value.split('@')[1];
+      if (domain && !genericProviders.includes(domain.toLowerCase())) {
+        data.org = domain;
+        break;
+      }
+    }
+  }
+
+  // 6. Construct vCard
   const vcard = [
     "BEGIN:VCARD",
     "VERSION:3.0"
