@@ -386,13 +386,13 @@ const App: React.FC = () => {
 
   // ...
 
-  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid'): Promise<'saved' | 'duplicate' | 'error'> => {
+  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid'): Promise<{ status: 'saved' | 'duplicate' | 'error', savedVCard?: string }> => {
     console.log("addToHistory called", { strLength: str?.length, hasParsed: !!parsed, images: scanImages?.length, mode });
 
     const p = parsed || parseVCardString(str);
     if (!p.isValid) {
       console.error("addToHistory: Invalid vCard", str);
-      return 'error';
+      return { status: 'error' };
     }
 
     const newData = p.data as VCardData;
@@ -425,7 +425,7 @@ const App: React.FC = () => {
       console.log("Exact duplicate detected - skipping save");
       // Optional: Notify user?
       // toast.info("Kontakt ist bereits der neueste Eintrag.");
-      return 'duplicate';
+      return { status: 'duplicate' };
     }
 
     // 2. Search for semantic duplicate
@@ -553,8 +553,8 @@ const App: React.FC = () => {
     setCurrentHistoryId(itemToSave.id);
 
     console.log("History updated successfully", { id: itemToSave.id, mode });
-    return 'saved';
-  }, []);
+    return { status: 'saved', savedVCard: itemToSave.vcard };
+  }, [eventModeActive, eventName]);
 
 
 
@@ -583,9 +583,14 @@ const App: React.FC = () => {
     if (parsedData.isValid) {
       const result = await addToHistory(vcardString, parsedData, currentImages);
       console.log("Manual Save result:", result);
-      if (result === 'saved') {
+
+      if (result.status === 'saved') {
         toast.success("Gespeichert!");
-      } else if (result === 'duplicate') {
+        // Update editor with the saved version (which includes injected tags)
+        if (result.savedVCard && result.savedVCard !== vcardString) {
+          setVcardString(result.savedVCard);
+        }
+      } else if (result.status === 'duplicate') {
         toast.info("Bereits vorhanden.");
       } else {
         toast.error("Fehler beim Speichern.");
