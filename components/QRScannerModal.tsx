@@ -13,7 +13,9 @@ interface QRScannerModalProps {
 export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan, lang }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [error, setError] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
     const requestRef = useRef<number>();
     const t = translations[lang as keyof typeof translations];
 
@@ -37,7 +39,11 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose,
         setError(null);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'environment' }
+                video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                }
             });
 
             if (videoRef.current) {
@@ -65,6 +71,57 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose,
         }
     };
 
+    const handlePhotoCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsProcessing(true);
+        setError(null);
+
+        try {
+            const img = new Image();
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+
+                    if (ctx) {
+                        ctx.drawImage(img, 0, 0);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                            inversionAttempts: "attemptBoth",
+                        });
+
+                        if (code && code.data) {
+                            onScan(code.data);
+                            setIsProcessing(false);
+                        } else {
+                            setError("Kein QR-Code im Foto gefunden.");
+                            setIsProcessing(false);
+                        }
+                    }
+                };
+                img.src = event.target?.result as string;
+            };
+
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error("Photo QR scan error:", err);
+            setError("Fehler beim Analysieren des Fotos.");
+            setIsProcessing(false);
+        }
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     const tick = () => {
         if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
             const canvas = canvasRef.current;
@@ -80,7 +137,7 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose,
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
                     const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                        inversionAttempts: "dontInvert",
+                        inversionAttempts: "attemptBoth",
                     });
 
                     if (code) {
@@ -154,7 +211,27 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose,
                     </div>
                 )}
 
-                <p className="text-white/60 mt-8 text-sm text-center max-w-xs">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={handlePhotoCapture}
+                />
+
+                {!error && (
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isProcessing}
+                        className="mt-6 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-lg"
+                    >
+                        <Camera size={20} />
+                        {isProcessing ? 'Analysiere...' : 'Foto aufnehmen'}
+                    </button>
+                )}
+
+                <p className="text-white/60 mt-4 text-sm text-center max-w-xs">
                     Point your camera at a vCard QR Code to import it automatically.
                 </p>
 
