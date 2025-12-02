@@ -83,7 +83,14 @@ This file tracks the current development status and planned features.
 ### 3. AI Enrichment (Phase 3)
 - [ ] **Health Check:** AI scans for missing country codes, formatting errors.
 - [ ] **Enrichment:** "Update from Signature" (Paste text → Update Contact).
-- [ ] ⚡ **Phone Number False Positives:** Improve regex parser to distinguish phone numbers from VAT/UST/IBAN/HR numbers
+
+---
+
+## 🧠 Project: Intelligent Regex Parser (Context-Aware Parsing)
+**Goal:** Transform the regex parser from pattern-matching to intelligent, database-backed analysis.
+
+### Phase 1: False Positive Elimination
+- [ ] ⚡ **Phone Number False Positives:** Distinguish phone numbers from VAT/UST/IBAN/HR numbers
   - **Problem:** Parser currently misidentifies non-phone numbers (USt-ID, IBAN, Handelsregister, etc.) as phone numbers
   - **Solution:** Implement negative lookahead with prefix blacklist
   - **Prefix Catalog (Numbers to EXCLUDE):**
@@ -94,6 +101,154 @@ This file tracks the current development status and planned features.
     - **Personal IDs:** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
     - **Dates:** `geb.`, `geboren`, `Geburtsdatum` (to avoid date patterns like `01.01.1990`)
   - **Implementation:** Add to `safeParser.ts` with case-insensitive regex
+
+### Phase 2: Anchor-Based Context Detection
+- [ ] **Multi-Pass Analysis Framework:** Leverage existing reference data as "anchors" for smarter text analysis
+  - **Problem:** Current regex parser works in isolation without using available reference databases
+  - **Available Reference Data:**
+    - ✅ **Landline Prefixes:** 5000+ German area codes (`landlinePrefixes.js`)
+    - ✅ **ZIP Codes:** Full German PLZ database with city mappings
+    - ✅ **Street Names:** 53MB database of German streets (`cities.ts`)
+    - ✅ **City Names:** Complete list of German cities
+    - ✅ **First Names:** German first name directory (potential addition)
+  - **New Parsing Concept - Multi-Pass Analysis:**
+    1. **Pass 1: Anchor Detection** - Identify known entities (PLZ, city, street, area code)
+    2. **Pass 2: Context Inference** - Use anchors to validate nearby fields
+       - If PLZ found → validate adjacent city name against database
+       - If area code found → validate it's actually a landline, not mobile
+       - If street name found → extract house number pattern
+       - If first name found → increase confidence for name extraction
+    3. **Pass 3: Confidence Scoring** - Assign scores based on anchor proximity
+       - High confidence: Field validated by 2+ anchors (e.g., "10115 Berlin" = PLZ + City match)
+       - Medium confidence: Field validated by 1 anchor
+       - Low confidence: Pure regex match without anchor validation
+  - **Benefits:**
+    - Reduce false positives (e.g., random numbers mistaken for phone)
+    - Improve address accuracy (validate street + PLZ + city consistency)
+    - Better name extraction (distinguish "Max Müller" from company names)
+    - Enable fuzzy matching (typos in city names can be corrected)
+
+### Phase 3: Hierarchical Weighting System
+- [ ] **Implement Priority-Based Field Extraction:**
+  - Create `anchorDetection.ts` utility
+  - Refactor `safeParser.ts` to use multi-pass approach
+  - Add confidence scores to parsed results
+  - Log validation mismatches for debugging
+  - **Analysis Hierarchy & Weighting System:**
+    - **Phase 1: Anchor Discovery (Priority Order)**
+      1. **PLZ (Weight: 10)** - Most reliable anchor, always 5 digits, validated against database
+      2. **Area Code (Weight: 9)** - 5000+ prefixes, validated against `landlinePrefixes.js`
+      3. **City Name (Weight: 8)** - Cross-reference with PLZ, fuzzy match allowed (Levenshtein distance ≤ 2)
+      4. **Street Name (Weight: 7)** - 53MB database, validate with city context
+      5. **First Name (Weight: 6)** - Lower priority, many false positives (e.g., city names)
+      6. **Email Domain (Weight: 5)** - Useful for company validation
+    - **Phase 2: Field Extraction with Context Boosting**
+      - **Address Field:**
+        - Base Score: regex match for address pattern
+        - +30% if adjacent PLZ found
+        - +20% if city name validated
+        - +15% if street name in database
+        - +10% if house number pattern matches
+        - **Final Decision:** Accept if score ≥ 60%
+      - **Phone Field:**
+        - Base Score: regex match for phone pattern
+        - +40% if area code in landline prefix list
+        - -50% if preceded by blacklist prefix (USt-ID, IBAN, etc.)
+        - +20% if near address (context: business phone)
+        - -30% if looks like IBAN (DE + 20 digits)
+        - **Final Decision:** Accept if score ≥ 50%
+      - **Name Field:**
+        - Base Score: capitalized words pattern
+        - +35% if first name in directory
+        - +25% if followed by title (Dr., Prof., etc.)
+        - +15% if near email/phone (context: contact person)
+        - -40% if in all caps (likely company name)
+        - -20% if contains "GmbH", "AG", "e.V."
+        - **Final Decision:** Accept if score ≥ 55%
+      - **Company Field:**
+        - Base Score: capitalized phrase
+        - +40% if contains legal form (GmbH, AG, KG, etc.)
+        - +30% if contains industry keywords (Consulting, Engineering, etc.)
+        - +20% if email domain matches extracted company name
+        - -30% if looks like person name (First + Last pattern)
+        - **Final Decision:** Accept if score ≥ 60%
+        - **German Legal Forms (Rechtsformen) - Complete Reference:**
+          - **Kapitalgesellschaften (Corporations):**
+            - `GmbH` (Gesellschaft mit beschränkter Haftung)
+            - `gGmbH` (gemeinnützige GmbH)
+            - `UG` (Unternehmergesellschaft haftungsbeschränkt)
+            - `AG` (Aktiengesellschaft)
+            - `SE` (Societas Europaea / Europäische Gesellschaft)
+            - `KGaA` (Kommanditgesellschaft auf Aktien)
+          - **Personengesellschaften (Partnerships):**
+            - `GbR` (Gesellschaft bürgerlichen Rechts)
+            - `OHG` (Offene Handelsgesellschaft)
+            - `KG` (Kommanditgesellschaft)
+            - `GmbH & Co. KG`
+            - `PartG` (Partnerschaftsgesellschaft)
+            - `PartG mbB` (mit beschränkter Berufshaftung)
+          - **Mischformen (Hybrid Structures):**
+            - `GmbH & Co. KG` (häufigste Form)
+            - `GmbH & Co. KGaA`
+            - `AG & Co. KG`
+            - `UG & Co. KG`
+            - `SE & Co. KG`
+            - `GmbH & Co. OHG`
+            - `Ltd. & Co. KG`
+            - `Stiftung & Co. KG`
+            - **Detection Note:** Match full pattern, not just "KG"
+          - **Einzelunternehmen & Sonstige:**
+            - `e.K.` (eingetragener Kaufmann)
+            - `e.Kfr.` (eingetragene Kauffrau)
+            - `Inh.` (Inhaber)
+          - **Non-Profit & Vereine:**
+            - `e.V.` (eingetragener Verein)
+            - `gGmbH` (gemeinnützige GmbH)
+            - `Stiftung`
+            - `gAG` (gemeinnützige AG)
+          - **Öffentliche Einrichtungen:**
+            - `AöR` (Anstalt öffentlichen Rechts)
+            - `KöR` (Körperschaft öffentlichen Rechts)
+          - **Ausländische Formen (häufig in DE):**
+            - `Ltd.` (Limited Company - UK)
+            - `S.A.` (Société Anonyme - FR/BE)
+            - `S.à r.l.` (Société à responsabilité limitée - LU)
+            - `B.V.` (Besloten Vennootschap - NL)
+            - `Inc.` (Incorporated - US)
+            - `LLC` (Limited Liability Company - US)
+          - **Variationen & Schreibweisen:**
+            - Detect with/without spaces: `GmbH`, `Gm bH`
+            - Detect with/without dots: `e.V.`, `eV`, `e V`
+            - Case-insensitive matching
+            - Detect in company suffix or standalone
+    - **Phase 3: Cross-Validation & Conflict Resolution**
+      - **Mutual Reinforcement:**
+        - PLZ + City match → Boost both by +20%
+        - Street + City match → Boost address confidence by +15%
+        - Area code + City → Validate phone is local landline
+        - First name + Email → Likely contact person, boost name confidence
+      - **Conflict Handling:**
+        - If multiple addresses found → Choose one with highest score
+        - If PLZ contradicts City → Flag for manual review, prefer PLZ
+        - If name ambiguous (could be person or company) → Use legal form as tiebreaker
+      - **Cascading Effects:**
+        - High-confidence address found → Increase threshold for secondary addresses (reduce duplicates)
+        - Company identified → Deprioritize person name extraction from same line
+        - Multiple phones found → Classify by context (area code = landline, +49 17x = mobile)
+    - **Phase 4: Confidence Reporting**
+      - Output JSON with per-field confidence scores
+      - Flag low-confidence fields for AI enrichment
+      - Log anchor matches for debugging
+      - Example output:
+        ```json
+        {
+          "name": { "value": "Max Müller", "confidence": 0.85, "anchors": ["firstName"] },
+          "address": { "value": "Hauptstr. 1, 10115 Berlin", "confidence": 0.92, "anchors": ["plz", "city", "street"] },
+          "phone": { "value": "+49 30 12345678", "confidence": 0.78, "anchors": ["areaCode"] }
+        }
+        ```
+
+
 
 ---
 
