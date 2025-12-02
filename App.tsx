@@ -1097,12 +1097,12 @@ const App: React.FC = () => {
             {/* Logo removed as per user request (space constraints) */}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
 
             {/* 1. Scan */}
             <button
               onClick={handleOpenScan}
-              className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors"
               title={t.scanTitle}
             >
               <Camera size={18} />
@@ -1112,7 +1112,7 @@ const App: React.FC = () => {
             {/* 2. Batch Upload */}
             <button
               onClick={handleOpenBatchUpload}
-              className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors"
               title={t.batchUpload}
             >
               <Upload size={18} />
@@ -1122,7 +1122,7 @@ const App: React.FC = () => {
             {/* 3. QR Scan */}
             <button
               onClick={() => setIsQRScannerOpen(true)}
-              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors"
               title="QR Code scannen"
             >
               <QrCode size={18} />
