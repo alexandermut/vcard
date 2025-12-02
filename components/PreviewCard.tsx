@@ -279,20 +279,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               </div>
             ))}
 
-            <div className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
-              <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                <Cake size={16} />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{t.birthday}</p>
-                <input
-                  value={localData.bday || ''}
-                  onChange={(ev) => updateField('bday', ev.target.value)}
-                  className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
-                  placeholder="YYYY-MM-DD"
-                />
-              </div>
-            </div>
+
 
             {localData.url?.map((u, i) => {
               const style = getUrlStyle(u.type, u.value);
