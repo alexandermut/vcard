@@ -359,7 +359,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 };
 
 const consumeJobAndTax = (lines: Line[], data: ParserData) => {
-  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch/i;
+  const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch|Mittelstandsberater|Berater/i;
   const re_ustid = /((Ust|Umsatz)\S+(\s|:))(DE(\s)?.*\d{1,9})/i;
   const re_stnr = /(?:Steuer+[-\s|:.A-Za-z]*)\D(.*\d{1,9})/i;
 

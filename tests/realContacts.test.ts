@@ -3,8 +3,24 @@ import { difficultContacts } from '../data/realContacts';
 import { parseImpressumToVCard } from '../utils/regexParser';
 import { parseVCardString } from '../utils/vcardUtils';
 
+interface ContactTestCase {
+    id: string;
+    text: string;
+    expected: {
+        fn?: string;
+        title?: string;
+        org?: string;
+        email?: string;
+        url?: string;
+        tel?: string;
+        fax?: string;
+        adr?: string;
+        cell?: string;
+    };
+}
+
 describe('Real Contacts Parsing', () => {
-    difficultContacts.forEach((contact) => {
+    (difficultContacts as ContactTestCase[]).forEach((contact) => {
         if (!contact.expected) return; // Skip commented out or incomplete cases
 
         it(`should correctly parse ${contact.id}`, () => {
@@ -55,7 +71,7 @@ describe('Real Contacts Parsing', () => {
                 const urls = data.url?.map(u => u.value) || [];
                 // URL might be full http or just domain, let's check loosely or strict depending on parser
                 // The parser usually adds http, but let's check if the expected string is contained
-                const hasUrl = urls.some(u => u.includes(contact.expected.url));
+                const hasUrl = urls.some(u => u.includes(contact.expected.url!));
                 expect(hasUrl).toBe(true);
             }
 

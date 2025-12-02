@@ -1,9 +1,8 @@
 export const difficultContacts = [
 
-    /*
-        {
-            id: "case_abcfinance_mut_full",
-            text: `
+    {
+        id: "case_abcfinance_mut_full",
+        text: `
     abcfinance GmbH
     Kamekestraße 2-8
     50672 Köln
@@ -13,18 +12,17 @@ export const difficultContacts = [
     Mittelstandsberater:
     Alexander Mut
       `,
-            expected: {
-                fn: "Alexander Mut",
-                title: "Mittelstandsberater",
-                org: "abcfinance GmbH",
-                email: "info@abcfinance.de",
-                url: "abcfinance.de",           // NEU: Domain aus der E-Mail extrahiert
-                tel: "0221579080",
-                fax: "0221579089126",
-                adr: "Kamekestraße 2-8, 50672 Köln"
-            }
-        },
-    */
+        expected: {
+            fn: "Alexander Mut",
+            title: "Mittelstandsberater",
+            org: "abcfinance GmbH",
+            email: "info@abcfinance.de",
+            url: "abcfinance.de",           // NEU: Domain aus der E-Mail extrahiert
+            tel: "+49221579080",
+            fax: "+49221579089126",
+            adr: "Kamekestraße 2-8, 50672 Köln"
+        }
+    },
 
 
 
