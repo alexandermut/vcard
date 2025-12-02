@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText, RotateCcw } from 'lucide-react';
 import { convertPdfToImages } from '../utils/pdfUtils';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
@@ -22,6 +22,8 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 }) => {
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
+  const [originalFrontImage, setOriginalFrontImage] = useState<string | null>(null);
+  const [originalBackImage, setOriginalBackImage] = useState<string | null>(null);
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const t = translations[lang];
@@ -187,25 +189,43 @@ export const ScanModal: React.FC<ScanModalProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.frontSide}</span>
                 {frontImage && (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        setIsProcessingImage(true);
-                        const cropped = await autoCropImage(frontImage);
-                        setFrontImage(cropped);
-                      } catch (err) {
-                        console.error("Auto-crop failed", err);
-                      } finally {
-                        setIsProcessingImage(false);
-                      }
-                    }}
-                    className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                    title="Automatisch zuschneiden"
-                  >
-                    <Sparkles size={12} />
-                    Auto-Crop
-                  </button>
+                  <div className="flex gap-2">
+                    {originalFrontImage ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFrontImage(originalFrontImage);
+                          setOriginalFrontImage(null);
+                        }}
+                        className="text-xs flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:underline"
+                        title="Rückgängig"
+                      >
+                        <RotateCcw size={12} />
+                        Undo
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            setIsProcessingImage(true);
+                            const cropped = await autoCropImage(frontImage);
+                            setOriginalFrontImage(frontImage);
+                            setFrontImage(cropped);
+                          } catch (err) {
+                            console.error("Auto-crop failed", err);
+                          } finally {
+                            setIsProcessingImage(false);
+                          }
+                        }}
+                        className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                        title="Automatisch zuschneiden"
+                      >
+                        <Sparkles size={12} />
+                        Auto-Crop
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
               <div
@@ -239,25 +259,43 @@ export const ScanModal: React.FC<ScanModalProps> = ({
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.backSide}</span>
                 {backImage && (
-                  <button
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      try {
-                        setIsProcessingImage(true);
-                        const cropped = await autoCropImage(backImage);
-                        setBackImage(cropped);
-                      } catch (err) {
-                        console.error("Auto-crop failed", err);
-                      } finally {
-                        setIsProcessingImage(false);
-                      }
-                    }}
-                    className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                    title="Automatisch zuschneiden"
-                  >
-                    <Sparkles size={12} />
-                    Auto-Crop
-                  </button>
+                  <div className="flex gap-2">
+                    {originalBackImage ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setBackImage(originalBackImage);
+                          setOriginalBackImage(null);
+                        }}
+                        className="text-xs flex items-center gap-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:underline"
+                        title="Rückgängig"
+                      >
+                        <RotateCcw size={12} />
+                        Undo
+                      </button>
+                    ) : (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            setIsProcessingImage(true);
+                            const cropped = await autoCropImage(backImage);
+                            setOriginalBackImage(backImage);
+                            setBackImage(cropped);
+                          } catch (err) {
+                            console.error("Auto-crop failed", err);
+                          } finally {
+                            setIsProcessingImage(false);
+                          }
+                        }}
+                        className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                        title="Automatisch zuschneiden"
+                      >
+                        <Sparkles size={12} />
+                        Auto-Crop
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
               <div
