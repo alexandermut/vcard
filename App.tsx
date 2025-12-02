@@ -579,14 +579,19 @@ const App: React.FC = () => {
   };
 
   const handleManualSave = async () => {
+    console.log("Manual Save triggered");
     if (parsedData.isValid) {
       const result = await addToHistory(vcardString, parsedData, currentImages);
+      console.log("Manual Save result:", result);
       if (result === 'saved') {
         toast.success("Gespeichert!");
       } else if (result === 'duplicate') {
         toast.info("Bereits vorhanden.");
+      } else {
+        toast.error("Fehler beim Speichern.");
       }
     } else {
+      console.warn("Manual Save: Invalid Data");
       toast.error(t.invalid || "Ungültige Daten.");
     }
   };
@@ -1267,7 +1272,7 @@ const App: React.FC = () => {
               </span>
             </button>
 
-            <Toaster position="top-center" richColors />
+            <Toaster position="bottom-center" richColors />
             <button
               onClick={() => setIsHelpOpen(true)}
               className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors relative group"
