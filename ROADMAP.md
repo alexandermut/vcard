@@ -145,49 +145,138 @@ This file tracks the current development status and planned features.
 - [ ] **Latency Testing:** Measure and optimize round-trip time.
 - [ ] **Fallback Logic:** Implement automatic failover to Gemini if the local server is unreachable.
 
+---
+
 ## 🔮 Future / Ideas
 
-### Integrations
-- [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud).
-- [ ] **Offline-OCR:** Tesseract.js fallback when offline.
-- [ ] **AI Grounding:** Real web search to complete missing data.
-- [ ] **Voice-to-Contact:** Dictate business cards.
-- [x] **Better Phone Parsing:** Use `libphonenumber-js` for robust international number handling.
-- [ ] **CRM Integration:** HubSpot / Salesforce via API.
-- [ ] **Outlook Add-in:** Direct integration into Microsoft 365.
-- [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data.
+**Legend:** ⚡ = Quick Win (1-5h implementation)
 
-### 🧠 AI & Intelligence
-- [ ] **Follow-up Assistant:** AI drafts personalized follow-up emails based on scan context & notes.
-- [ ] **Relationship Graph:** Visualize connections between contacts (Who knows who?).
-- [ ] **Smart Grouping:** Auto-categorize contacts by industry, location, or role.
-- [ ] **Voice Memos:** Record audio notes for contacts, auto-transcribed by AI.
-- [ ] **NLP Integration:** Use `compromise.js` (or similar) for smarter offline parsing of natural text (e.g. email signatures).
+### 🤖 AI & Intelligence
+- [ ] **Follow-up Assistant:** AI drafts personalized follow-up emails based on scan context & notes
+- [ ] **Auto-Tagging:** AI categorizes contacts (client, vendor, friend, etc.)
+- [ ] **Profile Enrichment:** Auto-lookup of LinkedIn/company data via AI
+- [ ] **Meeting Prep:** AI generates briefing notes before meetings
+- [ ] **Contact Scoring:** Rank contacts by importance/interaction frequency
+- [ ] **Smart Reminders:** "You haven't contacted [Name] in 6 months"
+- [ ] **Salutation Generator:** AI suggests proper greeting based on culture/title
+- [ ] **Language Detection:** Auto-detect and translate foreign business cards
+- [ ] **AI Grounding:** Real web search to complete missing data
+- [ ] **Health Check:** AI scans for missing country codes, formatting errors
+- [ ] **Enrichment:** "Update from Signature" (Paste text → Update Contact)
+- [ ] **Relationship Graph:** Visualize connections between contacts (who knows who?)
+- [ ] **Smart Grouping:** Auto-categorize contacts by industry, location, or role
+- [ ] **Voice Memos:** Record audio notes for contacts, auto-transcribed by AI
+- [ ] **NLP Integration:** Use `compromise.js` for smarter offline parsing of natural text
+
+
+### 🔗 Integrations & Sync
+- [ ] **WebDAV Sync:** Direct synchronization with CardDAV servers (Nextcloud, iCloud)
+- [ ] **LinkedIn Import:** Direct import from LinkedIn connections
+- [ ] **Email Extraction:** Scan inbox for signatures and auto-import
+- [ ] **CRM Integration:** HubSpot / Salesforce via API
+- [ ] **Outlook Add-in:** Direct integration into Microsoft 365
+- [ ] **Zapier / Make Webhooks:** Trigger workflows when a contact is added
+- [ ] **Calendar Integration:** Show "Last Met" date and upcoming birthdays in dashboard
+- [ ] **Browser Extension:** Chrome/Firefox Add-on to "grab" contact data
+- [ ] **Email Signature Parser:** Paste an email signature to create a contact instantly
+- [ ] **Recent Interactions:** Sort by "Last Contacted" (if integrated with email/calendar)
+
+### 🔄 Import & Export
+- [ ] **Offline-OCR:** Tesseract.js fallback when offline
+- [ ] **vCard 4.0 Support:** Full RFC 6350 compatibility
+- [x] **Better Phone Parsing:** Use `libphonenumber-js` for robust international number handling
+- [ ] ⚡ **Markdown Export:** Generate `.md` table from contacts
+- [ ] ⚡ **JSON Export:** Machine-readable format with JSON.stringify
+- [ ] ⚡ **Batch QR Generation:** Generate QR codes for all contacts at once
+- [ ] **Template System:** Custom export templates (letterhead, labels, etc.)
+- [ ] **Business Card API:** Public API for third-party integrations
+- [ ] ⚡ **Copy vCard to Clipboard:** Quick copy button with Clipboard API
+
+### 📱 Mobile & Device Features
+- [ ] **NFC Beam:** Share contacts via NFC tap (iOS/Android)
+- [ ] **Apple Wallet Integration:** Save contacts as passes for quick access
+- [ ] **Widget Support:** Dashboard widget with recent contacts and quick scan
+- [ ] **Apple Watch App:** Quick view of VIP contacts and scan reminders
+- [ ] **Shake to Scan:** Shake phone to instantly open camera for business card scan
+- [ ] **Voice-to-Contact:** Dictate business cards
+
+### 🎨 UX & Visualization
+- [ ] **Contact Timeline:** Visual timeline of when/where contacts were added
+- [ ] **Heat Map:** Geographic visualization of contact locations
+- [ ] **Company Clusters:** Group contacts by organization with visual org charts
+- [ ] ⚡ **Compact Mode:** Ultra-dense list view toggle
+- [ ] **Custom Themes:** Let users create/share color schemes
+- [ ] **Contact Cards 3D:** Swipeable 3D card stack UI for browsing
+- [ ] ⚡ **Quick Preview:** Hover cards for instant contact preview
+- [ ] ⚡ **Confetti Animation:** Celebrate 100/500/1000 contacts milestone
+- [ ] ⚡ **Contact Count Badge:** Show total contacts in header
+- [ ] ⚡ **Print Stylesheet:** Optimize contact list for printing
+
+### 🔍 Search & Discovery
+- [ ] **Fuzzy Date Search:** "contacts from last conference", "added this month"
+- [ ] **Visual Search:** Find contacts by uploaded photo (face recognition)
+- [ ] **Contextual Search:** "people I met at [location]" using note metadata
+- [ ] **Tag Autocomplete:** Smart tag suggestions based on job title/industry
+- [ ] **Duplicate Suggestions:** Proactive "Is this the same person?" prompts
+
+### 📊 Analytics & Insights
+- [ ] **Dashboard:** Stats on total contacts, growth over time, top companies
+- [ ] **Industry Breakdown:** Pie chart of contact industries
+- [ ] **Network Value:** Estimate professional network size/value
+- [ ] ⚡ **Contact Quality Score:** Show completeness % per contact
+- [ ] **Scan Statistics:** Best scan times, OCR accuracy trends
+- [ ] ⚡ **Missing Field Indicator:** Highlight empty required fields
+- [ ] ⚡ **Duplicate Count Badge:** Show duplicate count in header
+
+### 🎯 Productivity & Workflow
+- [ ] **Quick Actions:** Swipe gestures for common tasks (call, email, delete)
+- [ ] ⚡ **Favorites/VIP:** Star important contacts for quick access
+- [ ] **Contact Merging Queue:** Review queue for potential duplicates
+- [ ] **Scheduled Exports:** Auto-backup every week/month
+- [ ] ⚡ **Print Layouts:** Generate printable contact directories
+- [ ] **Name Pronunciation:** Audio clips for difficult names (TTS or recorded)
+- [ ] **Birthday Reminders:** Push notifications for contact birthdays
+- [ ] ⚡ **Smart Clipboard:** Auto-detect vCard text on paste
+- [ ] ⚡ **Keyboard Shortcuts:** `Cmd+S` (Save), `Cmd+N` (New Scan), `Cmd+F` (Search)
+- [ ] ⚡ **Recent Contacts Widget:** Show last 5 scans in header
+- [ ] ⚡ **Last Exported Timestamp:** Show when last backup was made
 
 ### 🤝 Networking & Events
-- [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
-- [ ] **Digital Business Card:** Public profile page (QR/NFC) for the user to share their own info.
-- [ ] **Team Sharing:** Share specific contact lists or folders with colleagues (E2E Encrypted).
+- [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025")
+- [ ] **Digital Business Card:** Public profile page (QR/NFC) for the user to share their own info
+- [ ] **Team Sharing:** Share specific contact lists or folders with colleagues (E2E Encrypted)
+- [ ] **Shared Collections:** Create shared contact folders for teams
+- [ ] **Contact Requests:** Request missing info from contacts via email/SMS
+- [ ] **Team Leaderboard:** Gamify contact collection at events
+- [ ] **Permission System:** Granular sharing (view-only, edit, admin)
+- [ ] **Change History:** Track who edited what and when
+- [ ] **Comments:** Team members can comment on contacts
 
-### 🔒 Security & Privacy
-- [ ] **Local Encryption:** Encrypt IndexedDB at rest with a user password/key.
-- [ ] **Biometric Lock:** Require FaceID/TouchID to open the app.
-- [ ] **Audit Log:** Track who accessed/exported which contacts.
+### 🛡️ Security & Privacy
+- [ ] **Local Encryption:** Encrypt IndexedDB at rest with a user password/key
+- [ ] **Biometric Lock:** Require FaceID/TouchID to open the app
+- [ ] **Audit Log:** Track who accessed/exported which contacts
+- [ ] **Self-Destructing Shares:** Time-limited contact sharing
+- [ ] **Watermarking:** Embed metadata in shared vCards to track leaks
+- [ ] **GDPR Compliance Tools:** Auto-delete after X months, consent tracking
+- [ ] **Anonymization Mode:** Remove PII for demo/testing purposes
+- [ ] **Secure Vault:** Encrypted section for sensitive contacts
 
-### 🛠️ Integrations & Automation
-- [ ] **Zapier / Make Webhooks:** Trigger workflows when a contact is added.
-- [ ] **Email Signature Parser:** Paste an email signature to create a contact instantly.
-- [ ] **Calendar Integration:** Show "Last Met" date and upcoming birthdays in dashboard.
+### 🌐 Platform & Infrastructure
+- [ ] **Desktop App:** Electron wrapper for native desktop experience
+- [ ] **CLI Tool:** Command-line interface for automation
+- [ ] **API Documentation:** OpenAPI spec for developers
+- [ ] **Plugin System:** Allow community extensions
+- [ ] **Themes Marketplace:** Download/share custom themes
+- [ ] **Local LLM Auto-Discovery:** Automatically find running Ollama instances
 
-### 💡 New Backlog Ideas
-- [ ] **Smart Clipboard:** Auto-detect vCard/Contact info when app gains focus.
-- [ ] **Keyboard Shortcuts:** `Cmd+S` (Save), `Cmd+N` (New Scan), `Cmd+F` (Search).
-- [ ] **Image Optimization:** Compress stored images to WebP to save storage.
-- [ ] **JSON/YAML Export:** Export contacts in machine-readable formats.
-- [ ] **Accessibility Audit:** Improve ARIA labels and screen reader support.
-- [ ] **Local LLM Auto-Discovery:** Automatically find running Ollama instances.
-- [ ] **Confetti Animation:** Celebrate when reaching 100/500/1000 contacts.
+### ⚙️ Technical Improvements
+- [ ] ⚡ **Image WebP Conversion:** Auto-convert uploads to WebP
+- [ ] ⚡ **Search Debouncing:** Reduce search lag with 300ms debounce
+- [ ] ⚡ **Lazy Load Images:** Defer offscreen image loading
+- [ ] ⚡ **ARIA Labels:** Add missing accessibility labels
+- [ ] ⚡ **Focus Indicators:** Improve keyboard navigation
+- [ ] ⚡ **High Contrast Mode:** Support for visually impaired
+- [ ] ⚡ **Dark Mode Auto-Switch:** Follow system preference
 
-### unsortiert
-- [ ] 
-- [ ] 
+ 
