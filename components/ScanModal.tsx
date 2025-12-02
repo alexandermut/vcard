@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText, RotateCcw } from 'lucide-react';
 import { convertPdfToImages } from '../utils/pdfUtils';
-import { scanBusinessCard, ImageInput, detectCardBounds } from '../services/aiService';
+import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
-import { autoCropImage, cropImageByBounds } from '../utils/cropUtils';
+import { autoCropImage } from '../utils/cropUtils';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -71,28 +71,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     }
   };
 
-  const handleSmartCrop = async (
-    image: string,
-    setImg: (s: string) => void,
-    setOriginal: (s: string) => void
-  ) => {
-    try {
-      setIsProcessingImage(true);
-      const bounds = await detectCardBounds(image, apiKey);
-      if (bounds) {
-        const cropped = await cropImageByBounds(image, bounds);
-        setOriginal(image);
-        setImg(cropped);
-      } else {
-        setError("Keine Visitenkarte erkannt.");
-      }
-    } catch (err) {
-      console.error("Smart Crop failed", err);
-      setError("Smart Crop fehlgeschlagen.");
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
+
 
   useEffect(() => {
     if (isOpen && initialFile) {
@@ -229,21 +208,10 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                             }
                           }}
                           className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                          title="Schneller lokaler Zuschnitt"
+                          title="Automatisch zuschneiden"
                         >
                           <Sparkles size={12} />
-                          Fast
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSmartCrop(frontImage, setFrontImage, setOriginalFrontImage);
-                          }}
-                          className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline"
-                          title="Präziser AI Zuschnitt"
-                        >
-                          <Sparkles size={12} />
-                          Smart
+                          Auto Crop
                         </button>
                       </div>
                     )}
@@ -312,21 +280,10 @@ export const ScanModal: React.FC<ScanModalProps> = ({
                             }
                           }}
                           className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
-                          title="Schneller lokaler Zuschnitt"
+                          title="Automatisch zuschneiden"
                         >
                           <Sparkles size={12} />
-                          Fast
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSmartCrop(backImage, setBackImage, setOriginalBackImage);
-                          }}
-                          className="text-xs flex items-center gap-1 text-purple-600 dark:text-purple-400 hover:underline"
-                          title="Präziser AI Zuschnitt"
-                        >
-                          <Sparkles size={12} />
-                          Smart
+                          Auto Crop
                         </button>
                       </div>
                     )}
