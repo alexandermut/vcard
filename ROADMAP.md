@@ -115,6 +115,32 @@ This file tracks the current development status and planned features.
     - [ ] RFC-Compliant Generator (Escaping, Folding).
     - [ ] Robust PHOTO Handling (Base64).
 
+---
+
+## 🖥️ Project: Self-Hosted AI Infrastructure (Ollama)
+**Goal:** Run a dedicated, privacy-focused LLM server to replace/augment Google Gemini.
+
+### Phase 1: Hardware & OS Setup
+- [ ] **Hardware Selection:** Evaluate Mac Studio (M2/M3 Ultra) vs. NVIDIA Server (RTX 3090/4090 cluster).
+- [ ] **OS Configuration:** Setup Linux (Ubuntu Server) or macOS for headless operation.
+- [ ] **Network Configuration:** Static IP, Port Forwarding, and Firewall rules.
+
+### Phase 2: Ollama Installation & Configuration
+- [ ] **Installation:** Deploy Ollama service (Docker or Bare Metal).
+- [ ] **Model Selection:** Benchmark Llama 3, Mixtral 8x7b, and Qwen for vCard extraction performance.
+- [ ] **Performance Tuning:** Optimize context window size and GPU layer offloading.
+
+### Phase 3: API & Security
+- [ ] **Reverse Proxy:** Setup Nginx or Traefik for secure API exposure.
+- [ ] **Authentication:** Implement Basic Auth or API Key middleware to protect the endpoint.
+- [ ] **SSL/TLS:** Configure Let's Encrypt for encrypted communication (HTTPS).
+- [ ] **Tunneling (Optional):** Setup Cloudflare Tunnel for secure remote access without open ports.
+
+### Phase 4: Integration
+- [ ] **App Connection:** Connect vCard App to the custom Ollama endpoint.
+- [ ] **Latency Testing:** Measure and optimize round-trip time.
+- [ ] **Fallback Logic:** Implement automatic failover to Gemini if the local server is unreachable.
+
 ## 🔮 Future / Ideas
 
 ### Integrations
@@ -135,7 +161,7 @@ This file tracks the current development status and planned features.
 - [ ] **NLP Integration:** Use `compromise.js` (or similar) for smarter offline parsing of natural text (e.g. email signatures).
 
 ### 🤝 Networking & Events
-- [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
+- [x] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
 - [ ] **Digital Business Card:** Public profile page (QR/NFC) for the user to share their own info.
 - [ ] **Team Sharing:** Share specific contact lists or folders with colleagues (E2E Encrypted).
 
