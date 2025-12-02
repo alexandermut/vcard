@@ -85,13 +85,39 @@ The output lands in the `dist/` folder and can be hosted on any static web serve
 *   **Local Storage:** Contact data and images reside in the browser's `localStorage` / `IndexedDB`.
 *   **Transparency:** Data leaves the browser only when actively using AI features (Upload to Google Gemini).
 
----
+## 🙏 Open Source Acknowledgments
 
+This project wouldn't exist without these amazing open source libraries:
+
+### Core Framework & Build Tools
+*   **[React](https://react.dev/)** (MIT) - UI Library
+*   **[Vite](https://vitejs.dev/)** (MIT) - Build Tool & Dev Server
+*   **[TypeScript](https://www.typescriptlang.org/)** (Apache 2.0) - Type Safety
+*   **[Tailwind CSS](https://tailwindcss.com/)** (MIT) - Utility-First CSS
+
+### AI & API
+*   **[@google/genai](https://github.com/google/generative-ai-js)** (Apache 2.0) - Google Gemini SDK
+*   **[@react-oauth/google](https://github.com/MomenSherif/react-oauth)** (MIT) - Google OAuth Integration
+
+### Image & Document Processing
 *   **[jsQR](https://github.com/cozmo/jsQR)** (Apache 2.0) - QR Code Scanning
 *   **[qrcode](https://github.com/soldair/node-qrcode)** (MIT) - QR Code Generation
+*   **[smartcrop](https://github.com/jwagner/smartcrop.js)** (MIT) - Intelligent Image Cropping
+*   **[PDF.js](https://mozilla.github.io/pdf.js/)** (Apache 2.0) - PDF Rendering & Conversion
+
+### Data & Storage
+*   **[idb](https://github.com/jakearchibald/idb)** (ISC) - IndexedDB Wrapper
 *   **[JSZip](https://stuk.github.io/jszip/)** (MIT) - ZIP File Creation
+*   **[libphonenumber-js](https://github.com/catamphetamine/libphonenumber-js)** (MIT) - Phone Number Validation
+
+### UI Components
 *   **[Lucide React](https://lucide.dev/)** (ISC) - Beautiful Icons
+*   **[Sonner](https://sonner.emilkowal.ski/)** (MIT) - Toast Notifications
+*   **[react-virtuoso](https://virtuoso.dev/)** (MIT) - Virtualized List Rendering
+
+### PWA & Fonts
 *   **[Vite Plugin PWA](https://vite-pwa-org.netlify.app/)** (MIT) - PWA Capabilities
+*   **[@fontsource/inter](https://fontsource.org/)** (OFL-1.1) - Inter Font Family
 
 ### Data Sources
 *   **Street Directory:** The offline street database is derived from **[OpenPLZ API](https://www.openplzapi.org/)**.
