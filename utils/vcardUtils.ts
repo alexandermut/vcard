@@ -87,6 +87,10 @@ export const generateVCardFromData = (data: VCardData): string => {
     lines.push(`ADR;CHARSET=utf-8;TYPE=${a.type}:;;${a.value.street};${a.value.city};${a.value.region};${a.value.zip};${a.value.country}`);
   });
 
+  if (data.categories && data.categories.length > 0) {
+    lines.push(`CATEGORIES;CHARSET=utf-8:${data.categories.join(',')}`);
+  }
+
   lines.push('END:VCARD');
   return lines.join('\n');
 };

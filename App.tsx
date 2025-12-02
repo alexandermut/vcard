@@ -40,6 +40,8 @@ import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
 import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
 import { RegexDebugger } from './components/RegexDebugger';
+import { EventModeModal } from './components/EventModeModal';
+import { Calendar } from 'lucide-react';
 
 
 
@@ -69,6 +71,11 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
   const [failedScansCount, setFailedScansCount] = useState(0);
+
+  // Event Mode State
+  const [isEventModeOpen, setIsEventModeOpen] = useState(false);
+  const [eventModeActive, setEventModeActive] = useState(false);
+  const [eventName, setEventName] = useState('');
 
   // Config State
   const [lang, setLang] = useState<Language>('de');
@@ -155,6 +162,13 @@ const App: React.FC = () => {
 
     const savedDark = localStorage.getItem('vcard_dark_mode');
     if (savedDark) setIsDarkMode(JSON.parse(savedDark));
+
+    // Load Event Mode
+    const savedEventActive = localStorage.getItem('vcard_event_active');
+    if (savedEventActive) setEventModeActive(JSON.parse(savedEventActive));
+
+    const savedEventName = localStorage.getItem('vcard_event_name');
+    if (savedEventName) setEventName(savedEventName);
   }, []);
 
   // Save Settings
@@ -168,6 +182,12 @@ const App: React.FC = () => {
     localStorage.setItem('vcard_lang', lang);
     localStorage.setItem('vcard_dark_mode', JSON.stringify(isDarkMode));
   }, [lang, isDarkMode]);
+
+  // Save Event Mode
+  useEffect(() => {
+    localStorage.setItem('vcard_event_active', JSON.stringify(eventModeActive));
+    localStorage.setItem('vcard_event_name', eventName);
+  }, [eventModeActive, eventName]);
 
 
   // Street DB State
@@ -375,6 +395,48 @@ const App: React.FC = () => {
     const newData = p.data as VCardData;
     const newFn = newData.fn?.trim();
     const newPhones = newData.tel?.map(t => clean_number(t.value)) || [];
+
+    // --- EVENT MODE INJECTION ---
+    if (eventModeActive && eventName && eventName.trim().length > 0) {
+      console.log("Injecting Event Tag:", eventName);
+      if (!newData.categories) newData.categories = [];
+      if (!newData.categories.includes(eventName)) {
+        newData.categories.push(eventName);
+        // Regenerate vCard string with new category
+        const newVCardString = generateVCardFromData(newData);
+        // Update str if it was the raw input, but we better use the regenerated one
+        // However, if we regenerate, we might lose some original formatting if the parser wasn't perfect.
+        // But for adding a category, we must regenerate or append.
+        // Let's use the regenerated one to be safe and consistent.
+        // Wait, 'str' is the input. 'p' is the parsed data.
+        // We should update 'itemToSave.vcard' later.
+
+        // Let's update the 'str' variable for the rest of the function?
+        // No, 'str' is used for duplicate check.
+        // We should update the data object and let the save logic handle it.
+        // But the save logic uses 'str' as vcard content for new entries if not regenerated.
+
+        // Actually, below we do:
+        // vcard: mergedString (if merged)
+        // vcard: str (if new or fallback)
+
+        // We need to ensure the saved vCard includes the category.
+        // So we should regenerate the vCard string if we added a category.
+        const vcardWithCategory = generateVCardFromData(newData);
+        // We will use this new string for saving.
+        // But wait, if we have a perfect original vCard, regenerating might change it.
+        // But adding a category IS changing it.
+
+        // Let's override 'str' with the new version if we injected a tag.
+        // This ensures the saved vCard has the tag.
+        // And we should update 'p' (parsed result) too?
+        // 'p' is already derived from 'newData' reference if we modified it in place?
+        // Yes, newData is p.data.
+
+        // So:
+        str = vcardWithCategory;
+      }
+    }
 
     // Get latest history from DB to ensure we check against current state
     const currentHistory = await getHistory();
@@ -1037,6 +1099,18 @@ const App: React.FC = () => {
         lang={lang}
       />
 
+      <EventModeModal
+        isOpen={isEventModeOpen}
+        onClose={() => setIsEventModeOpen(false)}
+        isActive={eventModeActive}
+        eventName={eventName}
+        onSave={(active, name) => {
+          setEventModeActive(active);
+          setEventName(name);
+        }}
+        lang={lang}
+      />
+
       <LegalModal
         isOpen={isLegalOpen}
         onClose={() => setIsLegalOpen(false)}
@@ -1098,6 +1172,25 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
+
+            {/* 0. Event Mode */}
+            <button
+              onClick={() => setIsEventModeOpen(true)}
+              className={`flex items-center gap-2 border hover:bg-opacity-80 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors relative ${eventModeActive
+                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                }`}
+              title="Event Modus"
+            >
+              <Calendar size={18} />
+              <span className="hidden lg:inline text-sm">{eventModeActive ? eventName : 'Event'}</span>
+              {eventModeActive && (
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                </span>
+              )}
+            </button>
 
             {/* 1. Scan */}
             <button
