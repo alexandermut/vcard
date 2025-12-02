@@ -114,7 +114,7 @@ export const initDB = () => {
                         db.deleteObjectStore(GOOGLE_STORE);
                     }
                     const googleStore = db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
-                    googleStore.createIndex('by-name', 'names.0.displayName');
+                    // googleStore.createIndex('by-name', 'names.0.displayName');
                 }
 
                 // Version 7: Failed Scans

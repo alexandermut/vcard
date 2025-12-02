@@ -242,6 +242,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               />
             </div>
           </div>
+          */}
         </div>
 
         <div className="space-y-4 pb-8">
