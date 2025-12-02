@@ -3,6 +3,7 @@ import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles,
 import { convertPdfToImages } from '../utils/pdfUtils';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { resizeImage } from '../utils/imageUtils';
+import { autoCropImage } from '../utils/cropUtils';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -183,7 +184,30 @@ export const ScanModal: React.FC<ScanModalProps> = ({
           <div className="grid grid-cols-2 gap-4 mb-6">
             {/* Front Image */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.frontSide}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.frontSide}</span>
+                {frontImage && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        setIsProcessingImage(true);
+                        const cropped = await autoCropImage(frontImage);
+                        setFrontImage(cropped);
+                      } catch (err) {
+                        console.error("Auto-crop failed", err);
+                      } finally {
+                        setIsProcessingImage(false);
+                      }
+                    }}
+                    className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                    title="Automatisch zuschneiden"
+                  >
+                    <Sparkles size={12} />
+                    Auto-Crop
+                  </button>
+                )}
+              </div>
               <div
                 onClick={() => !isProcessingImage && frontInputRef.current?.click()}
                 className={`aspect-[3/2] rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer overflow-hidden relative transition-all ${frontImage ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
@@ -212,7 +236,30 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 
             {/* Back Image */}
             <div className="flex flex-col gap-2">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.backSide}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t.backSide}</span>
+                {backImage && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        setIsProcessingImage(true);
+                        const cropped = await autoCropImage(backImage);
+                        setBackImage(cropped);
+                      } catch (err) {
+                        console.error("Auto-crop failed", err);
+                      } finally {
+                        setIsProcessingImage(false);
+                      }
+                    }}
+                    className="text-xs flex items-center gap-1 text-indigo-600 dark:text-indigo-400 hover:underline"
+                    title="Automatisch zuschneiden"
+                  >
+                    <Sparkles size={12} />
+                    Auto-Crop
+                  </button>
+                )}
+              </div>
               <div
                 onClick={() => !isProcessingImage && backInputRef.current?.click()}
                 className={`aspect-[3/2] rounded-lg border-2 border-dashed flex items-center justify-center cursor-pointer overflow-hidden relative transition-all ${backImage ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
