@@ -100,6 +100,7 @@ export const combineImages = (frontBase64: string, backBase64: string | undefine
       backImg.src = backBase64;
     };
     frontImg.onerror = reject;
+    frontImg.src = frontBase64;
   });
 };
 

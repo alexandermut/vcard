@@ -11,7 +11,7 @@ export const useScanQueue = (
   apiKey: string,
   lang: Language,
   llmConfig: LLMConfig,
-  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => void
+  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => Promise<void> | void
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -80,7 +80,7 @@ export const useScanQueue = (
         timeoutPromise
       ]);
 
-      onJobComplete(vcard, rawImages, job.mode);
+      await onJobComplete(vcard, rawImages, job.mode);
 
       setQueue(prev => prev.filter(j => j.id !== job.id));
 
