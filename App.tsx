@@ -885,7 +885,6 @@ const App: React.FC = () => {
 
     // Wait, the error said "Cannot find name 'setIsImporting'". 
     // Let's check if setIsImporting exists in App.tsx. 
-    // It seems I might have assumed it exists.
     // Let's check the file content or just remove the loading state for now to be safe and use simple alerts/toasts.
     // OR better: use the existing `setImportProgress` which IS in App.tsx (based on previous edits).
 

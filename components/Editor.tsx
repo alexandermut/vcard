@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, RotateCcw, Code, FileText, UploadCloud, Undo2, Clipboard } from 'lucide-react';
-import { parseImpressumToVCard } from '../utils/regexParser';
+import { parseImpressumSafe } from '../utils/safeParser';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -25,12 +25,17 @@ export const Editor: React.FC<EditorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const t = translations[lang];
 
-  const handleRawTextChange = (text: string) => {
+  const handleRawTextChange = async (text: string) => {
     setRawText(text);
     if (text.trim()) {
       onClearImages();
-      const generatedVCard = parseImpressumToVCard(text);
-      onChange(generatedVCard);
+      try {
+        const generatedVCard = await parseImpressumSafe(text);
+        onChange(generatedVCard);
+      } catch (e) {
+        console.error("Parser error (timeout or invalid):", e);
+        // Optionally show error state in UI, but for now just log it to avoid spamming user while typing
+      }
     }
   };
 

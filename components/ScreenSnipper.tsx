@@ -95,11 +95,6 @@ export const ScreenSnipper: React.FC<ScreenSnipperProps> = ({ stream, onCrop, on
                 }
             });
 
-            // Add Tailwind CDN as fallback if local styles fail in PiP
-            const tw = document.createElement('script');
-            tw.src = "https://cdn.tailwindcss.com";
-            pip.document.head.appendChild(tw);
-
             setPipWindow(pip);
         } catch (err) {
             console.error("Failed to open PiP:", err);
@@ -275,8 +270,8 @@ export const ScreenSnipper: React.FC<ScreenSnipperProps> = ({ stream, onCrop, on
                         onClick={handleConfirm}
                         disabled={!selection || selection.w < 10}
                         className={`flex items-center gap-2 px-6 py-3 rounded-full font-medium transition-colors ${selection && selection.w >= 10
-                                ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/30'
-                                : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                            ? 'bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/30'
+                            : 'bg-slate-800 text-slate-500 cursor-not-allowed'
                             }`}
                     >
                         <Check size={20} />
