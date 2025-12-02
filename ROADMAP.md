@@ -89,170 +89,186 @@ This file tracks the current development status and planned features.
 ## 🧠 Project: Intelligent Regex Parser (Context-Aware Parsing)
 **Goal:** Transform the regex parser from pattern-matching to intelligent, database-backed analysis.
 
-### Phase 1: False Positive Elimination
-- [ ] ⚡ **Phone Number False Positives:** Distinguish phone numbers from VAT/UST/IBAN/HR numbers
-  - **Problem:** Parser currently misidentifies non-phone numbers (USt-ID, IBAN, Handelsregister, etc.) as phone numbers
-  - **Solution:** Implement negative lookahead with prefix blacklist
+**Success Metrics:**
+- Reduce false positive rate by 80% (current: ~15% → target: <3%)
+- Increase field extraction accuracy to 95%+ (current: ~75%)
+- Achieve 90%+ confidence scores on standard business cards
+- Parse time under 50ms per contact (including anchor lookups)
+
+### Phase 1: Foundation & False Positive Elimination (Week 1-2)
+
+#### 1.1 Create Infrastructure
+- [ ] **Create `utils/parserAnchors.ts`** - Centralized anchor management
+  - [ ] Export blacklist prefixes as const arrays
+  - [ ] Export legal forms as categorized objects
+  - [ ] Export industry keywords
+  - [ ] Provide utility functions: `isBlacklisted()`, `hasLegalForm()`, `fuzzyMatch()`
+
+- [ ] **Create `utils/anchorDetection.ts`** - Anchor detection engine
+  - [ ] `detectPLZ(text: string): AnchorMatch[]` - Find all PLZ with positions
+  - [ ] `detectAreaCodes(text: string): AnchorMatch[]` - Find area codes
+  - [ ] `detectStreets(text: string): AnchorMatch[]` - Fuzzy street matching
+  - [ ] `detectCities(text: string): AnchorMatch[]` - City name matching
+  - [ ] Return format: `{ value: string, position: [start, end], weight: number }`
+
+#### 1.2 Blacklist Implementation ⚡
+- [ ] **Phone Number False Positives**
+  - [ ] Create regex negative lookahead for 40+ blacklist prefixes
   - **Prefix Catalog (Numbers to EXCLUDE):**
-    - **Tax/Registration:** `USt-ID`, `USt.ID`, `Umsatzsteuer-ID`, `VAT`, `VAT-ID`, `VAT No`, `UID`, `Steuernummer`, `St.-Nr.`, `Steuer-Nr.`
-    - **Trade Registry:** `Handelsregister`, `HRB`, `HRA`, `HR`, `Registernummer`, `Reg.-Nr.`, `Firmenbuchnummer`, `FN`
-    - **Banking:** `IBAN`, `BIC`, `SWIFT`, `Kontonummer`, `Konto-Nr.`, `Bankleitzahl`, `BLZ`
-    - **Business IDs:** `Artikelnummer`, `Art.-Nr.`, `Bestellnummer`, `Best.-Nr.`, `Kundennummer`, `Kd.-Nr.`, `Rechnungsnummer`, `Rechn.-Nr.`
-    - **Personal IDs:** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
-    - **Dates:** `geb.`, `geboren`, `Geburtsdatum` (to avoid date patterns like `01.01.1990`)
-  - **Implementation:** Add to `safeParser.ts` with case-insensitive regex
+    - **Tax/Registration (9):** `USt-ID`, `USt.ID`, `Umsatzsteuer-ID`, `VAT`, `VAT-ID`, `VAT No`, `UID`, `Steuernummer`, `St.-Nr.`, `Steuer-Nr.`
+    - **Trade Registry (8):** `Handelsregister`, `HRB`, `HRA`, `HR`, `Registernummer`, `Reg.-Nr.`, `Firmenbuchnummer`, `FN`
+    - **Banking (6):** `IBAN`, `BIC`, `SWIFT`, `Kontonummer`, `Konto-Nr.`, `Bankleitzahl`, `BLZ`
+    - **Business IDs (8):** `Artikelnummer`, `Art.-Nr.`, `Bestellnummer`, `Best.-Nr.`, `Kundennummer`, `Kd.-Nr.`, `Rechnungsnummer`, `Rechn.-Nr.`
+    - **Personal IDs (6):** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
+    - **Dates (3):** `geb.`, `geboren`, `Geburtsdatum`
+  - [ ] Pattern: `(?<!(?:USt-ID|IBAN|...):\s*)\d+` (negative lookbehind)
+  - [ ] Test with edge cases: "IBAN: DE12 3456..." vs "Tel: 030 123456"
 
-### Phase 2: Anchor-Based Context Detection
-- [ ] **Multi-Pass Analysis Framework:** Leverage existing reference data as "anchors" for smarter text analysis
-  - **Problem:** Current regex parser works in isolation without using available reference databases
-  - **Available Reference Data:**
-    - ✅ **Landline Prefixes:** 5000+ German area codes (`landlinePrefixes.js`)
-    - ✅ **ZIP Codes:** Full German PLZ database with city mappings
-    - ✅ **Street Names:** 53MB database of German streets (`cities.ts`)
-    - ✅ **City Names:** Complete list of German cities
-    - ✅ **First Names:** German first name directory (potential addition)
-  - **New Parsing Concept - Multi-Pass Analysis:**
-    1. **Pass 1: Anchor Detection** - Identify known entities (PLZ, city, street, area code)
-    2. **Pass 2: Context Inference** - Use anchors to validate nearby fields
-       - If PLZ found → validate adjacent city name against database
-       - If area code found → validate it's actually a landline, not mobile
-       - If street name found → extract house number pattern
-       - If first name found → increase confidence for name extraction
-    3. **Pass 3: Confidence Scoring** - Assign scores based on anchor proximity
-       - High confidence: Field validated by 2+ anchors (e.g., "10115 Berlin" = PLZ + City match)
-       - Medium confidence: Field validated by 1 anchor
-       - Low confidence: Pure regex match without anchor validation
-  - **Benefits:**
-    - Reduce false positives (e.g., random numbers mistaken for phone)
-    - Improve address accuracy (validate street + PLZ + city consistency)
-    - Better name extraction (distinguish "Max Müller" from company names)
-    - Enable fuzzy matching (typos in city names can be corrected)
+#### 1.3 Legal Forms Database
+- [ ] **Implement Company Detection**
+  - **48+ German Legal Forms:**
+    - **Kapitalgesellschaften (6):** GmbH, gGmbH, UG, AG, SE, KGaA
+    - **Personengesellschaften (6):** GbR, OHG, KG, GmbH & Co. KG, PartG, PartG mbB
+    - **Mischformen (8):** GmbH & Co. KG, GmbH & Co. KGaA, AG & Co. KG, UG & Co. KG, SE & Co. KG, GmbH & Co. OHG, Ltd. & Co. KG, Stiftung & Co. KG
+    - **Einzelunternehmen (3):** e.K., e.Kfr., Inh.
+    - **Non-Profit (4):** e.V., gGmbH, Stiftung, gAG
+    - **Öffentlich (2):** AöR, KöR
+    - **Ausländisch (6):** Ltd., S.A., S.à r.l., B.V., Inc., LLC
+  - [ ] Handle variations: `e.V.` = `eV` = `e V` (normalize before matching)
+  - [ ] Regex: `(?:GmbH\s*&\s*Co\.\s*KG|GmbH|AG|...)` (order by length, longest first)
 
-### Phase 3: Hierarchical Weighting System
-- [ ] **Implement Priority-Based Field Extraction:**
-  - Create `anchorDetection.ts` utility
-  - Refactor `safeParser.ts` to use multi-pass approach
-  - Add confidence scores to parsed results
-  - Log validation mismatches for debugging
-  - **Analysis Hierarchy & Weighting System:**
-    - **Phase 1: Anchor Discovery (Priority Order)**
-      1. **PLZ (Weight: 10)** - Most reliable anchor, always 5 digits, validated against database
-      2. **Area Code (Weight: 9)** - 5000+ prefixes, validated against `landlinePrefixes.js`
-      3. **City Name (Weight: 8)** - Cross-reference with PLZ, fuzzy match allowed (Levenshtein distance ≤ 2)
-      4. **Street Name (Weight: 7)** - 53MB database, validate with city context
-      5. **First Name (Weight: 6)** - Lower priority, many false positives (e.g., city names)
-      6. **Email Domain (Weight: 5)** - Useful for company validation
-    - **Phase 2: Field Extraction with Context Boosting**
-      - **Address Field:**
-        - Base Score: regex match for address pattern
-        - +30% if adjacent PLZ found
-        - +20% if city name validated
-        - +15% if street name in database
-        - +10% if house number pattern matches
-        - **Final Decision:** Accept if score ≥ 60%
-      - **Phone Field:**
-        - Base Score: regex match for phone pattern
-        - +40% if area code in landline prefix list
-        - -50% if preceded by blacklist prefix (USt-ID, IBAN, etc.)
-        - +20% if near address (context: business phone)
-        - -30% if looks like IBAN (DE + 20 digits)
-        - **Final Decision:** Accept if score ≥ 50%
-      - **Name Field:**
-        - Base Score: capitalized words pattern
-        - +35% if first name in directory
-        - +25% if followed by title (Dr., Prof., etc.)
-        - +15% if near email/phone (context: contact person)
-        - -40% if in all caps (likely company name)
-        - -20% if contains "GmbH", "AG", "e.V."
-        - **Final Decision:** Accept if score ≥ 55%
-      - **Company Field:**
-        - Base Score: capitalized phrase
-        - +40% if contains legal form (GmbH, AG, KG, etc.)
-        - +30% if contains industry keywords (Consulting, Engineering, etc.)
-        - +20% if email domain matches extracted company name
-        - -30% if looks like person name (First + Last pattern)
-        - **Final Decision:** Accept if score ≥ 60%
-        - **German Legal Forms (Rechtsformen) - Complete Reference:**
-          - **Kapitalgesellschaften (Corporations):**
-            - `GmbH` (Gesellschaft mit beschränkter Haftung)
-            - `gGmbH` (gemeinnützige GmbH)
-            - `UG` (Unternehmergesellschaft haftungsbeschränkt)
-            - `AG` (Aktiengesellschaft)
-            - `SE` (Societas Europaea / Europäische Gesellschaft)
-            - `KGaA` (Kommanditgesellschaft auf Aktien)
-          - **Personengesellschaften (Partnerships):**
-            - `GbR` (Gesellschaft bürgerlichen Rechts)
-            - `OHG` (Offene Handelsgesellschaft)
-            - `KG` (Kommanditgesellschaft)
-            - `GmbH & Co. KG`
-            - `PartG` (Partnerschaftsgesellschaft)
-            - `PartG mbB` (mit beschränkter Berufshaftung)
-          - **Mischformen (Hybrid Structures):**
-            - `GmbH & Co. KG` (häufigste Form)
-            - `GmbH & Co. KGaA`
-            - `AG & Co. KG`
-            - `UG & Co. KG`
-            - `SE & Co. KG`
-            - `GmbH & Co. OHG`
-            - `Ltd. & Co. KG`
-            - `Stiftung & Co. KG`
-            - **Detection Note:** Match full pattern, not just "KG"
-          - **Einzelunternehmen & Sonstige:**
-            - `e.K.` (eingetragener Kaufmann)
-            - `e.Kfr.` (eingetragene Kauffrau)
-            - `Inh.` (Inhaber)
-          - **Non-Profit & Vereine:**
-            - `e.V.` (eingetragener Verein)
-            - `gGmbH` (gemeinnützige GmbH)
-            - `Stiftung`
-            - `gAG` (gemeinnützige AG)
-          - **Öffentliche Einrichtungen:**
-            - `AöR` (Anstalt öffentlichen Rechts)
-            - `KöR` (Körperschaft öffentlichen Rechts)
-          - **Ausländische Formen (häufig in DE):**
-            - `Ltd.` (Limited Company - UK)
-            - `S.A.` (Société Anonyme - FR/BE)
-            - `S.à r.l.` (Société à responsabilité limitée - LU)
-            - `B.V.` (Besloten Vennootschap - NL)
-            - `Inc.` (Incorporated - US)
-            - `LLC` (Limited Liability Company - US)
-          - **Variationen & Schreibweisen:**
-            - Detect with/without spaces: `GmbH`, `Gm bH`
-            - Detect with/without dots: `e.V.`, `eV`, `e V`
-            - Case-insensitive matching
-            - Detect in company suffix or standalone
-    - **Phase 3: Cross-Validation & Conflict Resolution**
-      - **Mutual Reinforcement:**
-        - PLZ + City match → Boost both by +20%
-        - Street + City match → Boost address confidence by +15%
-        - Area code + City → Validate phone is local landline
-        - First name + Email → Likely contact person, boost name confidence
-      - **Conflict Handling:**
-        - If multiple addresses found → Choose one with highest score
-        - If PLZ contradicts City → Flag for manual review, prefer PLZ
-        - If name ambiguous (could be person or company) → Use legal form as tiebreaker
-      - **Cascading Effects:**
-        - High-confidence address found → Increase threshold for secondary addresses (reduce duplicates)
-        - Company identified → Deprioritize person name extraction from same line
-        - Multiple phones found → Classify by context (area code = landline, +49 17x = mobile)
-    - **Phase 4: Confidence Reporting**
-      - Output JSON with per-field confidence scores
-      - Flag low-confidence fields for AI enrichment
-      - Log anchor matches for debugging
-      - Example output:
-        ```json
-        {
-          "name": { "value": "Max Müller", "confidence": 0.85, "anchors": ["firstName"] },
-          "address": { "value": "Hauptstr. 1, 10115 Berlin", "confidence": 0.92, "anchors": ["plz", "city", "street"] },
-          "phone": { "value": "+49 30 12345678", "confidence": 0.78, "anchors": ["areaCode"] }
-        }
-        ```
+### Phase 2: Anchor-Based Context Detection (Week 3-4)
 
+#### 2.1 Multi-Pass Analysis Implementation
+- [ ] **Pass 1: Anchor Discovery** - Scan text for all anchors
+  ```typescript
+  interface AnchorMap {
+    plz: AnchorMatch[];        // Weight: 10
+    areaCode: AnchorMatch[];   // Weight: 9
+    city: AnchorMatch[];       // Weight: 8
+    street: AnchorMatch[];     // Weight: 7
+    firstName: AnchorMatch[];  // Weight: 6
+    emailDomain: AnchorMatch[]; // Weight: 5
+  }
+  ```
+  - [ ] Run detection in parallel (Promise.all for performance)
+  - [ ] Index anchors by text position for proximity lookup
 
+- [ ] **Pass 2: Context Inference** - Validate fields with anchors
+  - [ ] For each regex match, calculate anchor proximity score
+  - [ ] Proximity bonus: Within 50 chars = full bonus, 51-100 chars = 50% bonus
+  - [ ] Cross-validate:
+    - [ ] PLZ found → Check if adjacent text matches city in database
+    - [ ] Area code found → Validate against landline prefix list (5000+)
+    - [ ] Street found → Check if same line contains house number pattern
+    - [ ] First name found → Boost person name confidence
+
+- [ ] **Pass 3: Confidence Scoring** - Aggregate scores per field
+  - [ ] Base score: Regex match quality (0-40 points)
+  - [ ] Anchor bonuses: Up to +60 points based on proximity and weight
+  - [ ] Penalties: Blacklist hit = -50 points, all-caps = -40 points
+  - [ ] Final score: Normalize to 0.0-1.0 range
+  - [ ] Thresholds: Address ≥0.6, Phone ≥0.5, Name ≥0.55, Company ≥0.6
+
+#### 2.2 Fuzzy Matching for Typos
+- [ ] **Implement Levenshtein Distance** for city names
+  - [ ] Allow max distance of 2 for cities (e.g., "Berln" → "Berlin")
+  - [ ] Cache frequent corrections for performance
+  - [ ] Only apply to cities with PLZ anchor present (reduce false positives)
+
+### Phase 3: Hierarchical Weighting System (Week 5-6)
+
+#### 3.1 Field Extraction Rules
+- [ ] **Weighted Scoring per Field Type:**
+  - [ ] **Address Field:**
+    - Base: 40%, +30% PLZ, +20% city, +15% street, +10% house number
+    - Threshold: ≥60%
+  - [ ] **Phone Field:**
+    - Base: 40%, +40% area code, +20% near address
+    - Penalties: -50% blacklist, -30% IBAN pattern
+    - Threshold: ≥50%
+  - [ ] **Name Field:**
+    - Base: 40%, +35% first name, +25% title, +15% near email
+    - Penalties: -40% all-caps, -20% legal form present
+    - Threshold: ≥55%
+  - [ ] **Company Field:**
+    - Base: 40%, +40% legal form, +30% industry keyword, +20% domain match
+    - Penalties: -30% person name pattern
+    - Threshold: ≥60%
+
+#### 3.2 Cross-Validation & Conflict Resolution
+- [ ] **Mutual Reinforcement Logic:**
+  - [ ] PLZ + City match → Boost both by +20%
+  - [ ] Street + City match → Boost address by +15%
+  - [ ] Area code + City → Confirm local landline
+  - [ ] First name + Email → Boost name confidence by +15%
+
+- [ ] **Conflict Handling:**
+  - [ ] Multiple candidates → Choose highest score
+  - [ ] PLZ contradicts City → Prefer PLZ (weight 10 > 8)
+  - [ ] Name ambiguous → Check for legal form as tiebreaker
+  - [ ] Log conflicts to `debug.log` for review
+
+- [ ] **Cascading Effects:**
+  - [ ] High-confidence address → Increase threshold for 2nd address to 0.75
+  - [ ] Company detected → Suppress person name from same line
+  - [ ] Multiple phones → Classify by prefix (`030` = landline, `0176` = mobile)
+
+### Phase 4: Testing & Validation (Week 7)
+
+#### 4.1 Test Suite
+- [ ] **Unit Tests:**
+  - [ ] Test each anchor detection function independently
+  - [ ] Test blacklist regex with 100+ known false positives
+  - [ ] Test legal form matching with variations (dots, spaces, case)
+  - [ ] Test proximity calculations
+
+- [ ] **Integration Tests:**
+  - [ ] Run against 100 real-world business card scans
+  - [ ] Compare old parser vs new parser results
+  - [ ] Measure false positive reduction
+  - [ ] Measure confidence score distribution
+
+#### 4.2 Benchmarking
+- [ ] **Performance Metrics:**
+  - [ ] Target: <50ms per contact (including DB lookups)
+  - [ ] Profile anchor detection (likely bottleneck: street matching)
+  - [ ] Optimize: Use Set for O(1) lookups instead of Array.includes()
+  - [ ] Consider: Cache frequently matched cities/streets in memory
+
+#### 4.3 Confidence Reporting
+- [ ] Implement JSON output with confidence scores:
+  ```json
+  {
+    "fields": {
+      "name": { "value": "Max Müller", "confidence": 0.85, "anchors": ["firstName"] },
+      "company": { "value": "ABC GmbH", "confidence": 0.92, "anchors": ["legalForm"] },
+      "address": { "value": "Hauptstr. 1, 10115 Berlin", "confidence": 0.94, "anchors": ["plz", "city", "street"] },
+      "phone": { "value": "+49 30 12345678", "confidence": 0.78, "anchors": ["areaCode"] }
+    },
+    "meta": {
+      "totalAnchors": 5,
+      "processingTime": "42ms",
+      "flaggedForReview": []
+    }
+  }
+  ```
+
+### Phase 5: AI Fallback Integration (Week 8)
+- [ ] **Low-Confidence Escalation:**
+  - [ ] If any field <0.5 confidence → Flag for AI enrichment
+  - [ ] Pass anchor data to AI for context-aware correction
+  - [ ] AI can override low-confidence fields or fill gaps
+
+- [ ] **Hybrid Mode:**
+  - [ ] Regex parser runs first (fast, offline)
+  - [ ] High-confidence fields: Accept immediately
+  - [ ] Low-confidence fields: Send to AI for validation
+  - [ ] Best of both worlds: Speed + Accuracy
 
 ---
 
-##  Phase 4: Scaling & Performance (20k+ Contacts)
+## Phase 4: Scaling & Performance (20k+ Contacts)
 **Goal:** Ensure smooth operation with large datasets (>20,000 contacts).
 
 - [x] **Virtualization (React Virtuoso)**
