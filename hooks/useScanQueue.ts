@@ -46,7 +46,10 @@ export const useScanQueue = (
       const getBase64 = async (input: string | File): Promise<string> => {
         if (typeof input === 'string') return input;
         // Resize to max 1024px, 0.8 quality (JPEG)
-        return await resizeImage(input, 1024, 0.8);
+        console.time(`resize-${typeof input === 'string' ? 'str' : input.name}`);
+        const res = await resizeImage(input, 1024, 0.8);
+        console.timeEnd(`resize-${typeof input === 'string' ? 'str' : input.name}`);
+        return res;
       };
 
       // Load images into memory ONLY NOW
@@ -70,15 +73,19 @@ export const useScanQueue = (
         rawImages.push(base64);
       }
 
-      // 60s Timeout for AI processing
+      console.log("Images prepared, starting AI scan...", { count: images.length, mode: job.mode });
+      console.time(`ai-scan-${job.id}`);
+
+      // 180s Timeout for AI processing (allows for retries)
       const timeoutPromise = new Promise<string>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout: AI processing took too long")), 60000)
+        setTimeout(() => reject(new Error("Timeout: AI processing took too long")), 180000)
       );
 
       const vcard = await Promise.race([
         scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision'),
         timeoutPromise
       ]);
+      console.timeEnd(`ai-scan-${job.id}`);
 
       // Safety timeout for onJobComplete (saving)
       const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));
