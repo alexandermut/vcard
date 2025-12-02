@@ -184,7 +184,7 @@ export const syntheticEdgeCases = [
       Aufsichtsrat: Lisa Wichtig
     `,
         expected: {
-            org: "Mega Corp AG",
+            org: "MegaCorp AG",
             fn: "Dr. Boss",
             title: "Vorstand"
         }

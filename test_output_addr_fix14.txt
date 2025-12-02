@@ -1,0 +1,949 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.14 [39m[90m/Users/alexandermut/Desktop/kontakte.me[39m
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_format_dots
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Dr. Dot Tester
+      Tel: 040 123 45 67
+      M.0171 99 88 77 6
+    
+Lines: [ [32m'Dr. Dot Tester'[39m, [32m'Tel: 040 123 45 67'[39m, [32m'M.0171 99 88 77 6'[39m ]
+DEBUG consumeAddress Line: "Dr. Dot Tester"
+DEBUG consumeAddress Generic Check: "Dr. Dot Tester" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Dr. Dot Tester"
+DEBUG FINAL data.fn: "Dr. Dot Tester"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_format_slashes_mixed
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Slashy Mc Slashface
+      T: +49 30 / 123 45 - 0
+      F: +49 (0) 30 // 123 45 - 99
+    
+Lines: [
+  [32m'Slashy Mc Slashface'[39m,
+  [32m'T: +49 30 / 123 45 - 0'[39m,
+  [32m'F: +49 (0) 30 // 123 45 - 99'[39m
+]
+DEBUG consumeAddress Line: "Slashy Mc Slashface"
+DEBUG consumeAddress Generic Check: "Slashy Mc Slashface" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Slashy Mc Slashface"
+DEBUG FINAL data.fn: "Slashy Mc Slashface"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_sticky_text
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Kein Platz GmbH
+      Kontakt:Tel:+4989123456 Mail:info@keinplatz.de
+    
+Lines: [ [32m'Kein Platz GmbH'[39m, [32m'Kontakt:Tel:+4989123456 Mail:info@keinplatz.de'[39m ]
+DEBUG consumeAddress Line: "Kein Platz GmbH"
+DEBUG consumeAddress Generic Check: "Kein Platz GmbH" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_pipe_separator
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Designer Studio
+Berlin
+      Max Kreativ
+Art Director
+      +49 171 555 666
+m.kreativ@design.studio
+www.design.studio
+      Holzmarktstr. 25
+10243 Berlin
+    
+Lines: [
+  [32m'Designer Studio'[39m,
+  [32m'Berlin'[39m,
+  [32m'Max Kreativ'[39m,
+  [32m'Art Director'[39m,
+  [32m'+49 171 555 666'[39m,
+  [32m'm.kreativ@design.studio'[39m,
+  [32m'www.design.studio'[39m,
+  [32m'Holzmarktstr. 25'[39m,
+  [32m'10243 Berlin'[39m
+]
+DEBUG consumeAddress Line: "Designer Studio"
+DEBUG consumeAddress Generic Check: "Designer Studio" -> Match=false
+DEBUG consumeAddress Line: "Berlin"
+DEBUG consumeAddress Generic Check: "Berlin" -> Match=false
+DEBUG consumeAddress Line: "Max Kreativ"
+DEBUG consumeAddress Generic Check: "Max Kreativ" -> Match=false
+DEBUG consumeAddress Line: "Holzmarktstr. 25"
+DEBUG consumeAddress Generic Check: "Holzmarktstr. 25" -> Match=false
+DEBUG consumeAddress Line: "10243 Berlin"
+DEBUG consumeAddress Anchor: ZIP=10243 City=Berlin
+DEBUG consumeAddress Postfach Lookback: PrevPrev="www.design.studio"
+DEBUG consumeAddress PUSH: Street="Holzmarktstr. 25" City="Berlin" Zip="10243"
+DEBUG FINAL data.fn: "Max Kreativ"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_pipe_separator
+[22m[39mDEBUG consumeName: { line: [32m'Max Kreativ'[39m, match: [32m'Max'[39m }
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_sticky_text_v2
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Max Mustermann
+      Musterstraße 1
+      10115 Berlin
+      Tel:030123456
+      
+Lines: [ [32m'Max Mustermann'[39m, [32m'Musterstraße 1'[39m, [32m'10115 Berlin'[39m, [32m'Tel:030123456'[39m ]
+DEBUG consumeAddress Line: "Max Mustermann"
+DEBUG consumeAddress Generic Check: "Max Mustermann" -> Match=false
+DEBUG consumeAddress Line: "Musterstraße 1"
+DEBUG consumeAddress Generic Check: "Musterstraße 1" -> Match=false
+DEBUG consumeAddress Line: "10115 Berlin"
+DEBUG consumeAddress Anchor: ZIP=10115 City=Berlin
+DEBUG consumeAddress Postfach Lookback: PrevPrev="Max Mustermann"
+DEBUG consumeAddress PUSH: Street="Musterstraße 1" City="Berlin" Zip="10115"
+DEBUG FINAL data.fn: "Max Mustermann"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_sticky_text_v2
+[22m[39mDEBUG consumeName: { line: [32m'Max Mustermann'[39m, match: [32m'Max'[39m }
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_newlines_mess
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ Max Mustermann
+CEO
+Musterfirma
+      Musterstr. 1
+12345 Musterstadt
+      max@muster.de
+0171 1234567
+Lines: [
+  [32m'Max Mustermann'[39m,
+  [32m'CEO'[39m,
+  [32m'Musterfirma'[39m,
+  [32m'Musterstr. 1'[39m,
+  [32m'12345 Musterstadt'[39m,
+  [32m'max@muster.de'[39m,
+  [32m'0171 1234567'[39m
+]
+DEBUG consumeAddress Line: "Max Mustermann"
+DEBUG consumeAddress Generic Check: "Max Mustermann" -> Match=false
+DEBUG consumeAddress Line: "Musterfirma"
+DEBUG consumeAddress Generic Check: "Musterfirma" -> Match=false
+DEBUG consumeAddress Line: "Musterstr. 1"
+DEBUG consumeAddress Generic Check: "Musterstr. 1" -> Match=false
+DEBUG FINAL data.fn: "Max Mustermann"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_newlines_mess
+[22m[39mUnknown phone prefix for number: 012345. Assuming Landline.
+DEBUG consumeName: { line: [32m'Max Mustermann'[39m, match: [32m'Max'[39m }
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_ocr_l_for_1
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      OCR Victim
+      Te I: 040 / 123 456
+      Mobi I: 0170 / 555 666
+    
+Lines: [ [32m'OCR Victim'[39m, [32m'Te I: 040 / 123 456'[39m, [32m'Mobi I: 0170 / 555 666'[39m ]
+DEBUG consumeAddress Line: "OCR Victim"
+DEBUG consumeAddress Generic Check: "OCR Victim" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "OCR Victim"
+DEBUG FINAL data.fn: "OCR Victim"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_ocr_o_for_0
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Bad Scan AG
+      T: 030 / 123456
+      M: 0176 / 987654
+    
+Lines: [ [32m'Bad Scan AG'[39m, [32m'T: 030 / 123456'[39m, [32m'M: 0176 / 987654'[39m ]
+DEBUG consumeAddress Line: "Bad Scan AG"
+DEBUG consumeAddress Generic Check: "Bad Scan AG" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_ocr_errors_v2
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Max Mustermann
+      Emai 1: max@example.c 0 m
+      Tel: 0171 1234567
+      
+Lines: [ [32m'Max Mustermann'[39m, [32m'Emai 1: max@example.c 0 m'[39m, [32m'Tel: 0171 1234567'[39m ]
+DEBUG consumeAddress Line: "Max Mustermann"
+DEBUG consumeAddress Generic Check: "Max Mustermann" -> Match=false
+DEBUG FINAL data.fn: "Max Mustermann"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_ocr_errors_v2
+[22m[39mDEBUG consumeName: { line: [32m'Max Mustermann'[39m, match: [32m'Max'[39m }
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_typo_labels
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Lisa Müller
+      Email: lisa@mueller.de
+      Telefon: 030 999999
+      Webseite: www.mueller.de
+      
+Lines: [
+  [32m'Lisa Müller'[39m,
+  [32m'Email: lisa@mueller.de'[39m,
+  [32m'Telefon: 030 999999'[39m,
+  [32m'Webseite: www.mueller.de'[39m
+]
+DEBUG consumeAddress Line: "Lisa Müller"
+DEBUG consumeAddress Generic Check: "Lisa Müller" -> Match=false
+DEBUG FINAL data.fn: "Lisa Müller"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_ocr_spaces_in_numbers
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Ghost Spacer
+      T: + 4 9 ( 0 )40123
+    
+Lines: [ [32m'Ghost Spacer'[39m, [32m'T: + 4 9 ( 0 )40123'[39m ]
+DEBUG consumeAddress Line: "Ghost Spacer"
+DEBUG consumeAddress Generic Check: "Ghost Spacer" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Ghost Spacer"
+DEBUG FINAL data.fn: "Ghost Spacer"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_role_bottom
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Die Firma GmbH
+      Musterstraße 1
+      12345 Berlin
+      
+      Vertreten durch den Geschäftsführer:
+      Hans Guckindieluft
+    
+Lines: [
+  [32m'Die Firma GmbH'[39m,
+  [32m'Musterstraße 1'[39m,
+  [32m'12345 Berlin'[39m,
+  [32m'Vertreten durch den Geschäftsführer:'[39m,
+  [32m'Hans Guckindieluft'[39m
+]
+DEBUG consumeAddress Line: "Die Firma GmbH"
+DEBUG consumeAddress Generic Check: "Die Firma GmbH" -> Match=false
+DEBUG consumeAddress Line: "Musterstraße 1"
+DEBUG consumeAddress Generic Check: "Musterstraße 1" -> Match=false
+DEBUG consumeAddress Line: "12345 Berlin"
+DEBUG consumeAddress Anchor: ZIP=12345 City=Berlin
+DEBUG consumeAddress Postfach Lookback: PrevPrev="Die Firma GmbH"
+DEBUG consumeAddress PUSH: Street="Musterstraße 1" City="Berlin" Zip="12345"
+DEBUG FINAL data.fn: "Hans Guckindieluft"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_multi_role
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Mega Corp AG
+      Vorstand: Dr. Boss (Vorsitz), Max Knecht (Stellv.)
+      Aufsichtsrat: Lisa Wichtig
+    
+Lines: [
+  [32m'Mega Corp AG'[39m,
+  [32m'Vorstand: Dr. Boss (Vorsitz), Max Knecht (Stellv.)'[39m,
+  [32m'Aufsichtsrat: Lisa Wichtig'[39m
+]
+DEBUG consumeAddress Line: "Mega Corp AG"
+DEBUG consumeAddress Generic Check: "Mega Corp AG" -> Match=false
+DEBUG consumeAddress Line: "Aufsichtsrat: Lisa Wichtig"
+DEBUG consumeAddress Generic Check: "Aufsichtsrat: Lisa Wichtig" -> Match=false
+DEBUG FINAL data.fn: "Dr. Boss"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_multi_role_academic
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Prof. Dr. Dr. h.c. mult. Max Mustermann
+      Vorstandsvorsitzender & CEO
+      Universität Musterstadt
+      
+Lines: [
+  [32m'Prof. Dr. Dr. h.c. mult. Max Mustermann'[39m,
+  [32m'Vorstandsvorsitzender & CEO'[39m,
+  [32m'Universität Musterstadt'[39m
+]
+DEBUG consumeAddress Line: "Prof. Dr. Dr. h.c. mult. Max Mustermann"
+DEBUG consumeAddress Generic Check: "Prof. Dr. Dr. h.c. mult. Max Mustermann" -> Match=false
+DEBUG consumeAddress Line: "Universität Musterstadt"
+DEBUG consumeAddress Generic Check: "Universität Musterstadt" -> Match=false
+DEBUG FINAL data.fn: "Prof. Dr. Dr. h.c. mult. Max Mustermann"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_multi_role_academic
+[22m[39mDEBUG consumeName: {
+  line: [32m'Prof. Dr. Dr. h.c. mult. Max Mustermann'[39m,
+  match: [32m'Prof. Dr. Dr. h.c. mult. Max'[39m
+}
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_mixed_formats_doctor
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Dr. Med. Hans Wurst
+      Tel. +49 (0) 30 / 123 45 - 67
+      Fax: 030 123 45 68
+      Mobile: 0171-1234567
+      
+Lines: [
+  [32m'Dr. Med. Hans Wurst'[39m,
+  [32m'Tel. +49 (0) 30 / 123 45 - 67'[39m,
+  [32m'Fax: 030 123 45 68'[39m,
+  [32m'Mobile: 0171-1234567'[39m
+]
+DEBUG consumeAddress Line: "Dr. Med. Hans Wurst"
+DEBUG consumeAddress Generic Check: "Dr. Med. Hans Wurst" -> Match=false
+DEBUG FINAL data.fn: "Dr. Med. Hans Wurst"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_anchor_match
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Hafenarbeiter GmbH
+      20457 Hamburg
+      Tel: 040 999 888
+    
+Lines: [ [32m'Hafenarbeiter GmbH'[39m, [32m'20457 Hamburg'[39m, [32m'Tel: 040 999 888'[39m ]
+DEBUG consumeAddress Line: "Hafenarbeiter GmbH"
+DEBUG consumeAddress Generic Check: "Hafenarbeiter GmbH" -> Match=false
+DEBUG consumeAddress Line: "20457 Hamburg"
+DEBUG consumeAddress Anchor: ZIP=20457 City=Hamburg
+DEBUG consumeAddress Postfach Lookback: Prev="Hafenarbeiter GmbH" NO MATCH
+DEBUG consumeAddress PUSH: Street="" City="Hamburg" Zip="20457"
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_anchor_mismatch
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Remote Worker
+      10115 Berlin
+      Tel: 089 / 123 456 (Zentrale München)
+    
+Lines: [
+  [32m'Remote Worker'[39m,
+  [32m'10115 Berlin'[39m,
+  [32m'Tel: 089 / 123 456 (Zentrale München)'[39m
+]
+DEBUG consumeAddress Line: "Remote Worker"
+DEBUG consumeAddress Generic Check: "Remote Worker" -> Match=false
+DEBUG consumeAddress Line: "10115 Berlin"
+DEBUG consumeAddress Anchor: ZIP=10115 City=Berlin
+DEBUG consumeAddress Postfach Lookback: Prev="Remote Worker" NO MATCH
+DEBUG consumeAddress PUSH: Street="" City="Berlin" Zip="10115"
+DEBUG consumeNameHeuristic: Set data.fn to "Remote Worker"
+DEBUG FINAL data.fn: "Remote Worker"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_address_weird
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Firma GmbH
+      Hinterhof 2. OG, Aufgang B
+      Musterweg 7 a
+      D-12345 Musterstadt
+      
+Lines: [
+  [32m'Firma GmbH'[39m,
+  [32m'Hinterhof 2. OG, Aufgang B'[39m,
+  [32m'Musterweg 7 a'[39m,
+  [32m'D-12345 Musterstadt'[39m
+]
+DEBUG consumeAddress Line: "Firma GmbH"
+DEBUG consumeAddress Generic Check: "Firma GmbH" -> Match=false
+DEBUG consumeAddress Line: "Hinterhof 2. OG, Aufgang B"
+DEBUG consumeAddress Generic Check: "Hinterhof 2. OG, Aufgang B" -> Match=false
+DEBUG consumeAddress Line: "Musterweg 7 a"
+DEBUG consumeAddress Generic Check: "Musterweg 7 a" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_address_weird
+[22m[39mUnknown phone prefix for number: 012345. Assuming Landline.
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_inline_address
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Besuchen Sie uns in der Hauptstraße 5, 50667 Köln zu unseren Öffnungszeiten.
+      Ihr Team von Kölle Alaaf.
+    
+Lines: [
+  [32m'Besuchen Sie uns in der Hauptstraße 5, 50667 Köln zu unseren Öffnungszeiten.'[39m,
+  [32m'Ihr Team von Kölle Alaaf.'[39m
+]
+DEBUG consumeAddress Line: "Besuchen Sie uns in der Hauptstraße 5, 50667 Köln zu unseren Öffnungszeiten."
+DEBUG consumeAddress Anchor: ZIP=50667 City=Köln
+DEBUG consumeAddress PUSH: Street="Besuchen Sie uns in der Hauptstraße 5" City="Köln" Zip="50667"
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_mobile_check_hard
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Daniel Roaming
+      Festnetz: 0151 / 123 456 78
+      (Erreichbar nur mobil)
+    
+Lines: [
+  [32m'Daniel Roaming'[39m,
+  [32m'Festnetz: 0151 / 123 456 78'[39m,
+  [32m'(Erreichbar nur mobil)'[39m
+]
+DEBUG consumeAddress Line: "Daniel Roaming"
+DEBUG consumeAddress Generic Check: "Daniel Roaming" -> Match=false
+DEBUG consumeAddress Line: "(Erreichbar nur mobil)"
+DEBUG consumeAddress Generic Check: "(Erreichbar nur mobil)" -> Match=false
+DEBUG FINAL data.fn: "Daniel Roaming"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_fake_mobile
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Fritz Festnetz
+      Tel: 030 / 157 157
+    
+Lines: [ [32m'Fritz Festnetz'[39m, [32m'Tel: 030 / 157 157'[39m ]
+DEBUG consumeAddress Line: "Fritz Festnetz"
+DEBUG consumeAddress Generic Check: "Fritz Festnetz" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Fritz Festnetz"
+DEBUG FINAL data.fn: "Fritz Festnetz"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_no_name_service
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Info Service GmbH
+      Kontaktieren Sie uns:
+      info@service.de
+      0800 123456
+      
+Lines: [
+  [32m'Info Service GmbH'[39m,
+  [32m'Kontaktieren Sie uns:'[39m,
+  [32m'info@service.de'[39m,
+  [32m'0800 123456'[39m
+]
+DEBUG consumeAddress Line: "Info Service GmbH"
+DEBUG consumeAddress Generic Check: "Info Service GmbH" -> Match=false
+DEBUG consumeAddress Line: "Kontaktieren Sie uns:"
+DEBUG consumeAddress Generic Check: "Kontaktieren Sie uns:" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Kontaktieren Sie uns:"
+DEBUG FINAL data.fn: "Kontaktieren Sie uns:"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_no_name_service
+[22m[39mUnknown phone prefix for number: 0800123456. Assuming Landline.
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_no_labels
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Minimalist
+      0176 12345678
+      030 98765432
+    
+Lines: [ [32m'Minimalist'[39m, [32m'0176 12345678'[39m, [32m'030 98765432'[39m ]
+DEBUG consumeAddress Line: "Minimalist"
+DEBUG consumeAddress Generic Check: "Minimalist" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_url_typo
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Typo GmbH
+      Mail: info@typo-gmbh.de
+      Web: www,typo-gmbh,de
+    
+Lines: [ [32m'Typo GmbH'[39m, [32m'Mail: info@typo-gmbh.de'[39m, [32m'Web: www,typo-gmbh,de'[39m ]
+DEBUG consumeAddress Line: "Typo GmbH"
+DEBUG consumeAddress Generic Check: "Typo GmbH" -> Match=false
+DEBUG consumeAddress Line: "Web: www,typo-gmbh,de"
+DEBUG consumeAddress Generic Check: "Web: www,typo-gmbh,de" -> Match=false
+DEBUG FINAL data.fn: "Web: www"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_legal_disclaimer
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Max Mustermann
+      CEO
+      max@company.com
+      
+      This email is confidential. If you are not the intended recipient, please delete it.
+      Geschäftsführer: Max Mustermann
+      Amtsgericht Berlin HRB 12345
+      
+Lines: [
+  [32m'Max Mustermann'[39m,
+  [32m'CEO'[39m,
+  [32m'max@company.com'[39m,
+  [32m'This email is confidential. If you are not the intended recipient, please delete it.'[39m,
+  [32m'Geschäftsführer: Max Mustermann'[39m,
+  [32m'Amtsgericht Berlin HRB 12345'[39m
+]
+DEBUG consumeAddress Line: "Max Mustermann"
+DEBUG consumeAddress Generic Check: "Max Mustermann" -> Match=false
+DEBUG consumeAddress Line: "Geschäftsführer: Max Mustermann"
+DEBUG consumeAddress Generic Check: "Geschäftsführer: Max Mustermann" -> Match=false
+DEBUG FINAL data.fn: "Max Mustermann"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_email_spaced
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Anti Bot
+      E-Mail: kontakt [at] anti-bot . com
+    
+Lines: [ [32m'Anti Bot'[39m, [32m'E-Mail: kontakt [at] anti-bot . com'[39m ]
+DEBUG consumeAddress Line: "Anti Bot"
+DEBUG consumeAddress Generic Check: "Anti Bot" -> Match=false
+DEBUG consumeNameHeuristic: Set data.fn to "Anti Bot"
+DEBUG FINAL data.fn: "Anti Bot"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_no_http
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Modern Startup
+      visit us at modern-startup.io
+    
+Lines: [ [32m'Modern Startup'[39m, [32m'visit us at modern-startup.io'[39m ]
+DEBUG consumeAddress Line: "Modern Startup"
+DEBUG consumeAddress Generic Check: "Modern Startup" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_swiss_format
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Grüezi AG
+      Zürichstrasse 1
+      CH-8000 Zürich
+      Tel +41 44 123 45 67
+      Natel +41 79 987 65 43
+    
+Lines: [
+  [32m'Grüezi AG'[39m,
+  [32m'Zürichstrasse 1'[39m,
+  [32m'CH-8000 Zürich'[39m,
+  [32m'Tel +41 44 123 45 67'[39m,
+  [32m'Natel +41 79 987 65 43'[39m
+]
+DEBUG consumeAddress Line: "Grüezi AG"
+DEBUG consumeAddress Generic Check: "Grüezi AG" -> Match=false
+DEBUG consumeAddress Line: "Zürichstrasse 1"
+DEBUG consumeAddress Generic Check: "Zürichstrasse 1" -> Match=false
+DEBUG consumeAddress Line: "CH-8000 Zürich"
+DEBUG consumeAddress Generic Check: "CH-8000 Zürich" -> Match=true
+DEBUG consumeAddress Generic: ZIP=8000 Prefix=CH
+DEBUG consumeAddress Generic PreZip: ""
+DEBUG consumeAddress Postfach Lookback: PrevPrev="Grüezi AG"
+DEBUG consumeAddress PUSH: Street="Zürichstrasse 1" City="Zürich" Zip="8000"
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_austria_format
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Servus GmbH
+      Wienzeile 5, A-1010 Wien
+      T: +43 (0) 1 / 234 56 78
+    
+Lines: [
+  [32m'Servus GmbH'[39m,
+  [32m'Wienzeile 5, A-1010 Wien'[39m,
+  [32m'T: +43 (0) 1 / 234 56 78'[39m
+]
+DEBUG consumeAddress Line: "Servus GmbH"
+DEBUG consumeAddress Generic Check: "Servus GmbH" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_austria_format
+[22m[39mUnknown phone prefix for number: 01010. Assuming Landline.
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle syn_international_us
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      John Doe
+      123 Main St
+      New York, NY 10001
+      USA
+      Phone: +1 212 555 1234
+      
+Lines: [
+  [32m'John Doe'[39m,
+  [32m'123 Main St'[39m,
+  [32m'New York, NY 10001'[39m,
+  [32m'USA'[39m,
+  [32m'Phone: +1 212 555 1234'[39m
+]
+DEBUG consumeAddress Line: "John Doe"
+DEBUG consumeAddress Generic Check: "John Doe" -> Match=false
+DEBUG consumeAddress Line: "123 Main St"
+DEBUG consumeAddress Generic Check: "123 Main St" -> Match=false
+DEBUG consumeAddress Line: "New York, NY 10001"
+DEBUG consumeAddress US: ZIP=10001 City=New York
+DEBUG consumeAddress PUSH: Street="123 Main St" City="New York" Zip="10001"
+DEBUG FINAL data.fn: "John Doe"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_impressum_nested
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Herausgeber:
+      Medienhaus Nord
+      Ein Unternehmen der Nord-Gruppe
+      
+      Anschrift:
+      Nordstraße 1
+      20095 Hamburg
+      
+      Geschäftsführung:
+      Susi Sorglos, Peter Pan
+      
+      Kontakt Redaktion:
+      Tel: 040-11111 (Durchwahl -20)
+      Fax: 040-11111-99
+      redaktion@nord.de
+    
+Lines: [
+  [32m'Herausgeber:'[39m,
+  [32m'Medienhaus Nord'[39m,
+  [32m'Ein Unternehmen der Nord-Gruppe'[39m,
+  [32m'Anschrift:'[39m,
+  [32m'Nordstraße 1'[39m,
+  [32m'20095 Hamburg'[39m,
+  [32m'Geschäftsführung:'[39m,
+  [32m'Susi Sorglos, Peter Pan'[39m,
+  [32m'Kontakt Redaktion:'[39m,
+  [32m'Tel: 040-11111 (Durchwahl -20)'[39m,
+  [32m'Fax: 040-11111-99'[39m,
+  [32m'redaktion@nord.de'[39m
+]
+DEBUG consumeAddress Line: "Herausgeber:"
+DEBUG consumeAddress Generic Check: "Herausgeber:" -> Match=false
+DEBUG consumeAddress Line: "Medienhaus Nord"
+DEBUG consumeAddress Generic Check: "Medienhaus Nord" -> Match=false
+DEBUG consumeAddress Line: "Ein Unternehmen der Nord-Gruppe"
+DEBUG consumeAddress Generic Check: "Ein Unternehmen der Nord-Gruppe" -> Match=false
+DEBUG consumeAddress Line: "Anschrift:"
+DEBUG consumeAddress Generic Check: "Anschrift:" -> Match=false
+DEBUG consumeAddress Line: "Nordstraße 1"
+DEBUG consumeAddress Generic Check: "Nordstraße 1" -> Match=false
+DEBUG consumeAddress Line: "20095 Hamburg"
+DEBUG consumeAddress Anchor: ZIP=20095 City=Hamburg
+DEBUG consumeAddress Postfach Lookback: PrevPrev="Anschrift:"
+DEBUG consumeAddress PUSH: Street="Nordstraße 1" City="Hamburg" Zip="20095"
+DEBUG FINAL data.fn: "Peter Pan"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_opening_hours_trap
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Friseur Salon Schnittig
+      Termine unter: 040 123 456
+      Öffnungszeiten:
+      Mo - Fr: 09:00 - 18:00
+      Sa: 10:00 - 14:00
+    
+Lines: [
+  [32m'Friseur Salon Schnittig'[39m,
+  [32m'Termine unter: 040 123 456'[39m,
+  [32m'Öffnungszeiten:'[39m,
+  [32m'Mo - Fr: 09:00 - 18:00'[39m,
+  [32m'Sa: 10:00 - 14:00'[39m
+]
+DEBUG consumeAddress Line: "Friseur Salon Schnittig"
+DEBUG consumeAddress Generic Check: "Friseur Salon Schnittig" -> Match=false
+DEBUG consumeAddress Line: "Öffnungszeiten:"
+DEBUG consumeAddress Generic Check: "Öffnungszeiten:" -> Match=false
+DEBUG consumeAddress Line: "Mo - Fr: 09:00 - 18:00"
+DEBUG consumeAddress Generic Check: "Mo - Fr: 09:00 - 18:00" -> Match=false
+DEBUG consumeAddress Line: "Sa: 10:00 - 14:00"
+DEBUG consumeAddress Generic Check: "Sa: 10:00 - 14:00" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_iban_trap
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Zahlung bitte an:
+      Max Mustermann
+      IBAN: DE 89 3705 0198 1234 5678 00
+      BIC: COBA DE FF XXX
+      Tel bei Rückfragen: 0171 111 222 3
+    
+Lines: [
+  [32m'Zahlung bitte an:'[39m,
+  [32m'Max Mustermann'[39m,
+  [32m'IBAN: DE 89 3705 0198 1234 5678 00'[39m,
+  [32m'BIC: COBA DE FF XXX'[39m,
+  [32m'Tel bei Rückfragen: 0171 111 222 3'[39m
+]
+DEBUG consumeAddress Line: "Zahlung bitte an:"
+DEBUG consumeAddress Generic Check: "Zahlung bitte an:" -> Match=false
+DEBUG consumeAddress Line: "Max Mustermann"
+DEBUG consumeAddress Generic Check: "Max Mustermann" -> Match=false
+DEBUG consumeAddress Line: "BIC: COBA DE FF XXX"
+DEBUG consumeAddress Generic Check: "BIC: COBA DE FF XXX" -> Match=false
+DEBUG FINAL data.fn: "Max Mustermann"
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_iban_trap
+[22m[39mUnknown phone prefix for number: 01234. Assuming Landline.
+Unknown phone prefix for number: 0567800. Assuming Landline.
+DEBUG consumeName: { line: [32m'Max Mustermann'[39m, match: [32m'Max'[39m }
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_date_trap
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Event-Planung
+      Wir rufen zurück am 10 10 2025 um 14 00 Uhr.
+      Hotline: 0800 555 666
+    
+Lines: [
+  [32m'Event-Planung'[39m,
+  [32m'Wir rufen zurück am 10 10 2025 um 14 00 Uhr.'[39m,
+  [32m'Hotline: 0800 555 666'[39m
+]
+DEBUG consumeAddress Line: "Event-Planung"
+DEBUG consumeAddress Generic Check: "Event-Planung" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_date_trap
+[22m[39mUnknown phone prefix for number: 010102025. Assuming Landline.
+Unknown phone prefix for number: 01400. Assuming Landline.
+Unknown phone prefix for number: 0800555666. Assuming Landline.
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_noble_names
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Prof. Dr. Hans-Georg von der Wiese
+      Schlossallee 1
+      München
+    
+Lines: [ [32m'Prof. Dr. Hans-Georg von der Wiese'[39m, [32m'Schlossallee 1'[39m, [32m'München'[39m ]
+DEBUG consumeAddress Line: "Prof. Dr. Hans-Georg von der Wiese"
+DEBUG consumeAddress Generic Check: "Prof. Dr. Hans-Georg von der Wiese" -> Match=false
+DEBUG consumeAddress Line: "Schlossallee 1"
+DEBUG consumeAddress Generic Check: "Schlossallee 1" -> Match=false
+DEBUG consumeAddress PUSH: Street="Schlossallee 1" City="München" Zip=""
+DEBUG isName: "Prof. Dr. Hans-Georg von der Wiese" -> result=true, cap=4, validWords=true, hasSpace=true, noDigit=true
+DEBUG consumeNameHeuristic: Set data.fn to "Prof. Dr. Hans-Georg von der Wiese"
+DEBUG FINAL data.fn: "Prof. Dr. Hans-Georg von der Wiese"
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_postbox_co
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Geheimagentur GmbH
+      c/o Briefkasten-Firma
+      Postfach 12 34
+      10115 Berlin
+    
+Lines: [
+  [32m'Geheimagentur GmbH'[39m,
+  [32m'c/o Briefkasten-Firma'[39m,
+  [32m'Postfach 12 34'[39m,
+  [32m'10115 Berlin'[39m
+]
+DEBUG consumeAddress Line: "Geheimagentur GmbH"
+DEBUG consumeAddress Generic Check: "Geheimagentur GmbH" -> Match=false
+DEBUG consumeAddress Line: "c/o Briefkasten-Firma"
+DEBUG consumeAddress Generic Check: "c/o Briefkasten-Firma" -> Match=false
+DEBUG consumeAddress Line: "Postfach 12 34"
+DEBUG consumeAddress Generic Check: "Postfach 12 34" -> Match=false
+DEBUG consumeAddress Line: "10115 Berlin"
+DEBUG consumeAddress Anchor: ZIP=10115 City=Berlin
+DEBUG consumeAddress PUSH: Street="c/o Briefkasten-Firma, Postfach 12 34" City="Berlin" Zip="10115"
+DEBUG FINAL data.fn: ""
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_service_numbers
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Support Hotline
+      Kostenlos: 0800 / 123 456 7
+      Premium: 0900 - 666 666 (1,99€/Min)
+      Service: 01805 . 123 123
+    
+Lines: [
+  [32m'Support Hotline'[39m,
+  [32m'Kostenlos: 0800 / 123 456 7'[39m,
+  [32m'Premium: 0900 - 666 666 (1,99€/Min)'[39m,
+  [32m'Service: 01805 . 123 123'[39m
+]
+DEBUG consumeAddress Line: "Support Hotline"
+DEBUG consumeAddress Generic Check: "Support Hotline" -> Match=false
+DEBUG FINAL data.fn: ""
+
+[90mstderr[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle synth_service_numbers
+[22m[39mUnknown phone prefix for number: 08001234567. Assuming Landline.
+Unknown phone prefix for number: 0900666666. Assuming Landline.
+Unknown phone prefix for number: 01805123123. Assuming Landline.
+
+ [31m❯[39m utils/edgeCases.test.ts [2m([22m[2m37 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[32m 27[2mms[22m[39m
+     [32m✓[39m should handle synth_format_dots[32m 7[2mms[22m[39m
+[31m     [31m×[31m should handle synth_format_slashes_mixed[39m[32m 4[2mms[22m[39m
+[31m     [31m×[31m should handle synth_sticky_text[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_pipe_separator[32m 3[2mms[22m[39m
+     [32m✓[39m should handle syn_sticky_text_v2[32m 1[2mms[22m[39m
+[31m     [31m×[31m should handle syn_newlines_mess[39m[32m 1[2mms[22m[39m
+     [32m✓[39m should handle synth_ocr_l_for_1[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_ocr_o_for_0[32m 0[2mms[22m[39m
+[31m     [31m×[31m should handle syn_ocr_errors_v2[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_typo_labels[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_ocr_spaces_in_numbers[32m 0[2mms[22m[39m
+[31m     [31m×[31m should handle synth_role_bottom[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_multi_role[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_multi_role_academic[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_mixed_formats_doctor[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_anchor_match[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_anchor_mismatch[32m 0[2mms[22m[39m
+[31m     [31m×[31m should handle syn_address_weird[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_inline_address[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_mobile_check_hard[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_fake_mobile[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_no_name_service[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_no_labels[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_url_typo[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_legal_disclaimer[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_email_spaced[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_no_http[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_swiss_format[32m 0[2mms[22m[39m
+[31m     [31m×[31m should handle synth_austria_format[39m[32m 0[2mms[22m[39m
+     [32m✓[39m should handle syn_international_us[32m 1[2mms[22m[39m
+[31m     [31m×[31m should handle synth_impressum_nested[39m[32m 1[2mms[22m[39m
+     [32m✓[39m should handle synth_opening_hours_trap[32m 1[2mms[22m[39m
+     [32m✓[39m should handle synth_iban_trap[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_date_trap[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_noble_names[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_postbox_co[32m 0[2mms[22m[39m
+     [32m✓[39m should handle synth_service_numbers[32m 0[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 8 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle synth_format_slashes_mixed
+[31m[1mAssertionError[22m: expected 'Slashy Mc Slashface' to be 'Slashy McSlashface' // Object.is equality[39m
+
+Expected: [32m"Slashy McSlashface"[39m
+Received: [31m"Slashy Mc[7m [27mSlashface"[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m16:33[22m[39m
+    [90m 14| [39m
+    [90m 15| [39m            [35mif[39m (expected[33m.[39mfn) {
+    [90m 16| [39m                [34mexpect[39m(data[33m.[39mfn)[33m.[39m[34mtoBe[39m(expected[33m.[39mfn)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m 17| [39m            }
+    [90m 18| [39m            [35mif[39m (expected[33m.[39morg) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle synth_sticky_text
+[31m[1mAssertionError[22m: expected 'Kein Platz GmbH' to be 'KeinPlatz GmbH' // Object.is equality[39m
+
+Expected: [32m"KeinPlatz GmbH"[39m
+Received: [31m"Kein[7m [27mPlatz GmbH"[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m19:34[22m[39m
+    [90m 17| [39m            }
+    [90m 18| [39m            [35mif[39m (expected[33m.[39morg) {
+    [90m 19| [39m                [34mexpect[39m(data[33m.[39morg)[33m.[39m[34mtoBe[39m(expected[33m.[39morg)[33m;[39m
+    [90m   | [39m                                 [31m^[39m
+    [90m 20| [39m            }
+    [90m 21| [39m            [35mif[39m (expected[33m.[39mtitle) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle syn_newlines_mess
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle syn_address_weird
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle synth_austria_format
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m73:31[22m[39m
+    [90m 71| [39m                    })[33m;[39m
+    [90m 72| [39m                })[33m;[39m
+    [90m 73| [39m                [34mexpect[39m(found)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                              [31m^[39m
+    [90m 74| [39m            }
+    [90m 75| [39m        })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle syn_ocr_errors_v2
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m50:74[22m[39m
+    [90m 48| [39m            }
+    [90m 49| [39m            [35mif[39m (expected[33m.[39memail) {
+    [90m 50| [39m                expect(data.email.some(e => e.value === expected.email…
+    [90m   | [39m                                                                         [31m^[39m
+    [90m 51| [39m            }
+    [90m 52| [39m            [35mif[39m (expected[33m.[39murl) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle synth_role_bottom
+[31m[1mAssertionError[22m: expected 'Vertreten durch den Geschäftsführer' to be 'Geschäftsführer' // Object.is equality[39m
+
+Expected: [32m"Geschäftsführer"[39m
+Received: [31m"[7mVertreten durch den [27mGeschäftsführer"[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m22:36[22m[39m
+    [90m 20| [39m            }
+    [90m 21| [39m            [35mif[39m (expected[33m.[39mtitle) {
+    [90m 22| [39m                [34mexpect[39m(data[33m.[39mtitle)[33m.[39m[34mtoBe[39m(expected[33m.[39mtitle)[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m 23| [39m            }
+    [90m 24| [39m            [35mif[39m (expected[33m.[39mtel) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/8]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle synth_impressum_nested
+[31m[1mAssertionError[22m: expected 'Peter Pan' to be 'Susi Sorglos' // Object.is equality[39m
+
+Expected: [32m"Susi Sorglos"[39m
+Received: [31m"Peter Pan"[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m16:33[22m[39m
+    [90m 14| [39m
+    [90m 15| [39m            [35mif[39m (expected[33m.[39mfn) {
+    [90m 16| [39m                [34mexpect[39m(data[33m.[39mfn)[33m.[39m[34mtoBe[39m(expected[33m.[39mfn)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m 17| [39m            }
+    [90m 18| [39m            [35mif[39m (expected[33m.[39morg) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/8]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m8 failed[39m[22m[2m | [22m[1m[32m29 passed[39m[22m[90m (37)[39m
+[2m   Start at [22m 14:46:37
+[2m   Duration [22m 478ms[2m (transform 125ms, setup 34ms, import 150ms, tests 27ms, environment 145ms)[22m
+

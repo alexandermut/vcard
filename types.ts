@@ -43,7 +43,7 @@ export interface HistoryItem {
   note?: string;
   bday?: string;
   vcard: string;
-  images?: string[]; // Array of Base64 strings (Front/Back)
+  images?: (string | Blob)[]; // Array of Base64 strings or Blobs (Front/Back)
   keywords?: string[]; // For search indexing
   googleResourceName?: string; // Linked Google Contact ID
 }

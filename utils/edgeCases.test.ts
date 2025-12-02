@@ -3,8 +3,24 @@ import { syntheticEdgeCases } from '../data/syntheticEdgeCases';
 import { parseImpressumToVCard } from './regexParser';
 import { parseVCardString } from './vcardUtils';
 
+interface SyntheticEdgeCase {
+    id: string;
+    text: string;
+    expected: {
+        fn?: string;
+        org?: string;
+        title?: string;
+        tel?: string;
+        cell?: string;
+        fax?: string;
+        email?: string;
+        url?: string;
+        adr?: string;
+    };
+}
+
 describe('Synthetic Edge Cases', () => {
-    syntheticEdgeCases.forEach((testCase) => {
+    syntheticEdgeCases.forEach((testCase: SyntheticEdgeCase) => {
         it(`should handle ${testCase.id}`, () => {
             const vcard = parseImpressumToVCard(testCase.text);
             const parsed = parseVCardString(vcard);
@@ -50,7 +66,7 @@ describe('Synthetic Edge Cases', () => {
                 expect(data.email.some(e => e.value === expected.email)).toBe(true);
             }
             if (expected.url) {
-                expect(data.url.some(u => u.value.includes(expected.url))).toBe(true);
+                expect(data.url.some(u => u.value.includes(expected.url!))).toBe(true);
             }
             if (expected.adr) {
                 // Address comparison is tricky because of formatting.
