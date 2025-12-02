@@ -38,12 +38,12 @@ describe('Synthetic Edge Cases', () => {
                 expect(data.title).toBe(expected.title);
             }
             if (expected.tel) {
-                const tel = data.tel.find(t => t.type.includes('VOICE') && !t.type.includes('CELL') && !t.type.includes('FAX'));
+                const tel = (data.tel || []).find(t => t.type.includes('VOICE') && !t.type.includes('CELL') && !t.type.includes('FAX'));
                 // Note: The parser might return multiple types or different formatting.
                 // We check if we found *a* number that matches the expected value.
                 // The parser returns E.164 (e.g. +49...)
                 // The expected data also has E.164.
-                const found = data.tel.some(t => t.value === expected.tel);
+                const found = (data.tel || []).some(t => t.value === expected.tel);
                 if (expected.tel === "") {
                     // Expect NO tel
                     // But we might have other numbers (fax, cell).
@@ -53,20 +53,20 @@ describe('Synthetic Edge Cases', () => {
                     // Let's assume if expected.tel is "", we check that no number matches the "tel" classification logic?
                     // But for now, let's just check positive matches.
                 } else {
-                    expect(data.tel.some(t => t.value === expected.tel)).toBe(true);
+                    expect((data.tel || []).some(t => t.value === expected.tel)).toBe(true);
                 }
             }
             if (expected.cell) {
-                expect(data.tel.some(t => t.value === expected.cell)).toBe(true);
+                expect((data.tel || []).some(t => t.value === expected.cell)).toBe(true);
             }
             if (expected.fax) {
-                expect(data.tel.some(t => t.value === expected.fax)).toBe(true);
+                expect((data.tel || []).some(t => t.value === expected.fax)).toBe(true);
             }
             if (expected.email) {
-                expect(data.email.some(e => e.value === expected.email)).toBe(true);
+                expect((data.email || []).some(e => e.value === expected.email)).toBe(true);
             }
             if (expected.url) {
-                expect(data.url.some(u => u.value.includes(expected.url!))).toBe(true);
+                expect((data.url || []).some(u => u.value.includes(expected.url!))).toBe(true);
             }
             if (expected.adr) {
                 // Address comparison is tricky because of formatting.
@@ -75,7 +75,7 @@ describe('Synthetic Edge Cases', () => {
                 // But parseVCardString might parse it into object.
                 // Let's check data.adr array.
                 const expectedParts = expected.adr.split(',').map(p => p.trim());
-                const found = data.adr.some(a => {
+                const found = (data.adr || []).some(a => {
                     // parseVCardString returns an object for adr: { street, city, zip, country, ... }
                     // We construct a string from values to check inclusion
                     const val = Object.values(a.value).join(' ');
