@@ -1,4 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
+import { withExponentialBackoff } from "../utils/retryUtils";
 
 export const correctVCardWithAI = async (input: string, apiKey?: string): Promise<string> => {
   // Use provided key, or fallback to env if available (dev mode)
@@ -26,10 +27,19 @@ export const correctVCardWithAI = async (input: string, apiKey?: string): Promis
       ${input}
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-    });
+    const response = await withExponentialBackoff(
+      () => ai.models.generateContent({
+        model: 'gemini-2.0-flash',
+        contents: prompt,
+      }),
+      3,
+      1000,
+      2,
+      (error: any) => {
+        const msg = error?.message?.toLowerCase() || '';
+        return msg.includes('overloaded') || msg.includes('503') || msg.includes('429');
+      }
+    );
 
     let text = response.text || '';
     // Clean up potential markdown block artifacts

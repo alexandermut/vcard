@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { AIProvider, Language } from "../types";
 import { scanCardWithCustomLLM, chatWithCustomLLM } from "./customLlmService";
+import { withExponentialBackoff } from "../utils/retryUtils";
 import type { LLMConfig } from "../hooks/useLLMConfig";
 
 // Helper to generate dynamic prompts based on language and context
@@ -310,10 +311,20 @@ const callGeminiWithRetry = async (
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      ...promptConfig
-    });
+    const response = await withExponentialBackoff(
+      () => ai.models.generateContent({
+        model: modelName,
+        ...promptConfig
+      }),
+      3, // 3 retries
+      2000, // Start with 2s delay
+      2, // Double delay each time
+      (error: any) => {
+        const msg = error?.message?.toLowerCase() || '';
+        // Retry on overload, 503, or 429
+        return msg.includes('overloaded') || msg.includes('503') || msg.includes('429') || msg.includes('quota');
+      }
+    );
 
     let result = cleanResponse(response.text || '');
 
@@ -384,10 +395,19 @@ export const generateContent = async (
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
+    const response = await withExponentialBackoff(
+      () => ai.models.generateContent({
+        model: "gemini-3-pro-preview",
+        contents: [{ role: 'user', parts: [{ text: prompt }] }]
+      }),
+      3,
+      2000,
+      2,
+      (error: any) => {
+        const msg = error?.message?.toLowerCase() || '';
+        return msg.includes('overloaded') || msg.includes('503') || msg.includes('429');
+      }
+    );
     return response.text || '';
   } catch (e) {
     console.error("Gemini Chat Error:", e);
