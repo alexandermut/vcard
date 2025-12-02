@@ -80,7 +80,12 @@ export const useScanQueue = (
         timeoutPromise
       ]);
 
-      await onJobComplete(vcard, rawImages, job.mode);
+      // Safety timeout for onJobComplete (saving)
+      const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));
+      await Promise.race([
+        onJobComplete(vcard, rawImages, job.mode),
+        saveTimeout
+      ]);
 
       setQueue(prev => prev.filter(j => j.id !== job.id));
 

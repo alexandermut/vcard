@@ -104,10 +104,14 @@ const App: React.FC = () => {
       if (streetDbStatus === 'ready') {
         try {
           const parsed = parseVCardString(vcard);
-          const enrichedData = await enrichAddress(parsed.data);
+          // Timeout for enrichment
+          const enrichPromise = enrichAddress(parsed.data);
+          const timeoutPromise = new Promise<VCardData>((_, reject) => setTimeout(() => reject(new Error("Enrichment timeout")), 2000));
+
+          const enrichedData = await Promise.race([enrichPromise, timeoutPromise]);
           finalVCard = generateVCardFromData(enrichedData);
         } catch (e) {
-          console.warn("Address enrichment failed", e);
+          console.warn("Address enrichment failed or timed out", e);
         }
       }
 

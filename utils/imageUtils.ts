@@ -44,6 +44,9 @@ export const resizeImage = (file: File, maxDimension: number = 1024, quality: nu
       img.onerror = (error) => reject(error);
     };
     reader.onerror = (error) => reject(error);
+
+    // Timeout
+    setTimeout(() => reject(new Error("Image resize timed out")), 10000);
   });
 };
 
