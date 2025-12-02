@@ -396,53 +396,29 @@ const App: React.FC = () => {
     const newFn = newData.fn?.trim();
     const newPhones = newData.tel?.map(t => clean_number(t.value)) || [];
 
+    let vcardToSave = str;
+
     // --- EVENT MODE INJECTION ---
-    if (eventModeActive && eventName && eventName.trim().length > 0) {
-      console.log("Injecting Event Tag:", eventName);
-      if (!newData.categories) newData.categories = [];
-      if (!newData.categories.includes(eventName)) {
-        newData.categories.push(eventName);
-        // Regenerate vCard string with new category
-        const newVCardString = generateVCardFromData(newData);
-        // Update str if it was the raw input, but we better use the regenerated one
-        // However, if we regenerate, we might lose some original formatting if the parser wasn't perfect.
-        // But for adding a category, we must regenerate or append.
-        // Let's use the regenerated one to be safe and consistent.
-        // Wait, 'str' is the input. 'p' is the parsed data.
-        // We should update 'itemToSave.vcard' later.
-
-        // Let's update the 'str' variable for the rest of the function?
-        // No, 'str' is used for duplicate check.
-        // We should update the data object and let the save logic handle it.
-        // But the save logic uses 'str' as vcard content for new entries if not regenerated.
-
-        // Actually, below we do:
-        // vcard: mergedString (if merged)
-        // vcard: str (if new or fallback)
-
-        // We need to ensure the saved vCard includes the category.
-        // So we should regenerate the vCard string if we added a category.
-        const vcardWithCategory = generateVCardFromData(newData);
-        // We will use this new string for saving.
-        // But wait, if we have a perfect original vCard, regenerating might change it.
-        // But adding a category IS changing it.
-
-        // Let's override 'str' with the new version if we injected a tag.
-        // This ensures the saved vCard has the tag.
-        // And we should update 'p' (parsed result) too?
-        // 'p' is already derived from 'newData' reference if we modified it in place?
-        // Yes, newData is p.data.
-
-        // So:
-        str = vcardWithCategory;
+    try {
+      if (eventModeActive && eventName && eventName.trim().length > 0) {
+        console.log("Injecting Event Tag:", eventName);
+        if (!newData.categories) newData.categories = [];
+        if (!newData.categories.includes(eventName)) {
+          newData.categories.push(eventName);
+          // Regenerate vCard string with new category
+          vcardToSave = generateVCardFromData(newData);
+        }
       }
+    } catch (e) {
+      console.error("Error injecting event tag:", e);
+      // Continue without tag if injection fails
     }
 
     // Get latest history from DB to ensure we check against current state
     const currentHistory = await getHistory();
 
     // 1. Check for exact string duplicate
-    if (currentHistory.length > 0 && currentHistory[0].vcard === str) {
+    if (currentHistory.length > 0 && currentHistory[0].vcard === vcardToSave) {
       console.log("Exact duplicate detected - skipping save");
       // Optional: Notify user?
       // toast.info("Kontakt ist bereits der neueste Eintrag.");
@@ -482,6 +458,14 @@ const App: React.FC = () => {
         if (!mergedData.note && oldData.note) mergedData.note = oldData.note;
         if (!mergedData.photo && oldData.photo) mergedData.photo = oldData.photo;
 
+        // Merge Categories
+        if (oldData.categories) {
+          if (!mergedData.categories) mergedData.categories = [];
+          oldData.categories.forEach(c => {
+            if (!mergedData.categories!.includes(c)) mergedData.categories!.push(c);
+          });
+        }
+
         const mergeArrays = (newArr: any[] = [], oldArr: any[] = []) => {
           const result = [...newArr];
           oldArr.forEach(oldItem => {
@@ -516,7 +500,7 @@ const App: React.FC = () => {
           timestamp: Date.now(),
           name: newFn || oldItem.name,
           org: newData.org || oldItem.org,
-          vcard: str,
+          vcard: vcardToSave,
           images: mergedImages
         };
       }
@@ -527,7 +511,7 @@ const App: React.FC = () => {
         timestamp: Date.now(),
         name: newFn || 'Unbekannt',
         org: newData.org,
-        vcard: str,
+        vcard: vcardToSave,
         images: scanImages
       };
     }
@@ -1177,8 +1161,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setIsEventModeOpen(true)}
               className={`flex items-center gap-2 border hover:bg-opacity-80 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors relative ${eventModeActive
-                  ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
-                  : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                ? 'bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               title="Event Modus"
             >
