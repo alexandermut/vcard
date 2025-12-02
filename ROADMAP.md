@@ -12,12 +12,14 @@ This file tracks the current development status and planned features.
 - [x] Multi-language Support (DE / EN)
 - [x] Dark Mode / Light Mode
 - [x] Responsive Layout (Mobile & Desktop)
+- [x] Security Hardening (CSP, ReDoS Protection)
 
 ### Editor & Parser
 - [x] vCard 3.0 Generator & Parser
 - [x] Regex Parser for Text Input (Imprint, Signatures)
 - [x] DACH Address Format Support & City Database
 - [x] Editor Tabs: Text, Code, Enrich
+- [x] Advanced Phone Classification (Mobile vs Landline)
 - [x] Drag & Drop for Images
 
 ### AI Integration
@@ -43,6 +45,8 @@ This file tracks the current development status and planned features.
 
 ### Workflow & UX
 - [x] Scan Modal with "Scan & Next" Workflow
+- [x] Settings Sidebar Refactor
+- [x] FAQ / Help Page
 - [x] Background Scan Queue with Visual Indicator
 - [x] History with Original Images
 - [x] **Batch Upload:** Process multiple images/PDFs at once.
@@ -161,7 +165,7 @@ This file tracks the current development status and planned features.
 - [ ] **NLP Integration:** Use `compromise.js` (or similar) for smarter offline parsing of natural text (e.g. email signatures).
 
 ### 🤝 Networking & Events
-- [x] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
+- [ ] **Event Mode:** Auto-tag all scans with a specific event name (e.g., "DMEXCO 2025").
 - [ ] **Digital Business Card:** Public profile page (QR/NFC) for the user to share their own info.
 - [ ] **Team Sharing:** Share specific contact lists or folders with colleagues (E2E Encrypted).
 
@@ -174,6 +178,15 @@ This file tracks the current development status and planned features.
 - [ ] **Zapier / Make Webhooks:** Trigger workflows when a contact is added.
 - [ ] **Email Signature Parser:** Paste an email signature to create a contact instantly.
 - [ ] **Calendar Integration:** Show "Last Met" date and upcoming birthdays in dashboard.
+
+### 💡 New Backlog Ideas
+- [ ] **Smart Clipboard:** Auto-detect vCard/Contact info when app gains focus.
+- [ ] **Keyboard Shortcuts:** `Cmd+S` (Save), `Cmd+N` (New Scan), `Cmd+F` (Search).
+- [ ] **Image Optimization:** Compress stored images to WebP to save storage.
+- [ ] **JSON/YAML Export:** Export contacts in machine-readable formats.
+- [ ] **Accessibility Audit:** Improve ARIA labels and screen reader support.
+- [ ] **Local LLM Auto-Discovery:** Automatically find running Ollama instances.
+- [ ] **Confetti Animation:** Celebrate when reaching 100/500/1000 contacts.
 
 ### unsortiert
 - [ ] 
