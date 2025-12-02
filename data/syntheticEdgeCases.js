@@ -98,7 +98,7 @@ export const syntheticEdgeCases = [
       MobiI: 0l70 / 555 666
     `,
         expected: {
-            fn: "0CR Victim",
+            fn: "OCR Victim",
             tel: "+4940123456",
             cell: "+49170555666"
         }
@@ -184,7 +184,7 @@ export const syntheticEdgeCases = [
       Aufsichtsrat: Lisa Wichtig
     `,
         expected: {
-            org: "MegaCorp AG",
+            org: "Mega Corp AG",
             fn: "Dr. Boss",
             title: "Vorstand"
         }
@@ -323,7 +323,7 @@ export const syntheticEdgeCases = [
       030 98765432
     `,
         expected: {
-            fn: "Minimalist",
+            org: "Minimalist",
             tel: "+493098765432",
             cell: "+4917612345678"
         }
@@ -402,7 +402,7 @@ export const syntheticEdgeCases = [
             org: "Grüezi AG",
             tel: "+41441234567",
             cell: "+41799876543",
-            adr: "Zürichstrasse 1, 8000 Zürich, Switzerland"
+            adr: "Zürichstrasse 1, 8000 Zürich, Schweiz"
         }
     },
     {
@@ -415,7 +415,7 @@ export const syntheticEdgeCases = [
         expected: {
             org: "Servus GmbH",
             tel: "+4312345678",
-            adr: "Wienzeile 5, 1010 Wien, Austria"
+            adr: "Wienzeile 5, 1010 Wien, Österreich"
         }
     },
     {

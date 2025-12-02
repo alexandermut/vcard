@@ -78,7 +78,11 @@ const consumeMeta = (lines: Line[]) => {
 };
 
 const consumeEmails = (lines: Line[], data: ParserData) => {
-  const re_email = /([a-zA-Z0-9_.+-]+)(?:@|\s*[\(\[]\s*at\s*[\)\]]\s*)([a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/gi;
+  // Expanded regex to handle spaced [at] and dots
+  // e.g. "name [at] domain . com"
+  // Relaxed to allow spaces around @ and .
+  // Simplified to capture "word @ word . word" pattern
+  const re_email = /([a-zA-Z0-9_.+-]+)\s*(?:@|\[\s*at\s*\]|\(\s*at\s*\))\s*([a-zA-Z0-9-]+\s*(?:\.|\[\s*dot\s*\]|\(\s*dot\s*\))\s*[a-zA-Z0-9-.]+)/gi;
   const genericProviders = [
     'gmail.com', 'googlemail.com', 'gmx.de', 'gmx.net', 'web.de',
     'yahoo.com', 'yahoo.de', 'hotmail.com', 'outlook.com', 'outlook.de',
@@ -91,8 +95,10 @@ const consumeEmails = (lines: Line[], data: ParserData) => {
     const matches = line.clean.match(re_email);
     if (matches) {
       matches.forEach(email => {
-        // Normalize (at) -> @
-        const cleanEmail = email.replace(/\s*[\(\[]\s*at\s*[\)\]]\s*/i, '@');
+        // Normalize (at) -> @ and remove spaces around dots
+        let cleanEmail = email.replace(/\s*(?:\[\s*at\s*\]|\(\s*at\s*\))\s*/i, '@');
+        cleanEmail = cleanEmail.replace(/\s*(?:\[\s*dot\s*\]|\(\s*dot\s*\))\s*/i, '.');
+        cleanEmail = cleanEmail.replace(/\s+/g, ''); // Remove remaining spaces (e.g. "domain . com")
         data.email.push({ type: 'WORK,INTERNET', value: cleanEmail });
 
         // Also extract web from domain if not generic
@@ -148,6 +154,46 @@ const consumeUrls = (lines: Line[], data: ParserData) => {
       line.type = 'URL';
     }
   });
+};
+
+// Heuristic: Looks like a name?
+// Allow noble particles (von, van, de, du, da, di, der, den)
+// e.g. "Hans von der Wiese"
+const isName = (str: string) => {
+  if (str.length < 3) return false;
+  // Assuming re_forbidden is defined elsewhere or will be added.
+  // For now, commenting out to avoid error if not defined.
+  // if (re_forbidden.test(str)) return false;
+  // Must have at least one capitalized word
+  if (!/[A-ZÄÖÜ]/.test(str)) return false;
+  // Allow words starting with lowercase if they are particles
+  const words = str.split(/\s+/);
+  const particles = /^(von|van|de|du|da|di|der|den|le|la)$/i;
+  const validWords = words.every(w => {
+    return /^[A-ZÄÖÜ]/.test(w) || particles.test(w) || /^(Dr\.|Prof\.|Dipl\.|Mag\.|Ing\.)$/.test(w) || w.includes('-');
+  });
+
+  // Exclude common non-name words that might look like names
+  // Check first word for particles/common starts
+  if (/^(Ihr|Dein|Euer|Unser|Das|Die|Der|Team|Service|Info|Kontakt|Web|Mail|Tel|Fax)$/i.test(words[0])) {
+    return false;
+  }
+  // Check ANY word for specific business terms
+  if (words.some(w => /^(Startup|GmbH|AG|Inc|Ltd)$/i.test(w))) {
+    return false;
+  }
+  // console.log(`DEBUG isName: "${str}" -> validWords=${validWords}`);
+  // return validWords; // Too strict?
+  // Let's just check if it LOOKS like a name (mostly capitalized words or particles)
+  const capitalizedCount = words.filter(w => /^[A-ZÄÖÜ]/.test(w)).length;
+  // Must have at least 2 words (First Last) or particles
+  const hasSpace = words.length >= 2;
+  const result = capitalizedCount >= 1 && !/\d/.test(str) && hasSpace;
+
+  if (str.includes('Prof') || str.includes('Schlossallee')) {
+    console.log(`DEBUG isName: "${str}" -> result=${result}, cap=${capitalizedCount}, validWords=${validWords}, hasSpace=${hasSpace}, noDigit=${!/\d/.test(str)}`);
+  }
+  return result;
 };
 
 const consumePhones = (lines: Line[], data: ParserData) => {
@@ -360,38 +406,128 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 
       // 3. Try US/International Format: City, State ZIP (e.g. New York, NY 10001)
       if (!zip) {
+        // US: City, State ZIP
         const re_us = /([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})/;
         const matchUS = line.clean.match(re_us);
         if (matchUS) {
           city = matchUS[1].trim();
           zip = matchUS[3];
           country = "USA";
+          // Street might be before
+          const preCity = line.clean.substring(0, matchUS.index).trim();
+          if (preCity.length > 3) {
+            street = preCity.replace(/,$/, '');
+          }
           line.isConsumed = true;
           line.type = 'ADDRESS';
+        }
+
+        // CH/A: City with ZIP at end or beginning (handled by re_zip_generic mostly, but let's be robust)
+        // "Zürichstrasse 1, CH-8000 Zürich" -> re_zip_generic should catch "CH-8000"
+        // "Wienzeile 5, A-1010 Wien" -> re_zip_generic should catch "A-1010"
+        // "Wienzeile 5, A-1010 Wien" -> re_zip_generic should catch "A-1010"
+      }
+
+      // 5. Fallback: Street found, but no ZIP yet? (e.g. "Schlossallee 1" \n "München")
+      if (!zip && !city && !line.isConsumed) {
+        // Simple regex: Word+ Number (at least 3 chars for word)
+        const isStreet = /^[A-Za-zäöüß\s.-]{3,}\s\d+[a-z]?$/i.test(line.clean);
+        if (isStreet) {
+          // Look ahead for City
+          if (i + 1 < lines.length) {
+            const nextLine = lines[i + 1];
+            // City should be capitalized word(s), no digits
+            const isCity = !nextLine.isConsumed && /^[A-ZÄÖÜ][a-zäöüß]+(?:[\s-][A-ZÄÖÜ][a-zäöüß]+)*$/.test(nextLine.clean);
+
+            if (isCity) {
+              street = line.clean;
+              city = nextLine.clean;
+              country = "Deutschland"; // Default
+              line.isConsumed = true;
+              line.type = 'ADDRESS';
+              nextLine.isConsumed = true;
+              nextLine.type = 'ADDRESS';
+            }
+          }
         }
       }
     }
 
-    if (zip && city) {
+    // 4. Postbox / c/o support
+    // "Postfach 12 34" or "c/o Briefkasten-Firma"
+    if (!zip && /Postfach|c\/o/i.test(line.clean)) {
+      // If we found a ZIP in another line, this might be the street/pobox line
+      // But we need to link them.
+      // For now, if we see Postfach, treat it as address part.
+      // If we already have an address (from previous loop), append?
+      // The current logic breaks after finding one address.
+      // We might need to capture multiple address lines.
+    }
+
+    if ((zip || street) && city) {
       // If we haven't found the street yet, look at the line ABOVE
       if (!street && i > 0) {
         const prevLine = lines[i - 1];
         // Only if not consumed and looks like a street
         if (!prevLine.isConsumed) {
-          // Try to parse with our new robust parser
-          const addressResult = parseGermanAddress(prevLine.clean);
-
-          if (addressResult.isValid) {
-            street = prevLine.clean; // Keep original full string for vCard (Street + Number)
-            prevLine.isConsumed = true;
-            prevLine.type = 'ADDRESS';
-          }
-          // Fallback: Old heuristic (ends with digit) if parser was too strict but it looks okayish
-          else if (/\d+$/.test(prevLine.clean) && prevLine.clean.length > 5) {
+          // Check for c/o or Postfach in previous line
+          if (/c\/o|Postfach/i.test(prevLine.clean)) {
             street = prevLine.clean;
             prevLine.isConsumed = true;
             prevLine.type = 'ADDRESS';
+
+            // Check line BEFORE that for Company/Name if c/o?
+            // "Geheimagentur GmbH"
+            // "c/o Briefkasten-Firma" -> Street
+            // "Postfach 12 34" -> Street (overwrite or append?)
+            // "10115 Berlin" -> City/Zip
+
+            // If we have multiple street-like lines, we should join them.
+            if (i > 1) {
+              const prevPrev = lines[i - 2];
+              if (!prevPrev.isConsumed && /c\/o|Postfach/i.test(prevPrev.clean)) {
+                street = `${prevPrev.clean}, ${street}`;
+                prevPrev.isConsumed = true;
+                prevPrev.type = 'ADDRESS';
+              }
+            }
+          } else {
+            // Try to parse with our new robust parser
+            const addressResult = parseGermanAddress(prevLine.clean);
+
+            if (addressResult.isValid) {
+              street = prevLine.clean; // Keep original full string for vCard (Street + Number)
+              prevLine.isConsumed = true;
+              prevLine.type = 'ADDRESS';
+            }
+            // Fallback: Old heuristic (ends with digit) if parser was too strict but it looks okayish
+            // Also accept "Word Number" format for international addresses (e.g. "Zürichstrasse 1")
+            else if (/\d+$/.test(prevLine.clean) && prevLine.clean.length > 5) {
+              street = prevLine.clean;
+              prevLine.isConsumed = true;
+              prevLine.type = 'ADDRESS';
+            }
+            // Fallback 2: If we are in international mode (CH/A), accept almost anything before ZIP line as street if it's not a phone/email
+            else if ((country === 'Schweiz' || country === 'Österreich') && !prevLine.isConsumed && prevLine.clean.length > 5) {
+              street = prevLine.clean;
+              prevLine.isConsumed = true;
+              prevLine.type = 'ADDRESS';
+            }
+            // Fallback 3: US Address (starts with number)
+            else if (country === 'USA' && /^\d+\s+[A-Za-z]/.test(prevLine.clean)) {
+              street = prevLine.clean;
+              prevLine.isConsumed = true;
+              prevLine.type = 'ADDRESS';
+            }
           }
+        }
+      }
+
+      // Check for Postfach in CURRENT line if street is empty
+      if (!street) {
+        const matchPostfach = line.clean.match(/Postfach\s+\d+(?:\s+\d+)?/i);
+        if (matchPostfach) {
+          street = matchPostfach[0];
         }
       }
 
@@ -433,11 +569,6 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
       // If consumeJobAndTax took it as Title, then data.title = "Vorstandsvorsitzender & CEO".
       // Then "Universität Musterstadt" is left. consumeLeftovers should take it as Org.
 
-      // Debugging logic:
-      // If data.title is set, we are good.
-      // If data.org is NOT set, consumeLeftovers looks for first unconsumed line > 2 chars.
-      // If "Universität Musterstadt" is unconsumed, it should be Org.
-
       // Maybe the test failure means data.org was WRONGLY set to "Vorstandsvorsitzender & CEO"?
       // That would happen if consumeJobAndTax DID NOT consume it, and consumeLeftovers took it.
       // So re_job match failed?
@@ -454,12 +585,32 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
         if (!data.title) {
           // Strip "Vertreten durch den" or "Geschäftsführer:" prefixes
           let title = line.clean;
-          title = title.replace(/^(?:Vertreten durch (?:den|die)?\s*)/i, '');
+
+          // Check for "Title: Name" pattern
+          if (title.includes(':')) {
+            const parts = title.split(':');
+            const potentialTitle = parts[0].trim();
+            const potentialName = parts.slice(1).join(':').trim();
+
+            // If the part before colon is the job title
+            if (re_job.test(potentialTitle)) {
+              data.title = potentialTitle;
+              // Do NOT modify line.clean, so consumeName can use the context!
+              // Mark as JOB so consumeName processes it.
+              line.isConsumed = true;
+              line.type = 'JOB';
+              return;
+            }
+          }
+
+          // Relaxed regex to handle "Vertreten durch den" with case insensitivity and optional parts
+          // Use [\s\u00A0] to match regular spaces and non-breaking spaces
+          title = title.replace(/^Vertreten durch:?[\s\u00A0]+(?:den[\s\u00A0]+|die[\s\u00A0]+|das[\s\u00A0]+)?/i, '');
           title = title.replace(/:$/, '');
           data.title = title.trim();
+          line.isConsumed = true;
+          line.type = 'JOB';
         }
-        line.isConsumed = true;
-        line.type = 'JOB';
       }
     }
 
@@ -482,7 +633,7 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
 };
 
 const consumeCompany = (lines: Line[], data: ParserData) => {
-  const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited|Support|Hotline|Service|Praxis|Kanzlei|Agentur)(?:$|\s|[.,])/i;
+  const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited|Support|Hotline|Service|Praxis|Kanzlei|Agentur|Friseur|Salon|Studio)(?:$|\s|[.,])/i;
 
   lines.forEach(line => {
     if (line.isConsumed) return;
@@ -501,7 +652,8 @@ const consumeName = (lines: Line[], data: ParserData) => {
   // Allow comma separated list, capture first name
   // Support German characters (Umlauts) in name
   // Support academic titles in name (Prof. Dr. Max Mustermann)
-  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director|Vorstandsvorsitzender)(?:\s*:\s*|\s+&?\s*CEO\s*|\s+)((?:Prof\.|Dr\.|h\.c\.|mult\.|Dipl\.-|Mag\.|[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+\.?\s+)+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)(?:,|$)/i;
+  // Support trailing text like (Vorsitz) or & Partner
+  const re_context = /(?:Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director|Vorstandsvorsitzender)(?:\s*:\s*|\s+&?\s*CEO\s*|\s+)((?:Prof\.|Dr\.|h\.c\.|mult\.|Dipl\.-|Mag\.|[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+\.?\s+)+[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]+)(?:[\s,(]|$)/i;
 
   for (const line of lines) {
     if (line.isConsumed && line.type !== 'JOB') continue;
@@ -570,24 +722,41 @@ const consumeNameHeuristic = (lines: Line[], data: ParserData) => {
   for (const line of lines) {
     if (line.isConsumed) continue;
 
-    // Heuristic: Exactly 2 words, both capitalized, no numbers, reasonable length
-    const words = line.clean.split(/\s+/);
-    if (words.length === 2) {
-      const [first, last] = words;
-      // Check capitalization (First char upper, rest lower is typical, but ALL CAPS is also possible)
-      // Let's be strict: First char MUST be upper.
-      const isName = /^[A-ZÀ-ÖØ-Þ]/.test(first) && /^[A-ZÀ-ÖØ-Þ]/.test(last) &&
-        !/\d/.test(line.clean) && // No numbers
-        !/[@:;]/.test(line.clean) && // No special chars
-        line.clean.length < 40;
+    // Heuristic: Use isName function
+    if (isName(line.clean)) {
+      // Check for comma-separated names (e.g. "Susi Sorglos, Peter Pan")
+      if (line.clean.includes(',')) {
+        const parts = line.clean.split(',').map(p => p.trim());
+        // If both parts look like names, take the first one as primary FN
+        // Ideally we should add both, but our data structure supports one FN.
+        // We can add the second one to N or just ignore it for now to pass the test which expects the first one.
+        if (parts.length > 0 && isName(parts[0])) {
+          const firstPart = parts[0];
+          const words = firstPart.split(/\s+/);
+          const last = words[words.length - 1];
+          const first = words.slice(0, words.length - 1).join(' ');
 
-      if (isName) {
-        data.fn = `${first} ${last}`;
-        data.n = `${last};${first}`;
-        line.isConsumed = true;
-        line.type = 'NAME';
-        return; // Found it
+          data.fn = firstPart;
+          data.n = `${last};${first}`;
+          line.isConsumed = true;
+          line.type = 'NAME';
+          return;
+        }
       }
+
+      const words = line.clean.split(/\s+/);
+      // If isName returns true, we trust it.
+      // But we need to split into First/Last for N field.
+      // Simple assumption: Last word is surname.
+      const last = words[words.length - 1];
+      const first = words.slice(0, words.length - 1).join(' ');
+
+      data.fn = line.clean;
+      console.log(`DEBUG consumeNameHeuristic: Set data.fn to "${data.fn}"`);
+      data.n = `${last};${first}`;
+      line.isConsumed = true;
+      line.type = 'NAME';
+      return; // Found it
     }
   }
 };
@@ -613,9 +782,11 @@ const consumeLeftovers = (lines: Line[], data: ParserData) => {
     const nextUnconsumed = lines.find(l => !l.isConsumed && l.clean.length > 2);
     if (nextUnconsumed) {
       // Simple heuristic: If it has 2 words, it might be a name
+      // BUT must not have digits (to avoid addresses like "Musterstr 1")
       const parts = nextUnconsumed.clean.split(' ');
-      if (parts.length >= 2) {
+      if (parts.length >= 2 && !/\d/.test(nextUnconsumed.clean)) {
         data.fn = nextUnconsumed.clean;
+        console.log(`DEBUG consumeLeftovers: Set data.fn to "${data.fn}"`);
         data.n = `${parts[parts.length - 1]};${parts[0]}`;
         nextUnconsumed.isConsumed = true;
         nextUnconsumed.type = 'NAME';
@@ -639,7 +810,8 @@ export const parseImpressumToVCard = (text: string): string => {
 
   // PRE-PROCESSING: Fix "Newlines Mess"
   // Replace | with newline if it looks like a separator
-  cleanText = cleanText.replace(/\s+\|\s+/g, '\n');
+  // Also handle " • " as separator
+  cleanText = cleanText.replace(/\s+[|•]\s+/g, '\n');
 
   // PRE-PROCESSING: Fix "Sticky Text"
   // 1. LowercaseUppercase -> Lowercase Uppercase (e.g. MaxMustermann -> Max Mustermann)
@@ -693,10 +865,18 @@ export const parseImpressumToVCard = (text: string): string => {
     return match;
   });
 
+  // Fix OCR: 0 -> O at start of words (e.g. 0CR -> OCR, 0ber -> Ober)
+  // But NOT if it looks like a number (e.g. 040, 0171)
+  // Look for 0 followed by uppercase letters
+  cleanText = cleanText.replace(/\b0([A-Z]{2,})\b/g, 'O$1');
+
   // Fix OCR: l -> 1 in phone context (Line-based)
-  cleanText = cleanText.replace(/((?:Tel|Fax|Mobil|T|F|M)[:\.]?[ \t]*)([lI10-9\/\-\+\(\)[ \t]+)/gi, (match, labelPart, numberPart) => {
-    // Only replace if it contains at least one digit
-    if (/\d/.test(numberPart)) {
+  // Expanded to handle "TeI" (capital I) and spaces inside numbers
+  // Also allow "TeI" or "MobiI" in the label part (and "Te I" due to sticky text split)
+  cleanText = cleanText.replace(/((?:Tel|Fax|Mobil|T|F|M|Te\s*I|Mobi\s*I)[:\.]?[ \t]*)([lI10-9\/\-\+\(\)[ \t]+)/gi, (match, labelPart, numberPart) => {
+    // Only replace if it contains at least one digit OR looks like a number pattern with l/I
+    // e.g. "l23 456" -> "123 456"
+    if (/\d/.test(numberPart) || /[lI]\d/.test(numberPart) || /\d[lI]/.test(numberPart)) {
       return labelPart + numberPart.replace(/[lI]/g, '1');
     }
     return match;
@@ -718,6 +898,10 @@ export const parseImpressumToVCard = (text: string): string => {
     fn: "", n: "", org: "", title: "",
     tel: [], email: [], url: [], adr: [], note: []
   };
+
+  console.log('--- PARSER DEBUG ---');
+  console.log('Clean Text:\n', cleanText);
+  console.log('Lines:', lines.map(l => l.clean));
 
   // 3. Run Extractors (Order Matters!)
   consumeMeta(lines);
@@ -761,6 +945,7 @@ export const parseImpressumToVCard = (text: string): string => {
   }
 
   // 6. Construct vCard
+  console.log(`DEBUG FINAL data.fn: "${data.fn}"`);
   const vcard = [
     "BEGIN:VCARD",
     "VERSION:3.0"
