@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useScreenCapture } from './hooks/useScreenCapture';
-import { ScreenSnipper } from './components/ScreenSnipper';
 
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD, getTimestamp } from './utils/vcardUtils';
 import { correctVCard } from './services/aiService';
@@ -36,7 +34,7 @@ import { enrichAddress } from './utils/addressEnricher';
 import {
   Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
   MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
-  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2, Crop
+  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
@@ -46,34 +44,7 @@ import { RegexDebugger } from './components/RegexDebugger';
 
 
 const App: React.FC = () => {
-  // Handle global paste events for images
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      if (e.clipboardData && e.clipboardData.files.length > 0) {
-        const file = e.clipboardData.files[0];
-        if (file.type.startsWith('image/')) {
-          e.preventDefault();
-          setDroppedFile(file);
-          setIsScanOpen(true);
-          toast.success('Bild aus Zwischenablage eingefügt');
-        }
-      }
-    };
-
-    window.addEventListener('paste', handlePaste);
-    return () => window.removeEventListener('paste', handlePaste);
-  }, []);
-
   // --- STATE ---
-  const { startCapture, stopCapture, stream, isCapturing } = useScreenCapture();
-
-  const handleScreenCrop = (blob: Blob) => {
-    stopCapture();
-    const file = new File([blob], `screen_snip_${getTimestamp()}.jpg`, { type: 'image/jpeg' });
-    setDroppedFile(file);
-    setIsScanOpen(true);
-  };
-
   const [vcardString, setVcardString] = useState<string>(DEFAULT_VCARD);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1148,20 +1119,7 @@ const App: React.FC = () => {
               <span className="hidden lg:inline text-sm">{t.batchUpload}</span>
             </button>
 
-            {/* 3. Screen Snip */}
-            <button
-              onClick={startCapture}
-              disabled={isCapturing}
-              className="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
-              title="Bildschirmbereich scannen"
-            >
-              <Crop size={18} />
-              <span className="hidden lg:inline text-sm">Snip</span>
-            </button>
-
-            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
-
-            {/* 4. QR Scan */}
+            {/* 3. QR Scan */}
             <button
               onClick={() => setIsQRScannerOpen(true)}
               className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors"
@@ -1337,14 +1295,6 @@ const App: React.FC = () => {
         </div>
       </footer>
       <ReloadPrompt />
-
-      {stream && (
-        <ScreenSnipper
-          stream={stream}
-          onCrop={handleScreenCrop}
-          onCancel={stopCapture}
-        />
-      )}
 
       {new URLSearchParams(window.location.search).get('debug_regex') === 'true' && (
         <RegexDebugger />
