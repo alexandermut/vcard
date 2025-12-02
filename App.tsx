@@ -382,14 +382,13 @@ const App: React.FC = () => {
 
   // ...
 
-  // Smart Add To History (Merges Duplicates)
-  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid') => {
+  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid'): Promise<'saved' | 'duplicate' | 'error'> => {
     console.log("addToHistory called", { strLength: str?.length, hasParsed: !!parsed, images: scanImages?.length, mode });
 
     const p = parsed || parseVCardString(str);
     if (!p.isValid) {
       console.error("addToHistory: Invalid vCard", str);
-      return;
+      return 'error';
     }
 
     const newData = p.data as VCardData;
@@ -422,7 +421,7 @@ const App: React.FC = () => {
       console.log("Exact duplicate detected - skipping save");
       // Optional: Notify user?
       // toast.info("Kontakt ist bereits der neueste Eintrag.");
-      return;
+      return 'duplicate';
     }
 
     // 2. Search for semantic duplicate
@@ -550,7 +549,7 @@ const App: React.FC = () => {
     setCurrentHistoryId(itemToSave.id);
 
     console.log("History updated successfully", { id: itemToSave.id, mode });
-
+    return 'saved';
   }, []);
 
 
@@ -575,9 +574,16 @@ const App: React.FC = () => {
     downloadVCard(vcardString, filename);
   };
 
-  const handleManualSave = () => {
+  const handleManualSave = async () => {
     if (parsedData.isValid) {
-      addToHistory(vcardString, parsedData, currentImages);
+      const result = await addToHistory(vcardString, parsedData, currentImages);
+      if (result === 'saved') {
+        toast.success("Gespeichert!");
+      } else if (result === 'duplicate') {
+        toast.info("Bereits vorhanden.");
+      }
+    } else {
+      toast.error(t.invalid || "Ungültige Daten.");
     }
   };
 

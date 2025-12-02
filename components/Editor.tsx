@@ -25,16 +25,22 @@ export const Editor: React.FC<EditorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const t = translations[lang];
 
+  const lastTextRef = React.useRef(value);
+
   const handleRawTextChange = async (text: string) => {
     setRawText(text);
+    lastTextRef.current = text;
+
     if (text.trim()) {
       onClearImages();
       try {
         const generatedVCard = await parseImpressumSafe(text);
-        onChange(generatedVCard);
+        // Only update if the text hasn't changed since we started parsing
+        if (lastTextRef.current === text) {
+          onChange(generatedVCard);
+        }
       } catch (e) {
         console.error("Parser error (timeout or invalid):", e);
-        // Optionally show error state in UI, but for now just log it to avoid spamming user while typing
       }
     }
   };
