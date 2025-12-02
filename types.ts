@@ -54,9 +54,11 @@ export interface ScanJob {
   id: string;
   timestamp: number;
   images: (string | File)[]; // Array of images (pages/sides)
-  status: ScanStatus;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  result?: string;
   error?: string;
   mode?: 'vision' | 'hybrid';
+  retryCount?: number;
 }
 
 export interface Note {

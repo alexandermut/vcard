@@ -92,12 +92,28 @@ export const useScanQueue = (
     } catch (error: any) {
       console.error("Job failed", error);
       if (error.message && error.message.includes("Timeout")) {
-        console.warn("Job timed out, moving to back of queue", job.id);
-        setQueue(prev => {
-          // Remove current job and add to end with pending status
-          const filtered = prev.filter(j => j.id !== job.id);
-          return [...filtered, { ...job, status: 'pending', error: undefined }];
-        });
+        const currentRetries = job.retryCount || 0;
+        if (currentRetries < 2) {
+          console.warn(`Job timed out, retrying (${currentRetries + 1}/2)...`, job.id);
+          setQueue(prev => {
+            const filtered = prev.filter(j => j.id !== job.id);
+            return [...filtered, { ...job, status: 'pending', error: undefined, retryCount: currentRetries + 1 }];
+          });
+        } else {
+          console.error("Job timed out too many times, marking as error", job.id);
+          setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: "Timeout: Processing took too long after multiple retries." } : j));
+
+          // Save to Failed Scans DB
+          if (rawImages.length > 0) {
+            addFailedScan({
+              id: job.id,
+              timestamp: Date.now(),
+              images: rawImages,
+              error: "Timeout after retries",
+              mode: job.mode || 'vision'
+            }).catch(e => console.error("Failed to save failed scan", e));
+          }
+        }
       } else {
         // Mark as error, keep in queue so user sees it failed
         setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: error.message } : j));

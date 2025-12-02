@@ -104,6 +104,8 @@ export const combineImages = (frontBase64: string, backBase64: string | undefine
     };
     frontImg.onerror = reject;
     frontImg.src = frontBase64;
+    // Timeout
+    setTimeout(() => reject(new Error("Image combination timed out")), 10000);
   });
 };
 
