@@ -200,7 +200,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             )}
           </div>
 
-          {/* Categories / Tags */}
+          {/* Categories / Tags - MOVED TO BACKLOG
           <div className="mt-4 flex flex-wrap gap-2">
             {localData.categories?.map((tag, i) => (
               <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-700">
@@ -208,26 +208,24 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 {tag}
                 <button
                   onClick={() => {
-                    const newTags = localData.categories?.filter((_, idx) => idx !== i);
-                    updateField('categories', newTags as any); // Type assertion needed as updateField expects string usually, but we should fix that or handle it.
-                    // Wait, updateField signature is (field: keyof VCardData, value: string).
-                    // We need to update localData directly for arrays if updateField doesn't support it.
-                    // Actually, let's look at updateField implementation.
-                    // const newData = { ...localData, [field]: value };
-                    // It takes 'value' as string.
-                    // We need a specific handler for categories or update updateField to accept any.
+                    const newCats = localData.categories?.filter((_, idx) => idx !== i);
+                    // Assuming handleUpdate is a function that updates localData and calls onUpdate
+                    // If not, this needs to be adapted to the existing updateField/setLocalData pattern
+                    const newData = { ...localData, categories: newCats };
+                    setLocalData(newData);
+                    onUpdate(generateVCardFromData(newData));
                   }}
-                  className="hover:text-red-500 ml-1"
+                  className="hover:text-red-500"
                 >
                   <X size={12} />
                 </button>
               </span>
             ))}
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-slate-50 dark:bg-slate-800/50 border border-dashed border-slate-300 dark:border-slate-700">
-              <Plus size={12} className="text-slate-400" />
+            <div className="flex items-center gap-1">
               <input
-                className="bg-transparent border-none p-0 text-xs w-16 focus:ring-0 placeholder-slate-400"
-                placeholder="Add Tag"
+                type="text"
+                placeholder={t.addTag || "Tag..."}
+                className="w-20 px-2 py-1 text-xs rounded-md border border-slate-200 dark:border-slate-700 bg-transparent"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const val = (e.target as HTMLInputElement).value.trim();

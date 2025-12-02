@@ -401,7 +401,9 @@ const App: React.FC = () => {
 
     let vcardToSave = str;
 
-    // --- EVENT MODE INJECTION ---
+    // --- EVENT MODE INJECTION REMOVED ---
+    // User requested to move to backlog.
+    /*
     try {
       if (eventModeActive && eventName && eventName.trim().length > 0) {
         console.log("Injecting Event Tag:", eventName);
@@ -414,8 +416,8 @@ const App: React.FC = () => {
       }
     } catch (e) {
       console.error("Error injecting event tag:", e);
-      // Continue without tag if injection fails
     }
+    */
 
     // Get latest history from DB to ensure we check against current state
     const currentHistory = await getHistory();
