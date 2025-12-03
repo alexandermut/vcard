@@ -3,7 +3,8 @@ import { ScanJob } from '../types';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { Language } from '../types';
 import type { LLMConfig } from './useLLMConfig';
-
+import { scanWithTesseract } from '../services/tesseractService';
+import { parseImpressumToVCard } from '../utils/regexParser';
 import { resizeImage } from '../utils/imageUtils';
 import { addFailedScan } from '../utils/db';
 
@@ -11,6 +12,7 @@ export const useScanQueue = (
   apiKey: string,
   lang: Language,
   llmConfig: LLMConfig,
+  ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid',
   onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => Promise<void> | void
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
@@ -73,19 +75,100 @@ export const useScanQueue = (
         rawImages.push(base64);
       }
 
-      console.log("Images prepared, starting AI scan...", { count: images.length, mode: job.mode });
-      console.time(`ai-scan-${job.id}`);
+      console.log("Images prepared, starting OCR...", { count: images.length, mode: job.mode, ocrMethod });
+      console.time(`ocr-scan-${job.id}`);
 
-      // 180s Timeout for AI processing (allows for retries)
+      // 180s Timeout for OCR processing (allows for retries)
       const timeoutPromise = new Promise<string>((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout: AI processing took too long")), 180000)
+        setTimeout(() => reject(new Error("Timeout: OCR processing took too long")), 180000)
       );
 
-      const vcard = await Promise.race([
-        scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision'),
+      let vcard: string;
+
+      // OCR Method Selection Logic
+      if (ocrMethod === 'tesseract') {
+        // Tesseract Only (Offline)
+        console.log('[OCR] Mode: Tesseract Only');
+        const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+        vcard = parseImpressumToVCard(tesseractResult.text);
+
+      } else if (ocrMethod === 'gemini') {
+        // Gemini Only (Online - requires API key)
+        console.log('[OCR] Mode: Gemini Only');
+        if (!apiKey && llmConfig.provider !== 'custom') {
+          throw new Error('API Key required for Gemini mode');
+        }
+        vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+
+      } else if (ocrMethod === 'hybrid') {
+        // Hybrid: Run both, auto-select based on confidence
+        console.log('[OCR] Mode: Hybrid (both parallel)');
+        const [tesseractRes, geminiRes] = await Promise.allSettled([
+          (async () => {
+            const result = await scanWithTesseract(rawImages[0], lang, true);
+            return { vcard: parseImpressumToVCard(result.text), confidence: result.confidence, method: 'tesseract' as const };
+          })(),
+          (async () => {
+            if (!apiKey && llmConfig.provider !== 'custom') {
+              throw new Error('No API key for Gemini');
+            }
+            const vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+            return { vcard, confidence: 100, method: 'gemini' as const }; // Gemini = 100% confidence assumed
+          })()
+        ]);
+
+        // Select winner based on confidence
+        const tesseractVCard = tesseractRes.status === 'fulfilled' ? tesseractRes.value : null;
+        const geminiVCard = geminiRes.status === 'fulfilled' ? geminiRes.value : null;
+
+        if (geminiVCard && tesseractVCard) {
+          // Both succeeded - choose better confidence
+          vcard = geminiVCard.confidence >= tesseractVCard.confidence ? geminiVCard.vcard : tesseractVCard.vcard;
+          console.log(`[OCR] Hybrid: Selected ${geminiVCard.confidence >= tesseractVCard.confidence ? 'Gemini' : 'Tesseract'} (Gemini: ${geminiVCard.confidence}%, Tesseract: ${tesseractVCard.confidence}%)`);
+        } else if (geminiVCard) {
+          vcard = geminiVCard.vcard;
+          console.log('[OCR] Hybrid: Only Gemini succeeded');
+        } else if (tesseractVCard) {
+          vcard = tesseractVCard.vcard;
+          console.log('[OCR] Hybrid: Only Tesseract succeeded');
+        } else {
+          throw new Error('Both OCR methods failed');
+        }
+
+      } else {
+        // Auto Mode (Default): Offline-first with optional Gemini enhancement
+        console.log('[OCR] Mode: Auto (Offline-First)');
+
+        // 1. Always run Tesseract first (offline)
+        const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+        const tesseractVCard = parseImpressumToVCard(tesseractResult.text);
+        console.log(`[OCR] Auto: Tesseract completed (${tesseractResult.confidence}%)`);
+
+        // 2. If API key available, also run Gemini and compare
+        if (apiKey || llmConfig.provider === 'custom') {
+          try {
+            console.log('[OCR] Auto: Running Gemini as enhancement...');
+            const geminiVCard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+
+            // Gemini wins (100% confidence assumed)
+            vcard = geminiVCard;
+            console.log('[OCR] Auto: Using Gemini result (higher confidence)');
+          } catch (geminiError) {
+            console.warn('[OCR] Auto: Gemini failed, using Tesseract result', geminiError);
+            vcard = tesseractVCard;
+          }
+        } else {
+          // No API key - use Tesseract result
+          vcard = tesseractVCard;
+          console.log('[OCR] Auto: No API key, using Tesseract result');
+        }
+      }
+
+      vcard = await Promise.race([
+        Promise.resolve(vcard),
         timeoutPromise
       ]);
-      console.timeEnd(`ai-scan-${job.id}`);
+      console.timeEnd(`ocr-scan-${job.id}`);
 
       // Safety timeout for onJobComplete (saving)
       const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));

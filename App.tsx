@@ -91,11 +91,24 @@ const App: React.FC = () => {
     hasSystemKey
   } = useLLMConfig();
 
+  // Scan Queue (Batch Processing with auto-retry)
   const { queue, addJob, removeJob, clearErrors } = useScanQueue(
     getKeyToUse() || '',
     lang,
     llmConfig,
+    ocrMethod,
     async (vcard, images, mode) => {
+      setVcardString(vcard);
+      setCurrentImages(images);
+
+      // Auto-save to history on successful scan
+      try {
+        await addToHistory(vcard, undefined, images, mode);
+      } catch (err) {
+        console.error("Failed to save to history:", err);
+        toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
+      }
+
       // 1. Enrich Address (if Street DB is ready)
       let finalVCard = vcard;
       if (streetDbStatus === 'ready') {
@@ -125,9 +138,27 @@ const App: React.FC = () => {
     }
   );
 
-  const handleLoadHistoryItem = (item: HistoryItem) => {
+  const handleLoadHistoryItem = async (item: HistoryItem) => {
     setVcardString(item.vcard);
-    setCurrentImages(item.images);
+
+    // Convert Blob images to base64 strings if needed
+    if (item.images) {
+      const stringImages = await Promise.all(
+        item.images.map(async (img) => {
+          if (typeof img === 'string') return img;
+          // Convert Blob to base64
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(img);
+          });
+        })
+      );
+      setCurrentImages(stringImages);
+    } else {
+      setCurrentImages(undefined);
+    }
+
     setCurrentHistoryId(item.id);
     setIsHistoryOpen(false);
   };
