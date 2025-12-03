@@ -145,7 +145,8 @@ const App: React.FC = () => {
         console.error("Failed to save to history:", err);
         toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
       }
-    }
+    },
+    setOcrRawText // Pass raw OCR text callback to populate parser field
   );
 
   const handleLoadHistoryItem = async (item: HistoryItem) => {
