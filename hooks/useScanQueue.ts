@@ -110,7 +110,7 @@ export const useScanQueue = (
         const [tesseractRes, geminiRes] = await Promise.allSettled([
           (async () => {
             const result = await scanWithTesseract(rawImages[0], lang, true);
-            return { vcard: parseImpressumToVCard(result.text), confidence: result.confidence, method: 'tesseract' as const };
+            return { vcard: parseImpressumToVCard(result.text), confidence: result.confidence, method: 'tesseract' as const, rawText: result.text };
           })(),
           (async () => {
             if (!apiKey && llmConfig.provider !== 'custom') {
