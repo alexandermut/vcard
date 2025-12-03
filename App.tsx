@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD, getTimestamp } from './utils/vcardUtils';
-import { correctVCard } from './services/aiService';
+import { correctVCard, scanBusinessCard } from './services/aiService';
 import { useLLMConfig } from './hooks/useLLMConfig';
 import { useScanQueue } from './hooks/useScanQueue';
 import { translations } from './utils/translations';

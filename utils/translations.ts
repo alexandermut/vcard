@@ -77,6 +77,7 @@ export const translations = {
     noNotes: "Keine Notizen gefunden.",
     deleteConfirm: "Diese Notiz wirklich löschen?",
     viewContact: "Kontakt anzeigen",
+    noteSaveFirst: "Bitte speichern Sie den Kontakt zuerst im Verlauf.",
     paste: "Einfügen",
 
     // Chat
@@ -309,6 +310,7 @@ export const translations = {
     noNotes: "No notes found.",
     deleteConfirm: "Delete this note?",
     viewContact: "View Contact",
+    noteSaveFirst: "Please save the contact to history first.",
     paste: "Paste",
 
     // Chat
