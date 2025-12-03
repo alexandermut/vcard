@@ -159,9 +159,6 @@ export const scanWithTesseract = async (
     }
 };
 
-    }
-};
-
 /**
  * Extract contact data from Tesseract OCR result
  * Uses the existing regexParser for structured data extraction
