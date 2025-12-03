@@ -15,10 +15,11 @@ interface EditorProps {
   onClearImages: () => void;
   isOptimizing: boolean;
   lang: Language;
+  ocrRawText?: string; // Raw OCR text from Tesseract to populate parser field
 }
 
 export const Editor: React.FC<EditorProps> = ({
-  value, onChange, onOptimize, onUndo, canUndo, onReset, onImageDrop, onClearImages, isOptimizing, lang
+  value, onChange, onOptimize, onUndo, canUndo, onReset, onImageDrop, onClearImages, isOptimizing, lang, ocrRawText
 }) => {
   const [activeTab, setActiveTab] = useState<'text' | 'code'>('text');
   const [rawText, setRawText] = useState('');
@@ -26,6 +27,14 @@ export const Editor: React.FC<EditorProps> = ({
   const t = translations[lang];
 
   const lastTextRef = React.useRef(value);
+
+  // Populate rawText when OCR result is provided
+  React.useEffect(() => {
+    if (ocrRawText) {
+      setRawText(ocrRawText);
+      setActiveTab('text'); // Switch to text tab to show OCR result
+    }
+  }, [ocrRawText]);
 
   const handleRawTextChange = async (text: string) => {
     setRawText(text);

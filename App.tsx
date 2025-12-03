@@ -77,6 +77,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
   const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'hybrid'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, or hybrid
+  const [ocrRawText, setOcrRawText] = useState<string | undefined>(undefined); // Raw OCR text from Tesseract for parser field
 
 
 
@@ -116,12 +117,21 @@ const App: React.FC = () => {
           const parsed = parseVCardString(vcard);
           // Timeout for enrichment
           const enrichPromise = enrichAddress(parsed.data);
-          const timeoutPromise = new Promise<VCardData>((_, reject) => setTimeout(() => reject(new Error("Enrichment timeout")), 2000));
+          const timeoutPromise = new Promise<void>((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout')), 5000)
+          );
 
-          const enrichedData = await Promise.race([enrichPromise, timeoutPromise]);
-          finalVCard = generateVCardFromData(enrichedData);
-        } catch (e) {
-          console.warn("Address enrichment failed or timed out", e);
+          try {
+            await Promise.race([enrichPromise, timeoutPromise]);
+            if (parsed.data.adr && parsed.data.adr.length > 0) {
+              finalVCard = generateVCardFromData(parsed.data); // Assuming generateVCardFromData is the correct function
+              setVcardString(finalVCard);
+            }
+          } catch (timeoutError) {
+            console.warn('Address enrichment timed out, using original vCard');
+          }
+        } catch (enrichError) {
+          console.warn('Address enrichment failed:', enrichError);
         }
       }
 
@@ -1349,6 +1359,7 @@ const App: React.FC = () => {
               onImageDrop={handleImageDrop}
               onClearImages={() => setCurrentImages(undefined)}
               lang={lang}
+              ocrRawText={ocrRawText}
             />
           </div>
 

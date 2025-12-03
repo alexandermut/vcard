@@ -13,7 +13,8 @@ export const useScanQueue = (
   lang: Language,
   llmConfig: LLMConfig,
   ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid',
-  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => Promise<void> | void
+  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => Promise<void> | void,
+  onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -92,6 +93,9 @@ export const useScanQueue = (
         const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
         vcard = parseImpressumToVCard(tesseractResult.text);
 
+        // Pass raw OCR text to parent for parser field
+        if (onOCRRawText) onOCRRawText(tesseractResult.text);
+
       } else if (ocrMethod === 'gemini') {
         // Gemini Only (Online - requires API key)
         console.log('[OCR] Mode: Gemini Only');
@@ -130,6 +134,8 @@ export const useScanQueue = (
           console.log('[OCR] Hybrid: Only Gemini succeeded');
         } else if (tesseractVCard) {
           vcard = tesseractVCard.vcard;
+          // Pass raw OCR text to parent
+          if (onOCRRawText && tesseractVCard.rawText) onOCRRawText(tesseractVCard.rawText);
           console.log('[OCR] Hybrid: Only Tesseract succeeded');
         } else {
           throw new Error('Both OCR methods failed');
@@ -156,10 +162,14 @@ export const useScanQueue = (
           } catch (geminiError) {
             console.warn('[OCR] Auto: Gemini failed, using Tesseract result', geminiError);
             vcard = tesseractVCard;
+            // Pass raw OCR text to parent since we're using Tesseract
+            if (onOCRRawText) onOCRRawText(tesseractResult.text);
           }
         } else {
           // No API key - use Tesseract result
           vcard = tesseractVCard;
+          // Pass raw OCR text to parent
+          if (onOCRRawText) onOCRRawText(tesseractResult.text);
           console.log('[OCR] Auto: No API key, using Tesseract result');
         }
       }
