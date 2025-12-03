@@ -33,25 +33,44 @@ export const initializeTesseract = async (lang: Language): Promise<Worker> => {
     const tesseractLang = lang === 'de' ? 'deu' : 'eng';
 
     console.log(`[Tesseract] Initializing worker with language: ${tesseractLang}`);
+    console.log('[Tesseract] About to call createWorker...');
 
-    const worker = await createWorker(tesseractLang, 1, {
-        logger: (m: LoggerMessage) => {
-            if (m.status === 'loading language traineddata') {
-                console.log(`[Tesseract] Downloading ${tesseractLang}.traineddata...`);
+    try {
+        const worker = await createWorker(tesseractLang, 1, {
+            logger: (m: LoggerMessage) => {
+                console.log('[Tesseract] Worker log:', m.status, m.progress);
+                if (m.status === 'loading language traineddata') {
+                    console.log(`[Tesseract] Downloading ${tesseractLang}.traineddata...`);
+                }
             }
+        });
+
+        console.log('[Tesseract] createWorker completed, worker:', worker);
+
+        if (!worker) {
+            throw new Error('createWorker returned null/undefined');
         }
-    });
 
-    // Configure for business card recognition
-    await worker.setParameters({
-        tessedit_pageseg_mode: Tesseract.PSM.AUTO, // Automatic page segmentation
-        preserve_interword_spaces: '1',
-        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜßabcdefghijklmnopqrstuvwxyzäöüß0123456789@.,:;-+()/ \n',
-    });
+        // Configure for business card recognition
+        console.log('[Tesseract] Setting parameters...');
+        await worker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.AUTO, // Automatic page segmentation
+            preserve_interword_spaces: '1',
+            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜßabcdefghijklmnopqrstuvwxyzäöüß0123456789@.,:;-+()/ \n',
+        });
+        console.log('[Tesseract] Parameters set successfully');
 
-    tesseractWorker = worker;
-    currentLanguage = lang;
-    return worker;
+        tesseractWorker = worker;
+        currentLanguage = lang;
+
+        console.log('[Tesseract] Worker initialization complete');
+        return worker;
+    } catch (err) {
+        console.error('[Tesseract] Worker creation failed:', err);
+        console.error('[Tesseract] Error type:', typeof err);
+        console.error('[Tesseract] Error details:', err);
+        throw err;
+    }
 };
 
 /**
