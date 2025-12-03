@@ -11,8 +11,16 @@ export const preprocessImage = async (base64Image: string): Promise<string> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
 
+        // Timeout to prevent hanging
+        const timeout = setTimeout(() => {
+            reject(new Error('Image preprocessing timeout (10s)'));
+        }, 10000);
+
         img.onload = () => {
+            clearTimeout(timeout);
             try {
+                console.log('[Preprocessing] Image loaded, starting pipeline...');
+
                 // Step 1: Resize to optimal DPI (~300)
                 const resizedCanvas = resizeTo300DPI(img);
 
@@ -27,13 +35,20 @@ export const preprocessImage = async (base64Image: string): Promise<string> => {
 
                 // Convert final canvas to base64
                 const result = binarizedCanvas.toDataURL('image/png');
+                console.log('[Preprocessing] Pipeline completed successfully');
                 resolve(result);
             } catch (error) {
+                console.error('[Preprocessing] Pipeline error:', error);
                 reject(error);
             }
         };
 
-        img.onerror = () => reject(new Error('Failed to load image for preprocessing'));
+        img.onerror = (event) => {
+            clearTimeout(timeout);
+            console.error('[Preprocessing] Image load error:', event);
+            reject(new Error('Failed to load image for preprocessing'));
+        };
+
         img.src = base64Image;
     });
 };

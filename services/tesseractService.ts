@@ -85,8 +85,11 @@ export const scanWithTesseract = async (
 
     try {
         // Initialize worker
+        console.log('[Tesseract] Starting OCR process...');
         if (onProgress) onProgress(5);
+
         const worker = await initializeTesseract(lang);
+        console.log('[Tesseract] Worker initialized successfully');
         if (onProgress) onProgress(10);
 
         // Strip data:image/... prefix if present
@@ -99,17 +102,26 @@ export const scanWithTesseract = async (
         let processedImage = `data:image/png;base64,${imageData}`;
 
         if (enablePreprocessing) {
-            if (onProgress) onProgress(20);
-            console.log('[Tesseract] Preprocessing image...');
-            processedImage = await preprocessImage(processedImage);
-            if (onProgress) onProgress(30);
+            try {
+                if (onProgress) onProgress(20);
+                console.log('[Tesseract] Preprocessing image...');
+                processedImage = await preprocessImage(processedImage);
+                console.log('[Tesseract] Preprocessing completed successfully');
+                if (onProgress) onProgress(30);
+            } catch (preprocessError) {
+                // Fallback: Use original image if preprocessing fails
+                console.warn('[Tesseract] Preprocessing failed, using original image:', preprocessError);
+                processedImage = `data:image/png;base64,${imageData}`;
+                if (onProgress) onProgress(30);
+            }
         }
 
         // Perform OCR
-        console.log('[Tesseract] Starting OCR...');
+        console.log('[Tesseract] Starting OCR recognition...');
         const { data } = await worker.recognize(processedImage, {
             rotateAuto: true,
         });
+        console.log('[Tesseract] OCR recognition completed');
 
         if (onProgress) onProgress(100);
 
@@ -126,8 +138,27 @@ export const scanWithTesseract = async (
         };
 
     } catch (error) {
+        const processingTime = Date.now() - startTime;
         console.error('[Tesseract] OCR Error:', error);
-        throw new Error(`Tesseract OCR failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+        // Improved error message
+        let errorMessage = 'Unknown error';
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else if (error) {
+            errorMessage = String(error);
+        }
+
+        console.error('[Tesseract] Error details:', {
+            type: typeof error,
+            message: errorMessage,
+            stack: error instanceof Error ? error.stack : undefined
+        });
+
+        throw new Error(`Tesseract OCR failed: ${errorMessage}`);
+    }
+};
+
     }
 };
 
