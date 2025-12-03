@@ -40,8 +40,8 @@ interface SettingsSidebarProps {
     onRestoreZip: (file: File) => void;
     clearHistory: () => void;
     isExporting?: boolean;
-    tesseractTestMode: boolean;
-    setTesseractTestMode: (value: boolean) => void;
+    ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid';
+    setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'hybrid') => void;
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
@@ -49,7 +49,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip, isExporting, tesseractTestMode, setTesseractTestMode
+    onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -503,29 +503,30 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
 
                         <hr className="border-slate-100 dark:border-slate-800" />
 
-                        {/* 9. Tesseract.js Test Mode */}
+                        {/* 9. OCR Method Selection */}
                         <div>
-                            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Experiments</h3>
+                            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">Offline OCR</h3>
                             <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="text-2xl">🧪</div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className="text-2xl">🤖</div>
                                         <div>
-                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Tesseract.js OCR</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                                Offline Visitenkarten-Scan testen
-                                            </p>
+                                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">OCR Methode</p>
                                         </div>
                                     </div>
-                                    <label className="relative inline-flex items-center cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            className="sr-only peer"
-                                            checked={tesseractTestMode}
-                                            onChange={(e) => setTesseractTestMode(e.target.checked)}
-                                        />
-                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-600"></div>
-                                    </label>
+                                    <select
+                                        value={ocrMethod}
+                                        onChange={(e) => setOcrMethod(e.target.value as 'auto' | 'tesseract' | 'gemini' | 'hybrid')}
+                                        className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                    >
+                                        <option value="auto">🤖 Auto (Offline-First)</option>
+                                        <option value="tesseract">🧪 Tesseract (Offline)</option>
+                                        <option value="gemini">✨ Gemini/LLM (Online)</option>
+                                        <option value="hybrid">⚡ Hybrid (Beide)</option>
+                                    </select>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                                        Auto nutzt primär Tesseract (offline), Gemini als optionale Verbesserung wenn API Key vorhanden
+                                    </p>
                                 </div>
                             </div>
                         </div>

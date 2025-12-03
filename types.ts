@@ -73,5 +73,5 @@ export interface Note {
 }
 
 export interface Settings {
-  tesseractTestMode?: boolean; // Feature-flag for Tesseract.js offline OCR testing
+  ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'hybrid';
 }

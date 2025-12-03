@@ -40,7 +40,6 @@ import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
 import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
 import { RegexDebugger } from './components/RegexDebugger';
-import { TesseractTestModal } from './components/TesseractTestModal';
 
 
 
@@ -71,14 +70,13 @@ const App: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
   const [failedScansCount, setFailedScansCount] = useState(0);
-  const [isTesseractTestOpen, setIsTesseractTestOpen] = useState(false);
 
 
 
   // Config State
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
-  const [tesseractTestMode, setTesseractTestMode] = useState(false); // Feature-flag for Tesseract testing
+  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'hybrid'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, or hybrid
 
 
 
@@ -166,8 +164,8 @@ const App: React.FC = () => {
     const savedDark = localStorage.getItem('vcard_dark_mode');
     if (savedDark) setIsDarkMode(JSON.parse(savedDark));
 
-    const savedTesseractMode = localStorage.getItem('vcard_tesseract_test_mode');
-    if (savedTesseractMode) setTesseractTestMode(JSON.parse(savedTesseractMode));
+    const savedOcrMethod = localStorage.getItem('vcard_ocr_method');
+    if (savedOcrMethod) setOcrMethod(savedOcrMethod as 'auto' | 'tesseract' | 'gemini' | 'hybrid');
   }, []);
 
   // Save Settings
@@ -180,8 +178,8 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('vcard_lang', lang);
     localStorage.setItem('vcard_dark_mode', JSON.stringify(isDarkMode));
-    localStorage.setItem('vcard_tesseract_test_mode', JSON.stringify(tesseractTestMode));
-  }, [lang, isDarkMode, tesseractTestMode]);
+    localStorage.setItem('vcard_ocr_method', ocrMethod);
+  }, [lang, isDarkMode, ocrMethod]);
 
 
 
@@ -994,8 +992,8 @@ const App: React.FC = () => {
         onRestoreZip={handleRestoreZip}
         isExporting={isExporting}
         clearHistory={clearHistory}
-        tesseractTestMode={tesseractTestMode}
-        setTesseractTestMode={setTesseractTestMode}
+        ocrMethod={ocrMethod}
+        setOcrMethod={setOcrMethod}
       />
 
       <BatchUploadModal
@@ -1108,16 +1106,6 @@ const App: React.FC = () => {
       />
 
 
-      {/* Tesseract Test Modal - only visible when feature flag is enabled */}
-      {tesseractTestMode && (
-        <TesseractTestModal
-          isOpen={isTesseractTestOpen}
-          onClose={() => setIsTesseractTestOpen(false)}
-          apiKey={getKeyToUse() || ''}
-          lang={lang}
-          llmConfig={llmConfig}
-        />
-      )}
       <HelpModal
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
@@ -1256,20 +1244,6 @@ const App: React.FC = () => {
                 {t.settings}
               </span>
             </button>
-
-            {/* Tesseract Test Button - only visible when feature flag is active */}
-            {tesseractTestMode && (
-              <button
-                onClick={() => setIsTesseractTestOpen(true)}
-                className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition-colors relative group border-2 border-purple-200 dark:border-purple-800"
-                title="Tesseract OCR Test"
-              >
-                🧪
-                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-purple-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                  Tesseract Test
-                </span>
-              </button>
-            )}
 
             <Toaster position="bottom-center" richColors />
             <button
