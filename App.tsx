@@ -732,6 +732,56 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAIEnhance = async () => {
+    if (!currentImages || currentImages.length === 0) {
+      toast.error('Keine Bilder vorhanden zum Verbessern.');
+      return;
+    }
+
+    // Check for API key
+    const apiKeyToUse = getKeyToUse();
+    if (!apiKeyToUse && llmConfig.provider !== 'custom') {
+      toast.error('API Key erforderlich für AI-Verbesserung. Bitte in den Einstellungen konfigurieren.');
+      setIsSettingsOpen(true);
+      return;
+    }
+
+    setIsOptimizing(true);
+    setError(null);
+
+    try {
+      // Prepare images for AI
+      const imageInputs = currentImages.map((img) => {
+        const parts = img.split(',');
+        const mime = parts[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+        return {
+          mimeType: mime,
+          base64: parts[1]
+        };
+      });
+
+      console.log('[AI Enhance] Re-scanning with Gemini...');
+      const enhancedVCard = await scanBusinessCard(
+        imageInputs,
+        llmConfig.provider,
+        apiKeyToUse,
+        lang,
+        llmConfig,
+        'vision'
+      );
+
+      setVcardString(enhancedVCard);
+      setBackupVCard(vcardString); // Save current as backup for undo
+      toast.success('✨ Mit AI verbessert!');
+    } catch (err) {
+      console.error('[AI Enhance] Error:', err);
+      setError('AI-Verbesserung fehlgeschlagen: ' + (err as Error).message);
+      toast.error('AI-Verbesserung fehlgeschlagen.');
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   const handleImageDrop = (file: File) => {
     // Tesseract and Auto mode work without API key (offline-first)
     if (ocrMethod === 'tesseract' || ocrMethod === 'auto' || ocrMethod === 'hybrid') {
@@ -1377,15 +1427,14 @@ const App: React.FC = () => {
               images={currentImages}
               onSave={handleManualSave}
               onDownload={handleDownload}
+              onAIEnhance={handleAIEnhance}
               onViewNotes={() => {
                 if (currentHistoryId) {
                   setNotesFilterId(currentHistoryId);
                   setIsNotesOpen(true);
                 } else {
                   // Fallback if no ID (e.g. unsaved manual entry)
-                  // Maybe just open notes without filter?
-                  setNotesFilterId(null);
-                  setIsNotesOpen(true);
+                  toast.error(t.noteSaveFirst);
                 }
               }}
             />

@@ -15,13 +15,14 @@ interface PreviewCardProps {
   onSave: () => void;
   onDownload: () => void;
   onViewNotes?: () => void;
+  onAIEnhance?: () => void; // AI enhancement for offline scans
   lang: Language;
   images?: string[];
   token?: string; // Added token prop
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, lang, images, token
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -121,6 +122,18 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
           >
             <Save size={18} />
           </button>
+          {onAIEnhance && images && images.length > 0 && (
+            <button
+              onClick={onAIEnhance}
+              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors relative group"
+              title="Mit AI verbessern"
+            >
+              <span className="text-lg">✨</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                Mit AI verbessern
+              </span>
+            </button>
+          )}
           <button
             onClick={handleShare}
             className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
