@@ -71,3 +71,7 @@ export interface Note {
   location?: string;
   tags?: string[];
 }
+
+export interface Settings {
+  tesseractTestMode?: boolean; // Feature-flag for Tesseract.js offline OCR testing
+}
