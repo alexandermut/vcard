@@ -5,6 +5,7 @@ import { scanBusinessCard } from '../services/aiService';
 import type { Language } from '../types';
 import type { LLMConfig } from '../hooks/useLLMConfig';
 import { parseVCardString } from '../utils/vcardUtils';
+import { parseImpressumToVCard } from '../utils/regexParser';
 
 interface TesseractTestModalProps {
     isOpen: boolean;
@@ -147,15 +148,20 @@ export const TesseractTestModal: React.FC<TesseractTestModalProps> = ({
                             (progress) => setTesseractProgress(progress)
                         );
 
-                        // For now, just return raw OCR text
-                        // TODO: Integrate with your regexParser for structured extraction
+                        // Parse OCR text through regex parser to extract structured data
+                        console.log('[Tesseract Test] Parsing OCR text through regexParser...');
+                        const vcard = parseImpressumToVCard(result.text);
+                        console.log('[Tesseract Test] Parser completed, vCard:', vcard);
+
                         return {
                             method: 'tesseract' as const,
                             text: result.text,
+                            vcard,
                             processingTime: result.processingTime,
                             confidence: result.confidence,
-                            fieldsExtracted: { name: false, company: false, phone: false, email: false, address: false },
+                            fieldsExtracted: analyzeFields(vcard),
                         };
+
                     } catch (error) {
                         return {
                             method: 'tesseract' as const,
@@ -349,13 +355,12 @@ export const TesseractTestModal: React.FC<TesseractTestModalProps> = ({
                                             <div className="space-y-3 mb-4">
                                                 <MetricCard icon={<Clock />} label="Zeit" value={`${tesseractResult?.processingTime}ms`} />
                                                 <MetricCard icon={<Zap />} label="OCR Confidence" value={`${tesseractResult?.confidence?.toFixed(1)}%`} />
-                                                <div className="bg-amber-100 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm text-amber-800 dark:text-amber-200">
-                                                    ⚠️ Parser Integration ausstehend (rohe OCR-Ausgabe)
-                                                </div>
+                                                <MetricCard icon={<CheckCircle2 />} label="Genauigkeit" value={`${getAccuracyScore(tesseractResult?.fieldsExtracted || {} as any)}%`} />
+                                                <FieldsGrid fields={tesseractResult?.fieldsExtracted || {} as any} />
                                             </div>
                                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg">
                                                 <p className="text-xs font-mono text-slate-600 dark:text-slate-400 whitespace-pre-wrap max-h-64 overflow-y-auto">
-                                                    {tesseractResult?.text || 'Kein Text erkannt'}
+                                                    {tesseractResult?.vcard || tesseractResult?.text || 'Kein Text erkannt'}
                                                 </p>
                                             </div>
                                         </>
