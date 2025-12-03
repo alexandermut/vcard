@@ -677,7 +677,13 @@ const App: React.FC = () => {
   };
 
   const handleOpenScan = () => {
-    // Allow scan if Google key OR custom LLM is configured
+    // Tesseract and Auto mode work without API key (offline-first)
+    if (ocrMethod === 'tesseract' || ocrMethod === 'auto' || ocrMethod === 'hybrid') {
+      setIsScanOpen(true);
+      return;
+    }
+
+    // Gemini mode requires API key
     const hasGoogleKey = getKeyToUse() || hasSystemKey;
     const hasCustomLLM = llmConfig.provider === 'custom' && llmConfig.customBaseUrl && llmConfig.customModel;
 
@@ -690,6 +696,13 @@ const App: React.FC = () => {
   };
 
   const handleOpenBatchUpload = () => {
+    // Tesseract and Auto mode work without API key (offline-first)
+    if (ocrMethod === 'tesseract' || ocrMethod === 'auto' || ocrMethod === 'hybrid') {
+      setIsBatchUploadOpen(true);
+      return;
+    }
+
+    // Gemini mode requires API key
     const hasGoogleKey = getKeyToUse() || hasSystemKey;
     const hasCustomLLM = llmConfig.provider === 'custom' && llmConfig.customBaseUrl && llmConfig.customModel;
 
@@ -709,7 +722,14 @@ const App: React.FC = () => {
   };
 
   const handleImageDrop = (file: File) => {
-    // Allow scan if Google key OR custom LLM is configured
+    // Tesseract and Auto mode work without API key (offline-first)
+    if (ocrMethod === 'tesseract' || ocrMethod === 'auto' || ocrMethod === 'hybrid') {
+      setDroppedFile(file);
+      setIsScanOpen(true);
+      return;
+    }
+
+    // Gemini mode requires API key
     const hasGoogleKey = getKeyToUse() || hasSystemKey;
     const hasCustomLLM = llmConfig.provider === 'custom' && llmConfig.customBaseUrl && llmConfig.customModel;
 
