@@ -4,6 +4,7 @@ import { preprocessImage } from '../utils/tesseractPreprocessing';
 
 
 let tesseractWorker: Worker | null = null;
+let currentLanguage: Language | null = null;
 
 export interface TesseractResult {
     text: string;
@@ -13,11 +14,20 @@ export interface TesseractResult {
 
 /**
  * Initialize Tesseract.js worker with German or English language data
+ * FIX: Now properly handles language switching
  */
 export const initializeTesseract = async (lang: Language): Promise<Worker> => {
-    if (tesseractWorker) {
-        // Re-use existing worker if language matches
+    // Check if worker exists AND language matches
+    if (tesseractWorker && currentLanguage === lang) {
+        console.log(`[Tesseract] Reusing existing worker (${lang})`);
         return tesseractWorker;
+    }
+
+    // If language changed, terminate old worker
+    if (tesseractWorker && currentLanguage !== lang) {
+        console.log(`[Tesseract] Language changed from ${currentLanguage} to ${lang}, terminating old worker`);
+        await tesseractWorker.terminate();
+        tesseractWorker = null;
     }
 
     const tesseractLang = lang === 'de' ? 'deu' : 'eng';
@@ -40,6 +50,7 @@ export const initializeTesseract = async (lang: Language): Promise<Worker> => {
     });
 
     tesseractWorker = worker;
+    currentLanguage = lang;
     return worker;
 };
 
@@ -50,6 +61,7 @@ export const terminateTesseract = async (): Promise<void> => {
     if (tesseractWorker) {
         await tesseractWorker.terminate();
         tesseractWorker = null;
+        currentLanguage = null;
         console.log('[Tesseract] Worker terminated');
     }
 };

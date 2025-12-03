@@ -73,49 +73,70 @@ export const TesseractTestModal: React.FC<TesseractTestModalProps> = ({
     const handleRunTest = async () => {
         if (!testImage) return;
 
-        setIsProcessing(true);
-        setGeminiResult(null);
+        // FIX: Validate API key before running test (for non-custom LLM users)
+        if (!apiKey && llmConfig.provider !== 'custom') {
+            setGeminiResult({
+                method: 'gemini',
+                text: '',
+                processingTime: 0,
+                fieldsExtracted: { name: false, company: false, phone: false, email: false, address: false },
+                error: 'Missing API Key - please configure in Settings',
+            });
+            // Still run Tesseract test
+            setIsProcessing(true);
+        } else {
+            setIsProcessing(true);
+            setGeminiResult(null);
+        }
+
         setTesseractResult(null);
         setTesseractProgress(0);
 
-        // Extract base64 data
-        const base64Data = testImage.split(',')[1];
-        const mimeType = testImage.split(';')[0].split(':')[1];
+        // FIX: Safe base64 extraction with fallbacks
+        const parts = testImage.split(',');
+        const base64Data = parts.length > 1 ? parts[1] : testImage;
+        const mimeType = testImage.startsWith('data:') ? testImage.split(';')[0].split(':')[1] : 'image/png';
 
         try {
-            // Run both in parallel
-            const [geminiRes, tesseractRes] = await Promise.allSettled([
-                // Gemini API
-                (async () => {
-                    const startTime = Date.now();
-                    try {
-                        const vcard = await scanBusinessCard(
-                            [{ base64: base64Data, mimeType }],
-                            'google',
-                            apiKey,
-                            lang,
-                            llmConfig
-                        );
-                        const processingTime = Date.now() - startTime;
-                        return {
-                            method: 'gemini' as const,
-                            text: vcard,
-                            vcard,
-                            processingTime,
-                            fieldsExtracted: analyzeFields(vcard),
-                        };
-                    } catch (error) {
-                        return {
-                            method: 'gemini' as const,
-                            text: '',
-                            processingTime: Date.now() - startTime,
-                            fieldsExtracted: { name: false, company: false, phone: false, email: false, address: false },
-                            error: (error as Error).message,
-                        };
-                    }
-                })(),
+            // Run both in parallel (or skip Gemini if no API key)
+            const promises: Promise<TestResult>[] = [];
 
-                // Tesseract.js
+            // Only run Gemini if API key is present OR using custom LLM
+            if (apiKey || llmConfig.provider === 'custom') {
+                promises.push(
+                    (async () => {
+                        const startTime = Date.now();
+                        try {
+                            const vcard = await scanBusinessCard(
+                                [{ base64: base64Data, mimeType }],
+                                llmConfig.provider, // FIX: Use configured provider instead of hardcoded 'google'
+                                apiKey,
+                                lang,
+                                llmConfig
+                            );
+                            const processingTime = Date.now() - startTime;
+                            return {
+                                method: 'gemini' as const,
+                                text: vcard,
+                                vcard,
+                                processingTime,
+                                fieldsExtracted: analyzeFields(vcard),
+                            };
+                        } catch (error) {
+                            return {
+                                method: 'gemini' as const,
+                                text: '',
+                                processingTime: Date.now() - startTime,
+                                fieldsExtracted: { name: false, company: false, phone: false, email: false, address: false },
+                                error: (error as Error).message,
+                            };
+                        }
+                    })()
+                );
+            }
+
+            // Always run Tesseract
+            promises.push(
                 (async () => {
                     const startTime = Date.now();
                     try {
@@ -144,16 +165,20 @@ export const TesseractTestModal: React.FC<TesseractTestModalProps> = ({
                             error: (error as Error).message,
                         };
                     }
-                })(),
-            ]);
+                })()
+            );
 
-            if (geminiRes.status === 'fulfilled') {
-                setGeminiResult(geminiRes.value);
-            }
+            const results = await Promise.allSettled(promises);
 
-            if (tesseractRes.status === 'fulfilled') {
-                setTesseractResult(tesseractRes.value);
-            }
+            results.forEach((res) => {
+                if (res.status === 'fulfilled') {
+                    if (res.value.method === 'gemini') {
+                        setGeminiResult(res.value);
+                    } else {
+                        setTesseractResult(res.value);
+                    }
+                }
+            });
         } finally {
             setIsProcessing(false);
             setTesseractProgress(0);
@@ -383,8 +408,8 @@ const FieldsGrid: React.FC<{ fields: TestResult['fieldsExtracted'] }> = ({ field
             <div
                 key={key}
                 className={`flex items-center gap-2 p-2 rounded-lg text-sm ${found
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                    ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
                     }`}
             >
                 {found ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
