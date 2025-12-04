@@ -28,6 +28,18 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
         scrollToBottom();
     }, [messages]);
 
+    // Lock body scroll when sidebar is open
+    useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!input.trim() || isLoading) return;

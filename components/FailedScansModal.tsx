@@ -30,7 +30,13 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
     useEffect(() => {
         if (isOpen) {
             loadScans();
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen]);
 
     const handleRetry = async (scan: FailedScan) => {

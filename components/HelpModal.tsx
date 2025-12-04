@@ -14,6 +14,18 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, lang }) =
 
     const t = translations[lang];
 
+    // Lock body scroll
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     const sections = [
         {
             title: t.faqSectionScan,

@@ -26,7 +26,13 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
     useEffect(() => {
         if (isOpen) {
             loadNotes();
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen, filterContactId]);
 
     const loadNotes = async () => {

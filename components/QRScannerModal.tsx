@@ -23,15 +23,18 @@ export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose,
         if (!isOpen) {
             stopCamera();
             setError(null); // Reset error when closing
+            document.body.style.overflow = '';
             return;
         }
 
         // Reset error when opening
         setError(null);
         startCamera();
+        document.body.style.overflow = 'hidden';
 
         return () => {
             stopCamera();
+            document.body.style.overflow = '';
         };
     }, [isOpen]);
 

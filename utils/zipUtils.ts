@@ -93,19 +93,27 @@ export const restoreBackupZip = async (file: File): Promise<number> => {
                 // 2. Try to load images from ZIP folder (New ID-based Backup)
                 if (contact.imageRefs && Array.isArray(contact.imageRefs)) {
                     const zipImages = await Promise.all(contact.imageRefs.map(async (ref: string) => {
-                        // Try exact match first
-                        let imgFile = loadedZip.file(`images/${ref}`);
+                        try {
+                            // Try exact match first
+                            let imgFile = loadedZip.file(`images/${ref}`);
 
-                        // If not found, try to find by ID prefix (robustness)
-                        if (!imgFile) {
-                            const id = contact.id;
-                            // Look for files starting with ID in images/
-                            const match = Object.values(files).find(f => f.name.includes(`images/${id}_`));
-                            if (match) imgFile = match;
-                        }
+                            // If not found, try to find by ID prefix (robustness)
+                            if (!imgFile) {
+                                const id = contact.id;
+                                // Look for files starting with ID in images/
+                                // We try to match the suffix if possible to avoid swapping front/back
+                                const suffix = ref.split('_').pop(); // e.g. "front.jpg" or "front"
+                                const match = Object.values(files).find(f => {
+                                    return f.name.includes(`images/${id}_`) && (suffix ? f.name.includes(suffix) : true);
+                                });
+                                if (match) imgFile = match;
+                            }
 
-                        if (imgFile) {
-                            return await imgFile.async('blob');
+                            if (imgFile) {
+                                return await imgFile.async('blob');
+                            }
+                        } catch (e) {
+                            console.warn(`Failed to load image ${ref} from ZIP`, e);
                         }
                         return null;
                     }));

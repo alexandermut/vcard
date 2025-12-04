@@ -13,7 +13,13 @@ export const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, initial
     useEffect(() => {
         if (isOpen) {
             setActiveTab(initialTab);
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen, initialTab]);
 
     if (!isOpen) return null;

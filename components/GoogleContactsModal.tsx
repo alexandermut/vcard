@@ -26,12 +26,20 @@ export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen
 
     // Initial load & Sync
     useEffect(() => {
-        if (isOpen && isAuthenticated) {
-            // Auto-start sync if idle and few contacts
-            if (syncStatus === 'idle' && syncTotal < 10) {
-                startSync();
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+            if (isAuthenticated) {
+                // Auto-start sync if idle and few contacts
+                if (syncStatus === 'idle' && syncTotal < 10) {
+                    startSync();
+                }
             }
+        } else {
+            document.body.style.overflow = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen, isAuthenticated]);
 
     // Refresh list when switching to Import tab or when sync completes

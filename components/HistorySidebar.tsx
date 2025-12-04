@@ -345,6 +345,18 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     return () => clearTimeout(timer);
   }, [searchQuery, onSearch]);
 
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const handleExportCSV = () => {
     const csv = generateCSV(history);
     downloadCSV(csv, `${getTimestamp()}_vcard_export.csv`);

@@ -14,6 +14,27 @@ interface DuplicateFinderModalProps {
     onUpdateHistory: (newHistory: HistoryItem[]) => void;
 }
 
+// Helper Component for Safe Image Rendering
+const ContactImage = ({ src, alt, className }: { src: string | Blob, alt: string, className?: string }) => {
+    const [url, setUrl] = useState<string>('');
+
+    useEffect(() => {
+        if (!src) return;
+
+        if (typeof src === 'string') {
+            setUrl(src);
+        } else if (src instanceof Blob) {
+            const newUrl = URL.createObjectURL(src);
+            setUrl(newUrl);
+            return () => URL.revokeObjectURL(newUrl);
+        }
+    }, [src]);
+
+    if (!url) return <User size={24} className="md:w-8 md:h-8" />;
+
+    return <img src={url} alt={alt} className={className} />;
+};
+
 export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOpen, onClose, history, onUpdateHistory }) => {
     const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
     const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
@@ -68,10 +89,9 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     // Merge: Use new master's data, but override with dirty fields from prev
                     const newData = { ...parsed };
                     dirtyFields.forEach(field => {
-                        // @ts-ignore
                         if (prev[field] !== undefined) {
-                            // @ts-ignore
-                            newData[field] = prev[field];
+                            // We know field is keyof VCardData, so this assignment is safe
+                            (newData as any)[field] = prev[field];
                         }
                     });
                     return newData;
@@ -524,17 +544,17 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
                     <div className="grid grid-cols-[1fr_32px_1fr] md:grid-cols-[1fr_40px_1fr] gap-1 md:gap-2 mb-6 items-end">
                         <div
                             onClick={() => setMasterSide('left')}
-                            className={`cursor - pointer p - 2 md: p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 2 md: gap - 3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
+                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'left' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
                         >
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c1.images && c1.images.length > 0 ? (
-                                    <img src={c1.images[0]} alt="Profile" className="w-full h-full object-cover" />
+                                    <ContactImage src={c1.images[0]} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <User size={24} className="md:w-8 md:h-8" />
                                 )}
                             </div>
                             <div className="text-center w-full">
-                                <span className={`text - [10px] md: text - xs font - bold uppercase px - 2 py - 1 rounded - full block w - full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
+                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'left' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
                                     {masterSide === 'left' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>
@@ -546,23 +566,22 @@ export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOp
 
                         <div
                             onClick={() => setMasterSide('right')}
-                            className={`cursor - pointer p - 2 md: p - 4 rounded - xl border - 2 transition - all flex flex - col items - center gap - 2 md: gap - 3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
+                            className={`cursor-pointer p-2 md:p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 md:gap-3 ${masterSide === 'right' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800'} `}
                         >
                             <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-400 overflow-hidden">
                                 {c2.images && c2.images.length > 0 ? (
-                                    <img src={c2.images[0]} alt="Profile" className="w-full h-full object-cover" />
+                                    <ContactImage src={c2.images[0]} alt="Profile" className="w-full h-full object-cover" />
                                 ) : (
                                     <User size={24} className="md:w-8 md:h-8" />
                                 )}
                             </div>
                             <div className="text-center w-full">
-                                <span className={`text - [10px] md: text - xs font - bold uppercase px - 2 py - 1 rounded - full block w - full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
+                                <span className={`text-[10px] md:text-xs font-bold uppercase px-2 py-1 rounded-full block w-full truncate ${masterSide === 'right' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-400'} `}>
                                     {masterSide === 'right' ? 'Master (Bearbeitbar)' : 'Duplikat'}
                                 </span>
                             </div>
                         </div>
                     </div>
-
                     {/* Single Value Fields */}
                     {renderSingleField("Name", User, d1.fn, d2.fn, 'fn', 'text-indigo-500')}
                     {renderSingleField("Titel", Award, d1.title, d2.title, 'title', 'text-purple-500')}

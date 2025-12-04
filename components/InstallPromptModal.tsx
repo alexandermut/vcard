@@ -13,6 +13,18 @@ export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ isOpen, 
 
     const isGerman = lang === 'de';
 
+    // Lock body scroll
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-6 relative animate-in slide-in-from-bottom-10 duration-300">

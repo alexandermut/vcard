@@ -62,7 +62,13 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     useEffect(() => {
         if (isOpen) {
             checkSystemKey();
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
         }
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen]);
 
     const checkSystemKey = async () => {

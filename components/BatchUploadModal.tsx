@@ -87,6 +87,18 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
     const t = translations[lang];
 
+    // Lock body scroll
+    React.useEffect(() => {
+        if (isOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const processFiles = async (files: FileList | null) => {

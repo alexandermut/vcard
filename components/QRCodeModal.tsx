@@ -12,18 +12,26 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({ isOpen, onClose, vcard
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
 
   useEffect(() => {
-    if (isOpen && vcardString) {
-      QRCode.toDataURL(vcardString, {
-        width: 300,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#ffffff'
-        }
-      })
-        .then(url => setQrDataUrl(url))
-        .catch(err => console.error(err));
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      if (vcardString) {
+        QRCode.toDataURL(vcardString, {
+          width: 300,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#ffffff'
+          }
+        })
+          .then(url => setQrDataUrl(url))
+          .catch(err => console.error(err));
+      }
+    } else {
+      document.body.style.overflow = '';
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, vcardString]);
 
   if (!isOpen) return null;

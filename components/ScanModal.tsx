@@ -74,15 +74,22 @@ export const ScanModal: React.FC<ScanModalProps> = ({
 
 
   useEffect(() => {
-    if (isOpen && initialFile) {
-      processFile(initialFile, setFrontImage);
-    } else if (!isOpen) {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      if (initialFile) {
+        processFile(initialFile, setFrontImage);
+      }
+    } else {
+      document.body.style.overflow = '';
       // Reset on close
       setFrontImage(null);
       setBackImage(null);
       setError(null);
       setScanMode('vision');
     }
+    return () => {
+      document.body.style.overflow = '';
+    };
   }, [isOpen, initialFile]);
 
   useEffect(() => {
