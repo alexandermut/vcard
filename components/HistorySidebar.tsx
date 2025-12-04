@@ -628,214 +628,214 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             <option value="name-desc">Name (Z-A)</option>
           </select>
         </div>
-      </div>
 
-      {/* Search Bar */}
-      <div className="p-4 pb-0">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder={t.searchPlaceholder || "Search..."}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
-          />
-        </div>
-      </div>
 
-      <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
-        {history.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
-            <HistoryIcon size={48} className="mb-4 opacity-20" />
-            <p>{t.noHistory}</p>
-            <p className="text-xs mt-2">{t.noHistoryHint}</p>
+        {/* Search Bar */}
+        <div className="p-4 pb-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder={t.searchPlaceholder || "Search..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+            />
           </div>
-        ) : (
-          isOpen && (
-            <LocalErrorBoundary>
-              {itemsWithImageURLs.length < 50 ? (
-                // STANDARD LIST (No Virtualization) - Better for small lists & stability
-                <div className="h-full overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
-                  {itemsWithImageURLs.map((item, index) => (
-                    <HistoryRow
-                      key={item.id}
-                      index={index}
-                      style={{}}
-                      data={{
-                        items: itemsWithImageURLs,
-                        viewMode,
-                        searchQuery,
-                        onLoad,
-                        onClose,
-                        onDelete,
-                        handleDownloadSingle,
-                        handleSaveToGoogle,
-                        t,
-                        hasMore: false, // No loader needed for simple list usually, or handle differently
-                        isSelectionMode,
-                        selectedIds,
-                        onToggleSelection: toggleSelection
-                      }}
-                    />
-                  ))}
-                  {hasMore && (
-                    <div className="flex justify-center p-4">
-                      <button onClick={onLoadMore} className="text-blue-600 text-sm hover:underline">
-                        {t.loadMore}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                // VIRTUALIZED LIST (For performance with many items)
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <FixedSizeList
-                      height={height}
-                      width={width}
-                      itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                      itemSize={viewMode === 'grid' ? 176 : 110}
-                      itemData={{
-                        items: itemsWithImageURLs,
-                        viewMode,
-                        searchQuery,
-                        onLoad,
-                        onClose,
-                        onDelete,
-                        handleDownloadSingle,
-                        handleSaveToGoogle,
-                        t,
-                        hasMore,
-                        isSelectionMode,
-                        selectedIds,
-                        onToggleSelection: toggleSelection
-                      }}
-                      onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                        const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                        if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                          onLoadMore();
-                        }
-                      }}
-                    >
-                      {HistoryRow}
-                    </FixedSizeList>
-                  )}
-                </AutoSizer>
-              )}
-            </LocalErrorBoundary>
-          )
-        )}
-      </div>
+        </div>
 
-      {/* Footer Actions */}
-      {history.length > 0 && (
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
-
-          {/* Bulk Actions (Selection Mode) */}
-          {isSelectionMode ? (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-400 px-1">
-                <span>{selectedIds.size} ausgewählt</span>
-                <button onClick={handleSelectAll} className="text-blue-600 hover:underline">
-                  {selectedIds.size === history.length ? 'Keine' : 'Alle'}
-                </button>
-              </div>
-              <button
-                onClick={handleBulkEnhanceClick}
-                disabled={selectedIds.size === 0}
-                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
-              >
-                <div className="text-lg">✨</div>
-                {selectedIds.size > 0 ? `${selectedIds.size} Verbessern` : 'Verbessern'}
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm(`${selectedIds.size} Einträge wirklich löschen?`)) {
-                    selectedIds.forEach(id => onDelete(id));
-                    setSelectedIds(new Set());
-                  }
-                }}
-                disabled={selectedIds.size === 0}
-                className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-              >
-                <Trash2 size={14} /> Löschen
-              </button>
+        <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
+          {history.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
+              <HistoryIcon size={48} className="mb-4 opacity-20" />
+              <p>{t.noHistory}</p>
+              <p className="text-xs mt-2">{t.noHistoryHint}</p>
             </div>
           ) : (
-            <>
-              {/* Duplicate Finder Button */}
-              <button
-                onClick={() => setShowDuplicateFinder(true)}
-                className="w-full py-2 px-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-              >
-                <Merge size={14} /> Dubletten suchen & bereinigen
-              </button>
-
-              <div className="grid grid-cols-4 gap-2">
-                <button
-                  onClick={handleExportAllVCF}
-                  className="flex flex-col items-center justify-center gap-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 rounded-lg text-[10px] font-medium transition-colors"
-                >
-                  <Contact size={16} />
-                  {t.vcfBackup}
-                </button>
-                <button
-                  onClick={handleExportCSV}
-                  className="flex flex-col items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-                >
-                  <FileText size={16} />
-                  {t.csvExport}
-                </button>
-                <button
-                  onClick={handleExportJSON}
-                  className="flex flex-col items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-                >
-                  <FileText size={16} />
-                  {t.jsonExport}
-                </button>
-                <button
-                  onClick={handleExportImages}
-                  className="flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-                >
-                  <ImageIcon size={16} />
-                  {t.imgExport}
-                </button>
-              </div>
-
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  accept=".json"
-                  className="hidden"
-                />
-                <button
-                  onClick={handleRestoreClick}
-                  className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors"
-                  title={t.restoreBackup || "Restore Backup"}
-                >
-                  <Upload size={14} />
-                  <span className="truncate">{t.restoreBackup || "Restore"}</span>
-                </button>
-
-                <button
-                  onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
-                  className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
-                  title={t.clearHistory}
-                >
-                  <Trash2 size={14} />
-                  <span className="truncate">{t.clearHistory}</span>
-                </button>
-              </div>
-            </>
+            isOpen && (
+              <LocalErrorBoundary>
+                {itemsWithImageURLs.length < 50 ? (
+                  // STANDARD LIST (No Virtualization) - Better for small lists & stability
+                  <div className="h-full overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
+                    {itemsWithImageURLs.map((item, index) => (
+                      <HistoryRow
+                        key={item.id}
+                        index={index}
+                        style={{}}
+                        data={{
+                          items: itemsWithImageURLs,
+                          viewMode,
+                          searchQuery,
+                          onLoad,
+                          onClose,
+                          onDelete,
+                          handleDownloadSingle,
+                          handleSaveToGoogle,
+                          t,
+                          hasMore: false, // No loader needed for simple list usually, or handle differently
+                          isSelectionMode,
+                          selectedIds,
+                          onToggleSelection: toggleSelection
+                        }}
+                      />
+                    ))}
+                    {hasMore && (
+                      <div className="flex justify-center p-4">
+                        <button onClick={onLoadMore} className="text-blue-600 text-sm hover:underline">
+                          {t.loadMore}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // VIRTUALIZED LIST (For performance with many items)
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <FixedSizeList
+                        height={height}
+                        width={width}
+                        itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
+                        itemSize={viewMode === 'grid' ? 176 : 110}
+                        itemData={{
+                          items: itemsWithImageURLs,
+                          viewMode,
+                          searchQuery,
+                          onLoad,
+                          onClose,
+                          onDelete,
+                          handleDownloadSingle,
+                          handleSaveToGoogle,
+                          t,
+                          hasMore,
+                          isSelectionMode,
+                          selectedIds,
+                          onToggleSelection: toggleSelection
+                        }}
+                        onScroll={({ scrollOffset }: { scrollOffset: number }) => {
+                          const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
+                          if (hasMore && scrollOffset + height >= totalHeight - 200) {
+                            onLoadMore();
+                          }
+                        }}
+                      >
+                        {HistoryRow}
+                      </FixedSizeList>
+                    )}
+                  </AutoSizer>
+                )}
+              </LocalErrorBoundary>
+            )
           )}
         </div>
-      )}
 
-      {/* Load More Button Removed (Infinite Scroll) */}
-    </div>
+        {/* Footer Actions */}
+        {history.length > 0 && (
+          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
+
+            {/* Bulk Actions (Selection Mode) */}
+            {isSelectionMode ? (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-400 px-1">
+                  <span>{selectedIds.size} ausgewählt</span>
+                  <button onClick={handleSelectAll} className="text-blue-600 hover:underline">
+                    {selectedIds.size === history.length ? 'Keine' : 'Alle'}
+                  </button>
+                </div>
+                <button
+                  onClick={handleBulkEnhanceClick}
+                  disabled={selectedIds.size === 0}
+                  className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+                >
+                  <div className="text-lg">✨</div>
+                  {selectedIds.size > 0 ? `${selectedIds.size} Verbessern` : 'Verbessern'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm(`${selectedIds.size} Einträge wirklich löschen?`)) {
+                      selectedIds.forEach(id => onDelete(id));
+                      setSelectedIds(new Set());
+                    }
+                  }}
+                  disabled={selectedIds.size === 0}
+                  className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Trash2 size={14} /> Löschen
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Duplicate Finder Button */}
+                <button
+                  onClick={() => setShowDuplicateFinder(true)}
+                  className="w-full py-2 px-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Merge size={14} /> Dubletten suchen & bereinigen
+                </button>
+
+                <div className="grid grid-cols-4 gap-2">
+                  <button
+                    onClick={handleExportAllVCF}
+                    className="flex flex-col items-center justify-center gap-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 rounded-lg text-[10px] font-medium transition-colors"
+                  >
+                    <Contact size={16} />
+                    {t.vcfBackup}
+                  </button>
+                  <button
+                    onClick={handleExportCSV}
+                    className="flex flex-col items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                  >
+                    <FileText size={16} />
+                    {t.csvExport}
+                  </button>
+                  <button
+                    onClick={handleExportJSON}
+                    className="flex flex-col items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                  >
+                    <FileText size={16} />
+                    {t.jsonExport}
+                  </button>
+                  <button
+                    onClick={handleExportImages}
+                    className="flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                  >
+                    <ImageIcon size={16} />
+                    {t.imgExport}
+                  </button>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".json"
+                    className="hidden"
+                  />
+                  <button
+                    onClick={handleRestoreClick}
+                    className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors"
+                    title={t.restoreBackup || "Restore Backup"}
+                  >
+                    <Upload size={14} />
+                    <span className="truncate">{t.restoreBackup || "Restore"}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
+                    className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
+                    title={t.clearHistory}
+                  >
+                    <Trash2 size={14} />
+                    <span className="truncate">{t.clearHistory}</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* Load More Button Removed (Infinite Scroll) */}
+      </div>
     </>
   );
 };
