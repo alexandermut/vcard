@@ -582,7 +582,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <LocalErrorBoundary>
                 {itemsWithImageURLs.length < 50 ? (
                   // STANDARD LIST (No Virtualization) - Better for small lists & stability
-                  <div className="flex flex-col gap-2">
+                  <div className="h-full overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
                     {itemsWithImageURLs.map((item, index) => (
                       <HistoryRow
                         key={item.id}
