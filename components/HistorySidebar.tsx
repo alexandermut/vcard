@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Calendar, MapPin, Download, Trash2, Clock, Filter, Check, MoreVertical, List as ListIcon, LayoutGrid, Upload, Loader2, Image as ImageIcon, History as HistoryIcon, Contact, FileText, Merge, Users } from 'lucide-react';
-import { FixedSizeList } from 'react-window';
+import * as ReactWindow from 'react-window';
+// @ts-ignore
+const FixedSizeList = ReactWindow.FixedSizeList;
 import AutoSizer from 'react-virtualized-auto-sizer';
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
