@@ -43,6 +43,9 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const { token } = useGoogleContactsAuth();
   const searchWorkerRef = React.useRef<Worker | null>(null);
 
+  // ✅ NEW: Track created Object URLs for cleanup (prevent memory leaks)
+  const objectURLsRef = React.useRef<Set<string>>(new Set());
+
   useEffect(() => {
     // Initialize Worker
     searchWorkerRef.current = new SearchWorker();
@@ -84,6 +87,15 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
     return () => {
       searchWorkerRef.current?.terminate();
+      // ✅ NEW: Cleanup all Object URLs to prevent memory leaks
+      objectURLsRef.current.forEach(url => {
+        try {
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          // Ignore errors for already-revoked URLs
+        }
+      });
+      objectURLsRef.current.clear();
     };
   }, []);
 
@@ -182,8 +194,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       // Combine front and back if multiple
       try {
         // Convert Blob to string URL if needed
-        const img0 = typeof item.images[0] === 'string' ? item.images[0] : URL.createObjectURL(item.images[0]);
-        const img1 = item.images[1] ? (typeof item.images[1] === 'string' ? item.images[1] : URL.createObjectURL(item.images[1])) : undefined;
+        const img0 = getImageURL(item.images[0]);
+        const img1 = item.images[1] ? getImageURL(item.images[1]) : undefined;
         const combinedBlob = await combineImages(img0, img1);
         folder.file(`${baseFilename}.jpg`, combinedBlob);
       } catch (e) {
@@ -221,6 +233,17 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     const seconds = String(date.getSeconds()).padStart(2, '0');
     return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   };
+
+  // ✅ NEW: Helper to get image URL with proper tracking
+  const getImageURL = React.useCallback((img: string | Blob): string => {
+    if (typeof img === 'string') return img;
+
+    // Create Object URL and track it for cleanup
+    const url = URL.createObjectURL(img);
+    objectURLsRef.current.add(url);
+
+    return url;
+  }, []);
 
   // Sort history based on selected sort option
   const sortedHistory = React.useMemo(() => {
@@ -369,7 +392,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                       <div className="h-24 bg-slate-100 dark:bg-slate-800 w-full relative overflow-hidden">
                         {item.images && item.images.length > 0 ? (
                           <img
-                            src={typeof item.images[0] === 'string' ? item.images[0] : URL.createObjectURL(item.images[0])}
+                            src={getImageURL(item.images[0])}
                             alt="Scan"
                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                           />

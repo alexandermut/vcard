@@ -7,6 +7,22 @@ import { scanWithTesseract } from '../services/tesseractService';
 import { parseImpressumToVCard } from '../utils/regexParser';
 import { resizeImage } from '../utils/imageUtils';
 import { addFailedScan } from '../utils/db';
+import { wrap } from 'comlink';
+import type { ImageWorkerAPI } from '../workers/imageWorker';
+
+// ✅ NEW: Initialize image worker once (reuse across scans)
+let imageWorkerInstance: ReturnType<typeof wrap<ImageWorkerAPI>> | null = null;
+
+const getImageWorker = () => {
+  if (!imageWorkerInstance) {
+    const worker = new Worker(
+      new URL('../workers/imageWorker.ts', import.meta.url),
+      { type: 'module' }
+    );
+    imageWorkerInstance = wrap<ImageWorkerAPI>(worker);
+  }
+  return imageWorkerInstance;
+};
 
 export const useScanQueue = (
   apiKey: string,
@@ -45,14 +61,25 @@ export const useScanQueue = (
     let rawImages: string[] = [];
 
     try {
-      // Helper to convert File/String to Base64 (Resized)
+      // ✅ NEW: Use worker for compression (runs off main thread!)
+      const imageWorker = getImageWorker();
+
+      // Helper to convert File/String to Base64 via Worker
       const getBase64 = async (input: string | File): Promise<string> => {
         if (typeof input === 'string') return input;
-        // Resize to max 1024px, 0.8 quality (JPEG)
-        console.time(`resize-${typeof input === 'string' ? 'str' : input.name}`);
-        const res = await resizeImage(input, 1024, 0.8);
-        console.timeEnd(`resize-${typeof input === 'string' ? 'str' : input.name}`);
-        return res;
+
+        console.time(`worker-compress-${input.name}`);
+        try {
+          // Worker compression - no UI freeze!
+          const res = await imageWorker.compressImage(input, 0.3, 800);
+          console.timeEnd(`worker-compress-${input.name}`);
+          return res;
+        } catch (error) {
+          console.warn('Worker compression failed, falling back to main thread:', error);
+          // Fallback to main thread if worker fails
+          const res = await resizeImage(input, 800, 0.7);
+          return res;
+        }
       };
 
       // Load images into memory ONLY NOW

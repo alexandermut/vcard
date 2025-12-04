@@ -320,15 +320,9 @@ export const getHistoryPaged = async (limit: number, lastTimestamp?: number): Pr
     while (cursor && items.length < limit) {
         const item = cursor.value;
 
-        // Convert stored Blobs back to ObjectURLs for display
-        if (item.images && item.images.length > 0) {
-            item.images = item.images.map((img: any) => {
-                if (img instanceof Blob) {
-                    return URL.createObjectURL(img);
-                }
-                return img;
-            });
-        }
+        // ✅ FIXED: Don't create Object URLs here - let components do it on-demand
+        // This prevents memory leaks from unreleased URLs
+        // Components should handle Blob → URL conversion with proper cleanup
 
         items.push(item);
         cursor = await cursor.continue();
@@ -479,13 +473,7 @@ export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
         );
 
         if (allTermsMatch) {
-            // Convert Blobs for display
-            if (item.images && item.images.length > 0) {
-                item.images = item.images.map((img: any) => {
-                    if (img instanceof Blob) return URL.createObjectURL(img);
-                    return img;
-                });
-            }
+            // ✅ FIXED: Don't create Object URLs - components handle it
             uniqueItems.set(item.id, item);
         }
 

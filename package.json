@@ -13,6 +13,8 @@
     "@fontsource/inter": "^5.2.8",
     "@google/genai": "^1.0.0",
     "@react-oauth/google": "^0.12.2",
+    "browser-image-compression": "^2.0.2",
+    "comlink": "^4.4.2",
     "idb": "^8.0.3",
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
