@@ -403,6 +403,56 @@ This file tracks the current development status and planned features.
 
 ---
 
+## 🦀 Future Architecture: Rust & WebAssembly
+**Goal:** Migrate performance-critical and complex logic to Rust (compiled to WebAssembly) for maximum speed, type safety, and stability.
+
+### Why Rust?
+- **Performance:** Near-native speed for image processing and parsing.
+- **Safety:** Memory safety and strict type system prevent runtime crashes.
+- **Portability:** Core logic can be shared between Web, Desktop (Tauri), and Server.
+
+### Hybrid Architecture Concept
+The UI remains in **React/TypeScript** for flexibility and ecosystem access. The "Brain" of the application moves to **Rust/Wasm**.
+
+```mermaid
+graph TD
+    UI[React Frontend] <-->|JSON/Buffers| Bridge[Wasm Bridge]
+    Bridge <-->|Structs| Core[Rust Core Logic]
+    
+    subgraph Rust Core
+        Parser[vCard Parser & Generator]
+        ImgProc[Image Processing (Resize/Crop)]
+        Search[Tantivy Search Engine]
+        NLP[Regex & NLP Logic]
+    end
+```
+
+### Migration Candidates
+
+#### 1. Core Logic (High Priority)
+- **vCard Parser:** Replace `vcardUtils.ts` with a robust Rust parser (using `nom` or custom logic).
+  - *Benefit:* Handles edge cases (RFC 6350) correctly, faster parsing of large files.
+- **Image Processing:** Replace `browser-image-compression` with `image` crate.
+  - *Benefit:* Faster resizing, better quality control, off-main-thread by default.
+- **Regex/NLP:** Move "Intelligent Regex Parser" logic to Rust.
+  - *Benefit:* `regex` crate is extremely fast; complex logic is easier to test and maintain.
+
+#### 2. Search & Storage (Medium Priority)
+- **Search Engine:** Implement `tantivy` (Rust) for full-text search.
+  - *Benefit:* Millisecond search over 100k+ contacts, typo tolerance, complex queries.
+- **Database Layer:** Potential to use SQLite (wasm) or keep IndexedDB but managed via Rust.
+
+#### 3. UI (Low Priority / Out of Scope)
+- **Keep React:** Porting UI to Yew/Leptos is high effort with diminishing returns for this app type.
+
+### Implementation Steps (Draft)
+1.  **Setup:** Initialize Rust project with `wasm-pack`.
+2.  **Bridge:** Define shared types (TS <-> Rust).
+3.  **Prototype:** Port `clean_number` or simple parser function.
+4.  **Migrate:** Move vCard parser logic incrementally.
+
+---
+
 ## � Potential Open Source Libraries
 **Goal:** Evaluate and integrate popular JavaScript libraries to enhance functionality, performance, and code quality.
 

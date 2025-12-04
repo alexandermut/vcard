@@ -542,36 +542,38 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <p className="text-xs mt-2">{t.noHistoryHint}</p>
             </div>
           ) : (
-            <AutoSizer>
-              {({ height, width }) => (
-                <FixedSizeList
-                  height={height}
-                  width={width}
-                  itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                  itemSize={viewMode === 'grid' ? 176 : 110}
-                  itemData={{
-                    items: itemsWithImageURLs,
-                    viewMode,
-                    searchQuery,
-                    onLoad,
-                    onClose,
-                    onDelete,
-                    handleDownloadSingle,
-                    handleSaveToGoogle,
-                    t,
-                    hasMore
-                  }}
-                  onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                    const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                    if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                      onLoadMore();
-                    }
-                  }}
-                >
-                  {HistoryRow}
-                </FixedSizeList>
-              )}
-            </AutoSizer>
+            isOpen && (
+              <AutoSizer>
+                {({ height, width }) => (
+                  <FixedSizeList
+                    height={height}
+                    width={width}
+                    itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
+                    itemSize={viewMode === 'grid' ? 176 : 110}
+                    itemData={{
+                      items: itemsWithImageURLs,
+                      viewMode,
+                      searchQuery,
+                      onLoad,
+                      onClose,
+                      onDelete,
+                      handleDownloadSingle,
+                      handleSaveToGoogle,
+                      t,
+                      hasMore
+                    }}
+                    onScroll={({ scrollOffset }: { scrollOffset: number }) => {
+                      const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
+                      if (hasMore && scrollOffset + height >= totalHeight - 200) {
+                        onLoadMore();
+                      }
+                    }}
+                  >
+                    {HistoryRow}
+                  </FixedSizeList>
+                )}
+              </AutoSizer>
+            )
           )}
         </div>
 
