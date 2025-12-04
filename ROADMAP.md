@@ -60,6 +60,8 @@ This file tracks the current development status and planned features.
 - [x] **Memory Leak Fixes:** Object URL cleanup, proper lifecycle management.
 - [x] **Worker-Based Processing:** Comlink integration for non-blocking UI.
 - [x] **Batch Processing:** Stable handling of 50+ scans without crashes.
+- [x] **History Counter Fix:** Accurate total count from DB (not just loaded items).
+- [x] **Parallel Processing:** p-limit integration for 1-5 concurrent API requests with Settings UI.
 
 ### Export
 - [x] vCard Download (.vcf)
@@ -84,6 +86,8 @@ This file tracks the current development status and planned features.
 - [ ] **Photo Sync:** High-res photo upload & sync.
 
 ### 2. Performance & Stability (Continued)
+- [x] **History Counter:** Fixed pagination vs total count mismatch (2024-12-04)
+- [x] **Parallel Processing:** 1-5 concurrent scans with Settings UI (2024-12-04)
 - [ ] **Lazy Loading:** Optimize `cities.ts` and large dependencies.
 - [ ] **Code Splitting:** Reduce initial bundle size with dynamic imports.
 - [ ] **Service Worker Optimization:** Migrate to Workbox for better caching.
