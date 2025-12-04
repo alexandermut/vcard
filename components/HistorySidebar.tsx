@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Calendar, MapPin, Download, Trash2, Clock, Filter, Check, MoreVertical, List as ListIcon, LayoutGrid, Upload, Loader2, Image as ImageIcon, History as HistoryIcon, Contact, FileText, Merge, Users } from 'lucide-react';
-import * as ReactWindow from 'react-window';
+import * as ReactWindowNamespace from 'react-window';
+import * as AutoSizerNamespace from 'react-virtualized-auto-sizer';
+
 // @ts-ignore
-const FixedSizeList = ReactWindow.FixedSizeList || (ReactWindow.default ? ReactWindow.default.FixedSizeList : undefined);
-import AutoSizer from 'react-virtualized-auto-sizer';
+const FixedSizeList = ReactWindowNamespace.FixedSizeList || (ReactWindowNamespace.default as any)?.FixedSizeList;
+// @ts-ignore
+const AutoSizer = AutoSizerNamespace.default || AutoSizerNamespace;
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
 import { translations } from '../utils/translations';
@@ -227,6 +230,10 @@ const HistoryRow = React.memo(({ index, style, data }: HistoryRowProps) => {
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
 }) => {
+  if (!FixedSizeList || !AutoSizer) {
+    console.error('HistorySidebar dependencies missing:', { FixedSizeList, AutoSizer });
+    return null;
+  }
   const t = translations[lang];
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
