@@ -21,7 +21,7 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, failedCou
   if (queue.length === 0 && failedCount === 0) return null;
 
   return (
-    <div className="fixed bottom-24 right-4 z-50 flex flex-col gap-2 animate-in slide-in-from-right-4 fade-in">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 animate-in slide-in-from-right-4 fade-in">
       <div
         onClick={onOpenQueue}
         className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg p-3 flex items-center gap-3 min-w-[200px] cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-750 transition-colors group"

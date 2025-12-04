@@ -9,7 +9,7 @@ import { resizeImage } from '../utils/imageUtils';
 import { addFailedScan } from '../utils/db';
 import { wrap } from 'comlink';
 import type { ImageWorkerAPI } from '../workers/imageWorker';
-import pLimit from 'p-limit'; // ✅ NEW: For concurrency control
+
 
 // ✅ NEW: Initialize image worker once (reuse across scans)
 let imageWorkerInstance: ReturnType<typeof wrap<ImageWorkerAPI>> | null = null;
@@ -34,11 +34,12 @@ export const useScanQueue = (
   onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
-  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Derived state for WakeLock and UI
+  const isProcessing = queue.some(j => j.status === 'processing');
 
   // ✅ NEW: Create concurrency limiter based on llmConfig
   const concurrency = llmConfig.concurrentScans || 1;
-  const limit = pLimit(concurrency);
 
   console.log(`[ScanQueue] Concurrency limit: ${concurrency}`);
 
@@ -64,15 +65,13 @@ export const useScanQueue = (
     const nextJobIndex = queue.findIndex(job => job.status === 'pending');
     if (nextJobIndex === -1) return;
 
-    setIsProcessing(true);
     const job = queue[nextJobIndex];
 
     // Update status to processing
     setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'processing' } : j));
 
-    // ✅ NEW: Wrap processing in p-limit to control concurrency
-    await limit(async () => {
-
+    // Process the job
+    (async () => {
       let rawImages: string[] = [];
 
       try {
@@ -271,21 +270,19 @@ export const useScanQueue = (
             }).catch(e => console.error("Failed to save failed scan", e));
           }
         }
-      } finally {
-        const remainingPending = queue.filter(j => j.status === 'pending').length;
-        if (remainingPending === 0) {
-          setIsProcessing(false);
-        }
       }
-    }); // ✅ Close p-limit wrapper
-  }, [queue, apiKey, lang, llmConfig, ocrMethod, onJobComplete, onOCRRawText, concurrency, limit]);
+    })();
+  }, [queue, apiKey, lang, llmConfig, ocrMethod, onJobComplete, onOCRRawText, concurrency]);
 
   // Watch queue and trigger processing
   useEffect(() => {
-    if (!isProcessing && queue.some(j => j.status === 'pending')) {
+    const processingCount = queue.filter(j => j.status === 'processing').length;
+    const hasPending = queue.some(j => j.status === 'pending');
+
+    if (hasPending && processingCount < concurrency) {
       processNextJob();
     }
-  }, [queue, isProcessing, processNextJob]);
+  }, [queue, concurrency, processNextJob]);
 
   // Screen Wake Lock
   useEffect(() => {
