@@ -965,4 +965,207 @@ When evaluating a library for integration, consider:
 - [ ] ⚡ **High Contrast Mode:** Support for visually impaired
 - [ ] ⚡ **Dark Mode Auto-Switch:** Follow system preference
 
+---
+
+## 📚 Additional Library Recommendations
+
+**Goal:** Evaluate high-quality open source libraries to enhance functionality, performance, and developer experience.
+
+### 🔴 Data & Validation / Contact Intelligence
+
+#### [libphonenumber-js](https://github.com/catamphetamine/libphonenumber-js) (⭐ 7k+)
+- **Category:** Phone Number Parsing & Formatting
+- **Bundle Size:** ~20–30KB (min, "mobile" metadata build)
+- **Use Case:** Clean and normalize phone numbers from OCR / vCards before saving
+- **Benefits:**
+  - Parses international numbers, validates, and formats (E.164, national, international)
+  - Can guess region from country code or user locale
+  - Removes a ton of manual regex / edge cases
+- **Integration Points:**
+  - `utils/contactNormalizer.ts` (NEW) – normalize all phone numbers
+  - `utils/vCardParser.ts` – clean OCR'd phone strings before DB insert
+  - `components/ContactDetail.tsx` – pretty-print numbers consistently
+- **Status:** 🟢 Highly Recommended (low risk, high clarity gain)
+
+#### [validator.js](https://github.com/validatorjs/validator.js) (⭐ 22k+)
+- **Category:** String Validation & Sanitization
+- **Bundle Size:** ~40KB (can be tree-shaken if you import functions)
+- **Use Case:** Basic validation for email, URLs, IBAN, etc., as a complement to Zod
+- **Benefits:**
+  - Battle-tested validators for email, URL, IP, IBAN, UUID, etc.
+  - Pairs nicely with Zod via custom refinements
+- **Integration Points:**
+  - `utils/vCardParser.ts` – validate email/URL fields from OCR
+  - `components/EditContactForm.tsx` – form-level checks
+- **Status:** 🟡 Evaluation (nice-to-have, not critical)
+
+#### Valibot or Superstruct (Alternative to Zod)
+- **Category:** Schema Validation
+- **Why:** Similar DX to Zod, but can be smaller for simple schemas
+- **Use Case:** If bundle size from Zod grows too big, use on hot paths (e.g. OCR → contact schema) and keep Zod on the "tooling / internal" side
+- **Status:** 🔵 Monitor / Optional
+
+---
+
+### 🟡 State & Data Fetching / DX
+
+#### [TanStack Query (React Query)](https://github.com/TanStack/query) (⭐ 40k+)
+- **Category:** Data Fetching & Caching
+- **Bundle Size:** ~15KB
+- **Use Case:** Manage async data for "AI parsing", "OCR jobs", "sync status", etc.
+- **Benefits:**
+  - Automatic caching, retries, background refresh
+  - Great devtools; perfect for "scan queue" / "sync to server" states
+- **Integration Points:**
+  - `hooks/useScanQueue.ts` – manage OCR job lifecycle
+  - `services/aiService.ts` – wrap AI calls in queries/mutations
+  - Any future online sync API (if you add a backend)
+- **Status:** 🟡 Evaluation (big DX win once you add more async flows)
+
+#### [Zustand](https://github.com/pmndrs/zustand) (⭐ 40k+) / [Jotai](https://github.com/pmndrs/jotai) (⭐ 17k+)
+- **Category:** State Management
+- **Bundle Size:** ~1–4KB core
+- **Use Case:** Global but simple state: current scan, active contact, UI flags, feature toggles
+- **Benefits:**
+  - Minimalist, no boilerplate; fits well into a small app
+  - Works great with React Query: Query for remote/async, Zustand for local UI
+- **Integration Points:**
+  - `store/uiStore.ts` – modals, toasts, active tab
+  - `store/scanStore.ts` – currently scanned image, processing step
+- **Status:** 🟢 Recommended (cleaner than lifting state through props hell)
+
+---
+
+### 🟡 Web Workers / Performance
+
+#### [Comlink](https://github.com/GoogleChromeLabs/comlink) (⭐ 10k+)
+- **Category:** Web Worker RPC
+- **Bundle Size:** ~3KB
+- **Use Case:** Move OCR + heavy image preprocessing fully off the main thread
+- **Benefits:**
+  - You call worker functions like normal async functions (`await worker.parseCard()`)
+  - Perfect match for Tesseract.js + Jimp/OpenCV pipelines
+- **Integration Points:**
+  - `workers/ocrWorker.ts` – wrap Tesseract + preprocessing into a worker
+  - `workers/imageProcessingWorker.ts` – Jimp/OpenCV operations
+  - `hooks/useScanQueue.ts` – talk to workers via Comlink instead of postMessage
+- **Status:** 🟢 Highly Recommended (performance + UX)
+- **Note:** Already listed in ROADMAP Line 739
+
+#### workerize / workerize-loader (if using webpack)
+- **Category:** Worker Bundling Utility
+- **Use Case:** Quickly spin up workers for image/OCR tasks without custom tooling
+- **Note:** More relevant if your bundler choice makes worker setup annoying
+
+---
+
+### 🟢 PWA, Offline & Storage Utilities
+
+#### [Workbox](https://github.com/GoogleChrome/workbox) (⭐ 13k+)
+- **Category:** Service Worker / Offline Caching
+- **Use Case:** Robust offline behavior for PWA (app shell, card images, fonts)
+- **Benefits:**
+  - Strategies like "stale-while-revalidate", "network-first" with 1 line each
+  - Precaching build artifacts & runtime caching for images
+  - Background sync and queued requests if you later talk to a backend
+- **Integration Points:**
+  - `service-worker.ts` – migrate to Workbox-based setup
+  - Caching card images in `images/cards/*.`
+- **Status:** 🟢 Highly Recommended for serious PWA feel
+
+#### [localForage](https://github.com/localForage/localForage) (⭐ 24k+)
+- **Category:** Storage Wrapper (IndexedDB + WebSQL + localStorage)
+- **Use Case:** Simple key–value storage; great for non-relational bits (settings, feature flags), while Dexie handles structured contacts
+- **Integration Points:**
+  - `services/settingsService.ts` – theme, language, experimental flags
+- **Status:** 🟡 Evaluation (Dexie is already strong, this is "nice-to-have")
+
+---
+
+### 🟡 Image / EXIF / Compression Helpers
+
+#### [browser-image-compression](https://github.com/Donaldcwl/browser-image-compression) (⭐ 2.5k+)
+- **Category:** Client-Side Image Compression
+- **Bundle Size:** ~30KB
+- **Use Case:** Compress photos from camera before preprocessing & OCR
+- **Benefits:**
+  - Reduces file size while maintaining enough quality for OCR
+  - Configurable max width/height, quality, and output format
+- **Integration Points:**
+  - `utils/imagePreprocessing.ts` – first step: compress/resize incoming image
+  - `components/ScanModal.tsx` – compress right after capturing a photo
+- **Status:** 🟢 Recommended (mobile users, performance & upload UX)
+
+#### [exifr](https://github.com/MikeKovarik/exifr) (⭐ 1.7k+)
+- **Category:** EXIF Metadata Reader
+- **Bundle Size:** ~20–30KB (tree-shakeable)
+- **Use Case:** Auto-rotate images based on EXIF orientation from smartphone cameras
+- **Benefits:**
+  - Detect orientation and potentially GPS (if you ever want "scanned in X location")
+  - Fixes common "rotated card" issues before OpenCV/Jimp
+- **Integration Points:**
+  - `utils/imagePreprocessing.ts` – EXIF read + auto-rotate before everything else
+- **Status:** 🟢 Highly Recommended for camera-based scans
+
+---
+
+### 🟡 UI & Forms
+
+#### [React Hook Form](https://github.com/react-hook-form/react-hook-form) (⭐ 40k+)
+- **Category:** Form State & Validation
+- **Bundle Size:** ~9KB
+- **Use Case:** Edit contact forms, manual corrections after OCR
+- **Benefits:**
+  - Very fast + minimal rerenders
+  - Integrates nicely with Zod (zodResolver) for type-safe forms
+- **Integration Points:**
+  - `components/EditContactForm.tsx` – main consumer
+  - Post-OCR "verify contact details" screen
+- **Status:** 🟢 Recommended
+- **Note:** Already listed in ROADMAP Line 660
+
+#### [Framer Motion](https://github.com/framer/motion) (⭐ 24k+)
+- **Category:** Animation & Microinteractions
+- **Bundle Size:** ~50KB
+- **Use Case:** Animate the "O lens" in kontakte.me, transitions between views, card scan feedback
+- **Benefits:**
+  - Declarative animation API
+  - Easy "hover", "tap", "enter/exit" animations
+- **Integration Points:**
+  - Logo animation where the "O" pops forward + camera click
+  - `components/ScanModal.tsx` – animate scanning overlay or success checkmark
+- **Status:** 🟡 Nice-to-have, but very strong for branding
+- **Note:** Already listed in ROADMAP Line 693
+
+---
+
+### 🔵 Logging, Metrics & Debugging
+
+#### [Sentry JavaScript SDK](https://github.com/getsentry/sentry-javascript)
+- **Category:** Error Tracking
+- **Use Case:** Catch OCR crashes, worker issues, strange browser-specific bugs
+- **Integration Points:**
+  - App initialization – wrap React tree, track performance, user flows
+- **Status:** 🔵 Future (once real users are involved)
+
+---
+
+### 📦 Bundle Size Impact Summary
+
+| Library | Size | Priority | Load Strategy |
+|---------|------|----------|---------------|
+| libphonenumber-js | 20-30KB | 🟢 High | Eager/Tree-shaken |
+| validator.js | 40KB | 🟡 Medium | Tree-shaken |
+| TanStack Query | 15KB | 🟡 Medium | Eager |
+| Zustand | 1-4KB | 🟢 High | Eager |
+| Comlink | 3KB | 🟢 High | Eager |
+| Workbox | Variable | 🟢 High | SW only |
+| browser-image-compression | 30KB | 🟢 High | Lazy/Code-split |
+| exifr | 20-30KB | 🟢 High | Lazy/Code-split |
+| React Hook Form | 9KB | 🟢 High | Eager |
+| Framer Motion | 50KB | 🟡 Medium | Code-split |
+
+**Total Additional Weight:** ~200-250KB (if all adopted)  
+**Impact:** Minimal with code-splitting and lazy loading strategies
+
  

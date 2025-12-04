@@ -349,9 +349,45 @@ const callGeminiWithRetry = async (
 
     return result;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini API Error:", error);
-    throw error;
+
+    // Detailed error analysis for better user feedback
+    const errorMsg = error?.message?.toLowerCase() || '';
+    const errorStr = String(error)?.toLowerCase() || '';
+
+    // Network connectivity errors
+    if (errorMsg.includes('load failed') || errorMsg.includes('sending request') ||
+      errorMsg.includes('network') || errorMsg.includes('fetch') ||
+      errorStr.includes('typeerror')) {
+      throw new Error('Netzwerkverbindung fehlgeschlagen. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.');
+    }
+
+    // API key errors
+    if (errorMsg.includes('api key') || errorMsg.includes('unauthorized') ||
+      errorMsg.includes('403') || errorMsg.includes('401')) {
+      throw new Error('API-Schlüssel ungültig. Bitte überprüfen Sie Ihren Google AI API-Schlüssel in den Einstellungen.');
+    }
+
+    // Rate limiting / quota errors
+    if (errorMsg.includes('quota') || errorMsg.includes('rate limit') ||
+      errorMsg.includes('429') || errorMsg.includes('resource exhausted')) {
+      throw new Error('API-Quota überschritten. Bitte warten Sie einige Minuten und versuchen Sie es erneut.');
+    }
+
+    // Timeout errors
+    if (errorMsg.includes('timeout') || errorMsg.includes('timed out')) {
+      throw new Error('Zeitüberschreitung. Die Anfrage hat zu lange gedauert. Bitte versuchen Sie es erneut.');
+    }
+
+    // Service unavailable
+    if (errorMsg.includes('503') || errorMsg.includes('service unavailable') ||
+      errorMsg.includes('overloaded')) {
+      throw new Error('Google AI Service ist momentan überlastet. Bitte versuchen Sie es später erneut.');
+    }
+
+    // Generic fallback with original error
+    throw new Error(`AI-Anfrage fehlgeschlagen: ${error.message || 'Unbekannter Fehler'}`);
   }
 };
 

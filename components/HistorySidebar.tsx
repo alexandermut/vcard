@@ -38,6 +38,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [showDuplicateFinder, setShowDuplicateFinder] = useState(false);
+  const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'name-asc' | 'name-desc'>('date-desc');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { token } = useGoogleContactsAuth();
   const searchWorkerRef = React.useRef<Worker | null>(null);
@@ -180,7 +181,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
       // Combine front and back if multiple
       try {
-        const combinedBlob = await combineImages(item.images[0], item.images[1]);
+        // Convert Blob to string URL if needed
+        const img0 = typeof item.images[0] === 'string' ? item.images[0] : URL.createObjectURL(item.images[0]);
+        const img1 = item.images[1] ? (typeof item.images[1] === 'string' ? item.images[1] : URL.createObjectURL(item.images[1])) : undefined;
+        const combinedBlob = await combineImages(img0, img1);
         folder.file(`${baseFilename}.jpg`, combinedBlob);
       } catch (e) {
         console.error("Failed to combine images for", item.name, e);
@@ -206,6 +210,34 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       .join('')
       .toUpperCase();
   };
+
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  };
+
+  // Sort history based on selected sort option
+  const sortedHistory = React.useMemo(() => {
+    const sorted = [...history];
+    switch (sortBy) {
+      case 'date-desc':
+        return sorted.sort((a, b) => b.timestamp - a.timestamp);
+      case 'date-asc':
+        return sorted.sort((a, b) => a.timestamp - b.timestamp);
+      case 'name-asc':
+        return sorted.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      case 'name-desc':
+        return sorted.sort((a, b) => (b.name || '').localeCompare(a.name || ''));
+      default:
+        return sorted;
+    }
+  }, [history, sortBy]);
 
   // Helper for highlighting search terms
   const HighlightText = ({ text, query }: { text: string | undefined, query: string }) => {
@@ -244,32 +276,49 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
       <div className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
-            <History size={20} className="text-blue-600 dark:text-blue-400" />
-            <h3>{t.historyTitle} ({history.length})</h3>
-          </div>
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
+              <History size={20} className="text-blue-600 dark:text-blue-400" />
+              <h3>{t.historyTitle} ({history.length})</h3>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                title="Liste"
-              >
-                <List size={16} />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                title="Raster"
-              >
-                <LayoutGrid size={16} />
+            <div className="flex items-center gap-2">
+              <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                  title="Liste"
+                >
+                  <List size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                  title="Raster"
+                >
+                  <LayoutGrid size={16} />
+                </button>
+              </div>
+              <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
+                <X size={20} />
               </button>
             </div>
-            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
-              <X size={20} />
-            </button>
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 dark:text-slate-400">Sortierung:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as any)}
+              className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="date-desc">Neueste zuerst</option>
+              <option value="date-asc">Älteste zuerst</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+            </select>
           </div>
         </div>
 
@@ -297,7 +346,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           ) : (
             <Virtuoso
               style={{ height: '100%' }}
-              data={history}
+              data={sortedHistory}
               endReached={() => hasMore && onLoadMore()}
               components={{
                 Footer: () => {
@@ -319,7 +368,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     <>
                       <div className="h-24 bg-slate-100 dark:bg-slate-800 w-full relative overflow-hidden">
                         {item.images && item.images.length > 0 ? (
-                          <img src={item.images[0]} alt="Scan" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                          <img
+                            src={typeof item.images[0] === 'string' ? item.images[0] : URL.createObjectURL(item.images[0])}
+                            alt="Scan"
+                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-slate-300 dark:text-slate-600 text-2xl font-bold">
                             {getInitials(item.name || '?')}
@@ -370,7 +423,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                             <HighlightText text={item.name || 'Unbekannt'} query={searchQuery} />
                           </h4>
                           <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            <HighlightText text={item.org} query={searchQuery} />
+                            <HighlightText text={item.org || ''} query={searchQuery} />
                           </p>
                         </div>
                         <div className="flex gap-1 shrink-0">
@@ -407,8 +460,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         </div>
                       </div>
                       <div className="flex justify-between items-center mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/50">
-                        <span className="text-[10px] text-slate-400">
-                          {new Date(item.timestamp).toLocaleDateString()}
+                        <span className="text-[10px] text-slate-400 font-mono" title={formatDateTime(item.timestamp)}>
+                          {formatDateTime(item.timestamp)}
                         </span>
                         <span className="flex items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 group-hover:underline">
                           <Upload size={12} /> {t.load}

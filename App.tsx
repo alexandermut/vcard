@@ -746,6 +746,12 @@ const App: React.FC = () => {
       return;
     }
 
+    // Quick network connectivity check
+    if (!navigator.onLine) {
+      toast.error('Keine Internetverbindung. Bitte überprüfen Sie Ihre Netzwerkverbindung.');
+      return;
+    }
+
     setIsOptimizing(true);
     setError(null);
 
@@ -775,8 +781,17 @@ const App: React.FC = () => {
       toast.success('✨ Mit AI verbessert!');
     } catch (err) {
       console.error('[AI Enhance] Error:', err);
-      setError('AI-Verbesserung fehlgeschlagen: ' + (err as Error).message);
-      toast.error('AI-Verbesserung fehlgeschlagen.');
+      const errorMessage = (err as Error).message;
+      setError('AI-Verbesserung fehlgeschlagen: ' + errorMessage);
+
+      // Show user-friendly error with guidance
+      if (errorMessage.includes('Netzwerk')) {
+        toast.error('Netzwerkfehler. Prüfen Sie Ihre Internetverbindung oder verwenden Sie Tesseract OCR in den Einstellungen.');
+      } else if (errorMessage.includes('API-Schlüssel')) {
+        toast.error('API-Schlüssel Problem. Bitte prüfen Sie Ihre Einstellungen.');
+      } else {
+        toast.error('AI-Verbesserung fehlgeschlagen: ' + errorMessage);
+      }
     } finally {
       setIsOptimizing(false);
     }
