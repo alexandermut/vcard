@@ -294,7 +294,9 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'name-asc' | 'name-desc'>('date-desc');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { token } = useGoogleContactsAuth();
-  const searchWorkerRef = React.useRef<Worker | null>(null);
+  const searchWorkerRef = React.useRef<Worker | null>(null); // Keep ref for now to avoid breaking other things if referenced, but unused.
+  // Actually better to remove it if possible, but let's just keep the ref definition to minimize diff noise if it's used elsewhere (it's not).
+  // Let's remove the ref usage.
 
   // ✅ NEW: Track created Object URLs for cleanup (prevent memory leaks)
   const objectURLsRef = React.useRef<Set<string>>(new Set());
@@ -327,68 +329,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     setSelectedIds(new Set());
   };
 
-  useEffect(() => {
-    // Initialize Worker
-    searchWorkerRef.current = new SearchWorker();
-    searchWorkerRef.current.onmessage = (e) => {
-      const { type, results, error } = e.data;
-      if (type === 'results') {
-        // Need to convert Blobs to ObjectURLs for display if they are not already
-        // Actually, the worker sends data. If images are Blobs, we might need to handle them.
-        // But for now, let's assume they are usable or the component handles them.
-        // Wait, the component expects `images` to be string[] (URLs).
-        // If the worker returns Blobs, we need to convert them.
-        const processedResults = results.map((item: any) => {
-          if (item.images) {
-            item.images = item.images.map((img: any) => {
-              if (img instanceof Blob) return URL.createObjectURL(img);
-              return img;
-            });
-          }
-          return item;
-        });
-        onUpdateHistory(processedResults); // We update the parent's history state?
-        // Wait, `onUpdateHistory` updates the PARENT state.
-        // But `HistorySidebar` receives `history` as a prop.
-        // If we filter locally, we should probably have a local state for `filteredHistory`
-        // OR we call `onSearch` which updates the parent.
-        // The current `onSearch` prop calls `searchHistory` in `App.tsx` (or wherever).
-        // We should probably replace the `onSearch` prop logic with local worker logic OR
-        // move the worker to `App.tsx`.
-        // Given the sidebar is the UI for search, keeping it here is fine, BUT
-        // `history` prop comes from `App.tsx`.
-        // If we want to filter the list displayed IN THE SIDEBAR, we should ignore the `history` prop
-        // when searching?
-        // Actually, `App.tsx` passes `filteredHistory` (or just `history`).
-        // Let's look at `App.tsx` usage of `HistorySidebar`.
-      } else if (type === 'error') {
-        console.error("Search Worker Error:", error);
-      }
-    };
 
-    return () => {
-      searchWorkerRef.current?.terminate();
-      // ✅ NEW: Cleanup all Object URLs to prevent memory leaks
-      objectURLsRef.current.forEach(url => {
-        try {
-          URL.revokeObjectURL(url);
-        } catch (e) {
-          // Ignore errors for already-revoked URLs
-        }
-      });
-      objectURLsRef.current.clear();
-    };
-  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!searchQuery.trim()) {
-        onSearch(''); // Let App.tsx handle reset and state (hasMore)
-      } else {
-        if (searchWorkerRef.current) {
-          searchWorkerRef.current.postMessage({ type: 'search', query: searchQuery });
-        }
-      }
+      onSearch(searchQuery);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery, onSearch]);
