@@ -346,6 +346,12 @@ export const clearHistory = async () => {
     return db.clear(STORE_NAME);
 };
 
+export const countHistory = async (): Promise<number> => {
+    const db = await initDB();
+    return db.count(STORE_NAME);
+};
+
+
 export const migrateFromLocalStorage = async () => {
     const LOCAL_STORAGE_KEY = 'vcard_history';
     const rawData = localStorage.getItem(LOCAL_STORAGE_KEY);

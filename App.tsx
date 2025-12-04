@@ -24,7 +24,7 @@ import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans } from './utils/db';
+import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { NotesModal } from './components/NotesModal';
 import { FailedScansModal } from './components/FailedScansModal';
@@ -181,6 +181,7 @@ const App: React.FC = () => {
 
   // History State (Start empty, load async)
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [historyCount, setHistoryCount] = useState(0); // ✅ NEW: Total count in DB
   const [hasMoreHistory, setHasMoreHistory] = useState(true);
   const [notesCount, setNotesCount] = useState(0);
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null); // Track currently loaded/saved item
@@ -259,10 +260,12 @@ const App: React.FC = () => {
   useEffect(() => {
     const loadHistory = async () => {
       await migrateFromLocalStorage();
-      await migrateBase64ToBlob(); // Optimize storage
+      await migrateBase64ToBlob();
       await migrateKeywords(); // Add search index
       const items = await getHistoryPaged(HISTORY_LIMIT);
+      const count = await countHistory(); // ✅ NEW: Load total count
       setHistory(items);
+      setHistoryCount(count); // ✅ NEW: Set total count
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
 
       // Load notes count
@@ -399,6 +402,7 @@ const App: React.FC = () => {
       const items = await getHistoryPaged(HISTORY_LIMIT);
       setHistory(items);
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
+      setHistoryCount(await countHistory()); // Update total count
 
       toast.success(translations[lang].qrScanSuccess.replace('vCard', `${count} Items`)); // Reuse success message or add new one
     } catch (e) {
@@ -581,9 +585,10 @@ const App: React.FC = () => {
       setNotesCount(notes.length);
     }
 
-    // Refresh UI
-    const updatedHistory = await getHistory();
-    setHistory(updatedHistory);
+    // Refresh UI - Prepend new item to visible history instead of reloading all
+    setHistory(prev => [itemToSave, ...prev.slice(0, HISTORY_LIMIT - 1)]);
+    const newCount = await countHistory(); // ✅ NEW: Update total count
+    setHistoryCount(newCount);
     setCurrentHistoryId(itemToSave.id);
 
     console.log("History updated successfully", { id: itemToSave.id, mode });
@@ -1121,6 +1126,8 @@ const App: React.FC = () => {
         clearHistory={clearHistory}
         ocrMethod={ocrMethod}
         setOcrMethod={setOcrMethod}
+        concurrentScans={llmConfig.concurrentScans || 1}
+        setConcurrentScans={(value) => setCustomConfig({ concurrentScans: value })}
       />
 
       <BatchUploadModal
@@ -1186,25 +1193,36 @@ const App: React.FC = () => {
         isOpen={isHistoryOpen}
         onClose={() => setIsHistoryOpen(false)}
         history={history}
+        historyCount={historyCount}
+        hasMore={hasMoreHistory}
+        onLoadMore={handleLoadMoreHistory}
         onLoad={handleLoadHistoryItem}
+        onUpdateHistory={async () => {
+          const items = await getHistoryPaged(history.length); // Reload current count
+          const count = await countHistory();
+          setHistory(items);
+          setHistoryCount(count);
+        }}
         onDelete={async (id) => {
           await deleteHistoryItem(id);
-          // Reload first page to keep consistent
           const items = await getHistoryPaged(history.length); // Reload current count
+          const count = await countHistory();
           setHistory(items);
+          setHistoryCount(count);
         }}
         onClear={async () => {
           await clearHistory();
           setHistory([]);
+          setHistoryCount(0);
           setHasMoreHistory(false);
         }}
-        onLoadMore={handleLoadMoreHistory}
-        hasMore={hasMoreHistory}
         onSearch={handleSearchHistory}
         onRestore={handleRestoreBackup}
         lang={lang}
         onUpdateHistory={setHistory}
       />
+
+
 
       <NotesSidebar
         isOpen={isNotesOpen}
@@ -1488,9 +1506,11 @@ const App: React.FC = () => {
       </footer>
       <ReloadPrompt />
 
-      {new URLSearchParams(window.location.search).get('debug_regex') === 'true' && (
-        <RegexDebugger />
-      )}
+      {
+        new URLSearchParams(window.location.search).get('debug_regex') === 'true' && (
+          <RegexDebugger />
+        )
+      }
     </div>
   );
 };

@@ -42,6 +42,8 @@ interface SettingsSidebarProps {
     isExporting?: boolean;
     ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid';
     setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'hybrid') => void;
+    concurrentScans: number; // ✅ NEW: Parallel processing (1-5)
+    setConcurrentScans: (value: number) => void; // ✅ NEW
 }
 
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
@@ -49,7 +51,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod
+    onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod, concurrentScans, setConcurrentScans
 }) => {
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
@@ -528,6 +530,86 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                         Auto nutzt primär Tesseract (offline), Gemini als optionale Verbesserung wenn API Key vorhanden
                                     </p>
                                 </div>
+                            </div>
+                        </div>
+
+                        <hr className="border-slate-100 dark:border-slate-800" />
+
+                        {/* 10. Parallel Processing ✅ NEW */}
+                        <div>
+                            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">⚡ Performance</h3>
+                            <div className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800 space-y-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <div className="text-2xl">⚡</div>
+                                    <div>
+                                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">Parallele Verarbeitung</p>
+                                        <p className="text-xs text-slate-600 dark:text-slate-400">Batch-Scans beschleunigen</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Gleichzeitige Anfragen</label>
+                                        <span className="px-2 py-1 bg-white dark:bg-slate-800 rounded-md text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400">{concurrentScans}</span>
+                                    </div>
+
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max="5"
+                                        value={concurrentScans}
+                                        onChange={(e) => setConcurrentScans(Number(e.target.value))}
+                                        className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                                    />
+
+                                    <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400">
+                                        <span>1</span>
+                                        <span>2</span>
+                                        <span>3</span>
+                                        <span>4</span>
+                                        <span>5</span>
+                                    </div>
+                                </div>
+
+                                {/* Visual Indicator */}
+                                <div className="p-3 bg-white dark:bg-slate-800/50 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                                    <div className="text-center">
+                                        {concurrentScans === 1 && (
+                                            <>
+                                                <p className="text-sm font-bold text-slate-700 dark:text-slate-300">🐢 Standard</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sequential (sicher)</p>
+                                            </>
+                                        )}
+                                        {concurrentScans === 2 && (
+                                            <>
+                                                <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">🚀 2× schneller</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">2 gleichzeitig</p>
+                                            </>
+                                        )}
+                                        {concurrentScans === 3 && (
+                                            <>
+                                                <p className="text-sm font-bold text-purple-600 dark:text-purple-400">⚡ 3× schneller (empfohlen)</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">3 gleichzeitig</p>
+                                            </>
+                                        )}
+                                        {concurrentScans === 4 && (
+                                            <>
+                                                <p className="text-sm font-bold text-orange-600 dark:text-orange-400">🔥 4× schneller</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">4 gleichzeitig</p>
+                                            </>
+                                        )}
+                                        {concurrentScans === 5 && (
+                                            <>
+                                                <p className="text-sm font-bold text-red-600 dark:text-red-400">⚠️ 5× schneller (Maximum)</p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Rate Limits beachten!</p>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                                    <span className="font-medium">💡 Tipp:</span> 3 ist optimal für die meisten Szenarien. Höhere Werte können bei vielen API-Anfragen helfen, aber Gemini's Rate Limits (60/Min) beachten.
+                                </p>
                             </div>
                         </div>
 

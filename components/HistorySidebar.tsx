@@ -20,6 +20,7 @@ interface HistorySidebarProps {
   isOpen: boolean;
   onClose: () => void;
   history: HistoryItem[];
+  historyCount: number; // ✅ NEW: Total count from DB
   onLoad: (item: HistoryItem) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
@@ -32,7 +33,7 @@ interface HistorySidebarProps {
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
-  isOpen, onClose, history, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
+  isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
 }) => {
   const t = translations[lang];
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
@@ -303,7 +304,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           <div className="flex justify-between items-center mb-3">
             <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
               <History size={20} className="text-blue-600 dark:text-blue-400" />
-              <h3>{t.historyTitle} ({history.length})</h3>
+              <h3>{t.historyTitle} ({historyCount})</h3>
             </div>
 
             <div className="flex items-center gap-2">

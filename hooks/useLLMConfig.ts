@@ -10,6 +10,7 @@ export interface LLMConfig {
     customBaseUrl: string;
     customApiKey: string;
     customModel: string;
+    concurrentScans: number; // ✅ NEW: Parallel processing (1-5, default 1)
 }
 
 const DEFAULT_CONFIG: LLMConfig = {
@@ -20,6 +21,7 @@ const DEFAULT_CONFIG: LLMConfig = {
     customBaseUrl: '/ollama/v1',
     customApiKey: '',
     customModel: 'llava',
+    concurrentScans: 1, // ✅ NEW: Default to sequential (safe)
 };
 
 export const useLLMConfig = () => {
