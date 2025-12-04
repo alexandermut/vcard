@@ -100,8 +100,8 @@ This file tracks the current development status and planned features.
 
 ---
 
-## 🧠 Project: Intelligent Regex Parser (Context-Aware Parsing)
-**Goal:** Transform the regex parser from pattern-matching to intelligent, database-backed analysis.
+## 🧠 Project: Intelligent Hybrid Parser (Spatial & Context-Aware)
+**Goal:** Transform the regex parser from pattern-matching to intelligent, database-backed, and spatially-aware analysis.
 
 **Success Metrics:**
 - Reduce false positive rate by 80% (current: ~15% → target: <3%)
@@ -189,6 +189,21 @@ This file tracks the current development status and planned features.
   - [ ] Allow max distance of 2 for cities (e.g., "Berln" → "Berlin")
   - [ ] Cache frequent corrections for performance
   - [ ] Only apply to cities with PLZ anchor present (reduce false positives)
+
+#### 2.3 Spatial Layout Analysis (Visual Anchors)
+- [ ] **Goal:** Use the physical position of text to improve classification.
+- [ ] **Tasks:**
+    - [ ] **Line Grouping:** Detect blocks of text (Address block vs. Contact block) based on vertical spacing.
+    - [ ] **Position Weighting:**
+        - [ ] Phone/Email/Web: High probability at **Bottom Left/Right**.
+        - [ ] Name/Title: High probability at **Top/Center**.
+    - [ ] **Alignment Detection:** Detect Left-aligned vs. Centered layouts.
+
+#### 2.4 Icon & Visual Element Detection
+- [ ] **Goal:** Use icons as strong anchors for field identification.
+- [ ] **Tasks:**
+    - [ ] **Icon Recognition (OpenCV.js):** Detect common icons (Phone handset, Envelope, Globe, LinkedIn logo).
+    - [ ] **Icon-Text Association:** Associate detected icon with the text line immediately to its right.
 
 ### Phase 3: Hierarchical Weighting System (Week 5-6)
 
@@ -279,6 +294,19 @@ This file tracks the current development status and planned features.
   - [ ] High-confidence fields: Accept immediately
   - [ ] Low-confidence fields: Send to AI for validation
   - [ ] Best of both worlds: Speed + Accuracy
+
+### Phase 6: User Feedback Loop (Continuous Learning)
+- [ ] **Goal:** The parser gets smarter with every user correction.
+- [ ] **Tasks:**
+    - [ ] **Correction Tracking:** Log when a user changes a field type (e.g., "Tel" -> "Mobile").
+    - [ ] **Pattern Storage:** Store the regex pattern of the corrected line in a local "User Knowledge Base".
+    - [ ] **Adaptive Weighting:** Increase weight for patterns the user frequently validates.
+
+### Phase 7: Internationalization (Beyond DACH)
+- [ ] **Goal:** Support global address and phone formats.
+- [ ] **Tasks:**
+    - [ ] **US/UK Address Support:** Parse "City, State ZIP" formats.
+    - [ ] **International Phone Formats:** Handle `(555) 123-4567` and other styles.
 
 ---
 

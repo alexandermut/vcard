@@ -266,7 +266,7 @@ export const translations = {
     faqSectionScan: "1. Scanning & Import",
     faqScanTitle: "How to scan business cards?",
     faqScanDesc: "Use the 'Scan' button for single cards or 'Batch Upload' for multiple. You can take photos directly or drag & drop files (Images/PDFs) into the window.",
-    faqScanTips: "Tip: Ensure good lighting and a dark background for best results. For glossy cards, turn off the flash to avoid reflections.",
+    faqScanTips: "Offline Mode: Without internet or AI key, the app uses 'Tesseract OCR' (local text recognition) and 'Regex' (pattern matching). This is fast and private but less accurate than AI.",
 
     faqQrTitle: "Scanning QR Codes",
     faqQrDesc: "Click the QR icon in the header to capture digital business cards directly via webcam.",
@@ -280,7 +280,7 @@ export const translations = {
     faqSectionEdit: "2. Editing & AI",
     faqEditTitle: "Correcting & Optimizing Data",
     faqEditDesc: "Type directly into the preview or use the text editor on the left. The 'AI' button (Magic Wand) uses artificial intelligence to fix errors and complete missing data.",
-    faqEditTips: "Tip: If the AI misassigns fields, correct them manually in the text editor and press 'AI' again to re-analyze the structure.",
+    faqEditTips: "Post-Processing: You can re-analyze individual or all contacts via AI at any time (even later) to improve quality.",
 
     faqSocialTitle: "Social Media Search",
     faqSocialDesc: "Click 'Start Research' in the preview. The app automatically searches for LinkedIn, Xing, or company websites matching the contact.",
@@ -313,7 +313,7 @@ export const translations = {
 
     faqAiTitle: "AI Processing",
     faqAiDesc: "For text recognition, images are briefly sent to the configured AI (Google Gemini or OpenAI), analyzed, and immediately deleted. When using Ollama (Local), data never leaves your PC.",
-    faqAiTips: "Security: Use a local LLM (Ollama) for sensitive data to work 100% offline.",
+    faqAiTips: "Privacy: Not even the developer of this app has access to your data. Everything happens on your device or directly between you and the AI provider.",
 
     // Section: Settings
     faqSectionSettings: "6. Settings & AI",
@@ -321,8 +321,8 @@ export const translations = {
     faqLlmDesc: "Choose between Google Gemini (fast & accurate, Cloud), OpenAI (Alternative, Cloud), or Ollama (Local, Privacy).",
     faqLlmTips: "Recommendation: 'Google Gemini Flash' currently offers the best balance of speed and accuracy for business cards.",
 
-    faqKeyTitle: "API Keys",
-    faqKeyDesc: "Cloud AI requires an API Key. It is stored encrypted only in your browser.",
+    faqKeyTitle: "API Keys & Costs",
+    faqKeyDesc: "Cloud AI requires an API Key. It is stored encrypted only in your browser. Costs are minimal (cents for hundreds of cards).",
     faqKeyTips: "Free: Google offers a generous free tier for Gemini. Click 'Generate Key' to create one.",
 
     // Section: Troubleshooting
