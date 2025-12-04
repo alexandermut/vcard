@@ -580,36 +580,69 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           ) : (
             isOpen && (
               <LocalErrorBoundary>
-                <AutoSizer>
-                  {({ height, width }) => (
-                    <FixedSizeList
-                      height={height}
-                      width={width}
-                      itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                      itemSize={viewMode === 'grid' ? 176 : 110}
-                      itemData={{
-                        items: itemsWithImageURLs,
-                        viewMode,
-                        searchQuery,
-                        onLoad,
-                        onClose,
-                        onDelete,
-                        handleDownloadSingle,
-                        handleSaveToGoogle,
-                        t,
-                        hasMore
-                      }}
-                      onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                        const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                        if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                          onLoadMore();
-                        }
-                      }}
-                    >
-                      {HistoryRow}
-                    </FixedSizeList>
-                  )}
-                </AutoSizer>
+                {itemsWithImageURLs.length < 50 ? (
+                  // STANDARD LIST (No Virtualization) - Better for small lists & stability
+                  <div className="flex flex-col gap-2">
+                    {itemsWithImageURLs.map((item, index) => (
+                      <HistoryRow
+                        key={item.id}
+                        index={index}
+                        style={{}}
+                        data={{
+                          items: itemsWithImageURLs,
+                          viewMode,
+                          searchQuery,
+                          onLoad,
+                          onClose,
+                          onDelete,
+                          handleDownloadSingle,
+                          handleSaveToGoogle,
+                          t,
+                          hasMore: false // No loader needed for simple list usually, or handle differently
+                        }}
+                      />
+                    ))}
+                    {hasMore && (
+                      <div className="flex justify-center p-4">
+                        <button onClick={onLoadMore} className="text-blue-600 text-sm hover:underline">
+                          {t.loadMore}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // VIRTUALIZED LIST (For performance with many items)
+                  <AutoSizer>
+                    {({ height, width }) => (
+                      <FixedSizeList
+                        height={height}
+                        width={width}
+                        itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
+                        itemSize={viewMode === 'grid' ? 176 : 110}
+                        itemData={{
+                          items: itemsWithImageURLs,
+                          viewMode,
+                          searchQuery,
+                          onLoad,
+                          onClose,
+                          onDelete,
+                          handleDownloadSingle,
+                          handleSaveToGoogle,
+                          t,
+                          hasMore
+                        }}
+                        onScroll={({ scrollOffset }: { scrollOffset: number }) => {
+                          const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
+                          if (hasMore && scrollOffset + height >= totalHeight - 200) {
+                            onLoadMore();
+                          }
+                        }}
+                      >
+                        {HistoryRow}
+                      </FixedSizeList>
+                    )}
+                  </AutoSizer>
+                )}
               </LocalErrorBoundary>
             )
           )}
