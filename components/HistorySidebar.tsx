@@ -263,6 +263,14 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     }
   }, [history, sortBy]);
 
+  // ✅ NEW: Pre-compute image URLs to avoid repeated Object URL creation
+  const itemsWithImageURLs = React.useMemo(() => {
+    return sortedHistory.map(item => ({
+      ...item,
+      cachedImageURL: item.images?.[0] ? getImageURL(item.images[0]) : null
+    }));
+  }, [sortedHistory, getImageURL]);
+
   // Helper for highlighting search terms
   const HighlightText = ({ text, query }: { text: string | undefined, query: string }) => {
     if (!text) return null;
@@ -370,8 +378,10 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           ) : (
             <Virtuoso
               style={{ height: '100%' }}
-              data={sortedHistory}
+              data={itemsWithImageURLs}
               endReached={() => hasMore && onLoadMore()}
+              overscan={200}
+              increaseViewportBy={{ top: 600, bottom: 600 }}
               components={{
                 Footer: () => {
                   return hasMore ? (
@@ -391,9 +401,9 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     // GRID ITEM
                     <>
                       <div className="h-24 bg-slate-100 dark:bg-slate-800 w-full relative overflow-hidden">
-                        {item.images && item.images.length > 0 ? (
+                        {item.cachedImageURL ? (
                           <img
-                            src={getImageURL(item.images[0])}
+                            src={item.cachedImageURL}
                             alt="Scan"
                             className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
                           />
