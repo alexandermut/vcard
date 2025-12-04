@@ -1219,7 +1219,7 @@ const App: React.FC = () => {
         onSearch={handleSearchHistory}
         onRestore={handleRestoreBackup}
         lang={lang}
-        onUpdateHistory={setHistory}
+
       />
 
 
