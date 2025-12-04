@@ -601,11 +601,53 @@ const App: React.FC = () => {
 
   // ... queue ...
 
+  // Bulk Enhance Handler
+  const handleBulkEnhance = async (ids: string[]) => {
+    if (ids.length === 0) return;
+
+    // Filter items that have images
+    const itemsToEnhance = history.filter(item => ids.includes(item.id) && item.images && item.images.length > 0);
+
+    if (itemsToEnhance.length === 0) {
+      toast.error("Keine der ausgewählten Kontakte haben Bilder zum Verbessern.");
+      return;
+    }
+
+    toast.info(`${itemsToEnhance.length} Kontakte zur Warteschlange hinzugefügt...`);
+
+    // Add to queue
+    for (const item of itemsToEnhance) {
+      if (item.images) {
+        // Convert Blobs to Base64 if necessary, or pass as is if useScanQueue handles it.
+        // useScanQueue expects (string | File)[].
+        // item.images is (string | Blob)[].
+        // We need to convert Blob to File or just pass string.
+        // If it's a Blob, we can cast it to File (it's a subclass) or keep as Blob if supported.
+        // Let's check useScanQueue types. It says (string | File)[].
+        // Blob is not strictly File in TS, but compatible in JS.
+        // Let's convert Blobs to Files to be safe and provide a name.
+
+        const processedImages = item.images.map((img, idx) => {
+          if (img instanceof Blob) {
+            return new File([img], `bulk_enhance_${item.id}_${idx}.jpg`, { type: img.type });
+          }
+          return img;
+        });
+
+        addJob(processedImages, 'vision'); // Use 'vision' mode for enhancement
+      }
+    }
+
+    setIsHistoryOpen(false); // Close sidebar to show progress
+    setIsBatchUploadOpen(true); // ✅ NEW: Open Batch Upload Modal to show progress
+  };
+
   // Update HistorySidebar props
   // <HistorySidebar
   //   ...
   //   onDelete={async (id) => { await deleteHistoryItem(id); setHistory(await getHistory()); }}
   //   onClear={async () => { await clearHistory(); setHistory([]); }}
+  //   onBulkEnhance={handleBulkEnhance}
   // />
 
   const handleDownload = () => {
@@ -1203,6 +1245,7 @@ const App: React.FC = () => {
           setHistory(items);
           setHistoryCount(count);
         }}
+        onBulkEnhance={handleBulkEnhance}
         onDelete={async (id) => {
           await deleteHistoryItem(id);
           const items = await getHistoryPaged(history.length); // Reload current count

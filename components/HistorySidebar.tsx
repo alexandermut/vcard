@@ -34,6 +34,7 @@ interface HistorySidebarProps {
   onRestore: (file: File) => Promise<void>;
   lang: Language;
   onUpdateHistory: (history: HistoryItem[]) => void;
+  onBulkEnhance: (ids: string[]) => void; // ✅ NEW: Bulk Enhance Callback
 }
 
 const getInitials = (name: string) => {
@@ -88,11 +89,14 @@ interface HistoryRowProps {
     handleSaveToGoogle: (item: HistoryItem) => Promise<void>;
     t: any;
     hasMore: boolean;
+    isSelectionMode: boolean; // ✅ NEW
+    selectedIds: Set<string>; // ✅ NEW
+    onToggleSelection: (id: string) => void; // ✅ NEW
   };
 }
 
 const HistoryRow = React.memo(({ index, style, data }: HistoryRowProps) => {
-  const { items, viewMode, searchQuery, onLoad, onClose, onDelete, handleDownloadSingle, handleSaveToGoogle, t, hasMore } = data;
+  const { items, viewMode, searchQuery, onLoad, onClose, onDelete, handleDownloadSingle, handleSaveToGoogle, t, hasMore, isSelectionMode, selectedIds, onToggleSelection } = data;
 
   if (hasMore && index === items.length) {
     return (
@@ -109,9 +113,25 @@ const HistoryRow = React.memo(({ index, style, data }: HistoryRowProps) => {
   return (
     <div style={{ ...style, paddingBottom: '12px' }}>
       <div
-        onClick={() => { onLoad(item); onClose(); }}
-        className={`group bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer relative overflow-hidden h-full ${viewMode === 'grid' ? 'flex flex-col' : 'p-3'}`}
+        onClick={() => {
+          if (isSelectionMode) {
+            onToggleSelection(item.id);
+          } else {
+            onLoad(item);
+            onClose();
+          }
+        }}
+        className={`group bg-white dark:bg-slate-900 border ${selectedIds.has(item.id) ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-800'} rounded-lg hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer relative overflow-hidden h-full ${viewMode === 'grid' ? 'flex flex-col' : 'p-3'}`}
       >
+        {/* Selection Checkbox Overlay */}
+        {isSelectionMode && (
+          <div className="absolute top-2 right-2 z-20">
+            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedIds.has(item.id) ? 'bg-indigo-600 border-indigo-600' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600'}`}>
+              {selectedIds.has(item.id) && <Check size={12} className="text-white" />}
+            </div>
+          </div>
+        )}
+
         {viewMode === 'grid' ? (
           // GRID ITEM
           <>
@@ -252,7 +272,7 @@ class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, 
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
-  isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
+  isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory, onBulkEnhance
 }) => {
   // ... (rest of component logic)
 
@@ -278,6 +298,34 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
   // ✅ NEW: Track created Object URLs for cleanup (prevent memory leaks)
   const objectURLsRef = React.useRef<Set<string>>(new Set());
+
+  // ✅ NEW: Selection Mode State
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === history.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(history.map(h => h.id)));
+    }
+  };
+
+  const handleBulkEnhanceClick = () => {
+    onBulkEnhance(Array.from(selectedIds));
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
 
   useEffect(() => {
     // Initialize Worker
@@ -526,214 +574,268 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
               <h3>{t.historyTitle} ({historyCount})</h3>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5">
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-1.5 rounded-md transition-colors ${viewMode === 'list'
-                    ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  title="Liste"
-                >
-                  <ListIcon size={16} />
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
-                  title="Raster"
-                >
-                  <LayoutGrid size={16} />
+          </div>
+
+          {/* Selection Toggle */}
+          <button
+            onClick={() => {
+              setIsSelectionMode(!isSelectionMode);
+              setSelectedIds(new Set()); // Clear selection when toggling
+            }}
+            className={`p-1.5 rounded-md transition-colors ml-2 ${isSelectionMode ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+            title={isSelectionMode ? "Auswahl beenden" : "Auswählen"}
+          >
+            <Check size={20} className={isSelectionMode ? "stroke-2" : ""} />
+          </button>
+
+          <div className="flex items-center gap-2">
+            <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                  : 'text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                title="Liste"
+              >
+                <ListIcon size={16} />
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                title="Raster"
+              >
+                <LayoutGrid size={16} />
+              </button>
+            </div>
+            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Sort Options */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Sortierung:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="date-desc">Neueste zuerst</option>
+            <option value="date-asc">Älteste zuerst</option>
+            <option value="name-asc">Name (A-Z)</option>
+            <option value="name-desc">Name (Z-A)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="p-4 pb-0">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input
+            type="text"
+            placeholder={t.searchPlaceholder || "Search..."}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
+        {history.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
+            <HistoryIcon size={48} className="mb-4 opacity-20" />
+            <p>{t.noHistory}</p>
+            <p className="text-xs mt-2">{t.noHistoryHint}</p>
+          </div>
+        ) : (
+          isOpen && (
+            <LocalErrorBoundary>
+              {itemsWithImageURLs.length < 50 ? (
+                // STANDARD LIST (No Virtualization) - Better for small lists & stability
+                <div className="h-full overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
+                  {itemsWithImageURLs.map((item, index) => (
+                    <HistoryRow
+                      key={item.id}
+                      index={index}
+                      style={{}}
+                      data={{
+                        items: itemsWithImageURLs,
+                        viewMode,
+                        searchQuery,
+                        onLoad,
+                        onClose,
+                        onDelete,
+                        handleDownloadSingle,
+                        handleSaveToGoogle,
+                        t,
+                        hasMore: false, // No loader needed for simple list usually, or handle differently
+                        isSelectionMode,
+                        selectedIds,
+                        onToggleSelection: toggleSelection
+                      }}
+                    />
+                  ))}
+                  {hasMore && (
+                    <div className="flex justify-center p-4">
+                      <button onClick={onLoadMore} className="text-blue-600 text-sm hover:underline">
+                        {t.loadMore}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // VIRTUALIZED LIST (For performance with many items)
+                <AutoSizer>
+                  {({ height, width }) => (
+                    <FixedSizeList
+                      height={height}
+                      width={width}
+                      itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
+                      itemSize={viewMode === 'grid' ? 176 : 110}
+                      itemData={{
+                        items: itemsWithImageURLs,
+                        viewMode,
+                        searchQuery,
+                        onLoad,
+                        onClose,
+                        onDelete,
+                        handleDownloadSingle,
+                        handleSaveToGoogle,
+                        t,
+                        hasMore,
+                        isSelectionMode,
+                        selectedIds,
+                        onToggleSelection: toggleSelection
+                      }}
+                      onScroll={({ scrollOffset }: { scrollOffset: number }) => {
+                        const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
+                        if (hasMore && scrollOffset + height >= totalHeight - 200) {
+                          onLoadMore();
+                        }
+                      }}
+                    >
+                      {HistoryRow}
+                    </FixedSizeList>
+                  )}
+                </AutoSizer>
+              )}
+            </LocalErrorBoundary>
+          )
+        )}
+      </div>
+
+      {/* Footer Actions */}
+      {history.length > 0 && (
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
+
+          {/* Bulk Actions (Selection Mode) */}
+          {isSelectionMode ? (
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-400 px-1">
+                <span>{selectedIds.size} ausgewählt</span>
+                <button onClick={handleSelectAll} className="text-blue-600 hover:underline">
+                  {selectedIds.size === history.length ? 'Keine' : 'Alle'}
                 </button>
               </div>
-              <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
-                <X size={20} />
+              <button
+                onClick={handleBulkEnhanceClick}
+                disabled={selectedIds.size === 0}
+                className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 shadow-sm"
+              >
+                <div className="text-lg">✨</div>
+                {selectedIds.size > 0 ? `${selectedIds.size} Verbessern` : 'Verbessern'}
               </button>
-            </div>
-          </div>
-
-          {/* Sort Options */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 dark:text-slate-400">Sortierung:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-md px-2 py-1 text-slate-700 dark:text-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="date-desc">Neueste zuerst</option>
-              <option value="date-asc">Älteste zuerst</option>
-              <option value="name-asc">Name (A-Z)</option>
-              <option value="name-desc">Name (Z-A)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="p-4 pb-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder={t.searchPlaceholder || "Search..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-blue-500 text-slate-800 dark:text-slate-200 placeholder-slate-400"
-            />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
-          {history.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
-              <HistoryIcon size={48} className="mb-4 opacity-20" />
-              <p>{t.noHistory}</p>
-              <p className="text-xs mt-2">{t.noHistoryHint}</p>
+              <button
+                onClick={() => {
+                  if (confirm(`${selectedIds.size} Einträge wirklich löschen?`)) {
+                    selectedIds.forEach(id => onDelete(id));
+                    setSelectedIds(new Set());
+                  }
+                }}
+                disabled={selectedIds.size === 0}
+                className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Trash2 size={14} /> Löschen
+              </button>
             </div>
           ) : (
-            isOpen && (
-              <LocalErrorBoundary>
-                {itemsWithImageURLs.length < 50 ? (
-                  // STANDARD LIST (No Virtualization) - Better for small lists & stability
-                  <div className="h-full overflow-y-auto flex flex-col gap-2 pr-1 custom-scrollbar">
-                    {itemsWithImageURLs.map((item, index) => (
-                      <HistoryRow
-                        key={item.id}
-                        index={index}
-                        style={{}}
-                        data={{
-                          items: itemsWithImageURLs,
-                          viewMode,
-                          searchQuery,
-                          onLoad,
-                          onClose,
-                          onDelete,
-                          handleDownloadSingle,
-                          handleSaveToGoogle,
-                          t,
-                          hasMore: false // No loader needed for simple list usually, or handle differently
-                        }}
-                      />
-                    ))}
-                    {hasMore && (
-                      <div className="flex justify-center p-4">
-                        <button onClick={onLoadMore} className="text-blue-600 text-sm hover:underline">
-                          {t.loadMore}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // VIRTUALIZED LIST (For performance with many items)
-                  <AutoSizer>
-                    {({ height, width }) => (
-                      <FixedSizeList
-                        height={height}
-                        width={width}
-                        itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                        itemSize={viewMode === 'grid' ? 176 : 110}
-                        itemData={{
-                          items: itemsWithImageURLs,
-                          viewMode,
-                          searchQuery,
-                          onLoad,
-                          onClose,
-                          onDelete,
-                          handleDownloadSingle,
-                          handleSaveToGoogle,
-                          t,
-                          hasMore
-                        }}
-                        onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                          const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                          if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                            onLoadMore();
-                          }
-                        }}
-                      >
-                        {HistoryRow}
-                      </FixedSizeList>
-                    )}
-                  </AutoSizer>
-                )}
-              </LocalErrorBoundary>
-            )
+            <>
+              {/* Duplicate Finder Button */}
+              <button
+                onClick={() => setShowDuplicateFinder(true)}
+                className="w-full py-2 px-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
+              >
+                <Merge size={14} /> Dubletten suchen & bereinigen
+              </button>
+
+              <div className="grid grid-cols-4 gap-2">
+                <button
+                  onClick={handleExportAllVCF}
+                  className="flex flex-col items-center justify-center gap-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 rounded-lg text-[10px] font-medium transition-colors"
+                >
+                  <Contact size={16} />
+                  {t.vcfBackup}
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="flex flex-col items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                >
+                  <FileText size={16} />
+                  {t.csvExport}
+                </button>
+                <button
+                  onClick={handleExportJSON}
+                  className="flex flex-col items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                >
+                  <FileText size={16} />
+                  {t.jsonExport}
+                </button>
+                <button
+                  onClick={handleExportImages}
+                  className="flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
+                >
+                  <ImageIcon size={16} />
+                  {t.imgExport}
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  accept=".json"
+                  className="hidden"
+                />
+                <button
+                  onClick={handleRestoreClick}
+                  className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors"
+                  title={t.restoreBackup || "Restore Backup"}
+                >
+                  <Upload size={14} />
+                  <span className="truncate">{t.restoreBackup || "Restore"}</span>
+                </button>
+
+                <button
+                  onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
+                  className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
+                  title={t.clearHistory}
+                >
+                  <Trash2 size={14} />
+                  <span className="truncate">{t.clearHistory}</span>
+                </button>
+              </div>
+            </>
           )}
         </div>
+      )}
 
-        {/* Footer Actions */}
-        {history.length > 0 && (
-          <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 space-y-3">
-
-            {/* Duplicate Finder Button */}
-            <button
-              onClick={() => setShowDuplicateFinder(true)}
-              className="w-full py-2 px-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-1.5 shadow-sm"
-            >
-              <Merge size={14} /> Dubletten suchen & bereinigen
-            </button>
-
-            <div className="grid grid-cols-4 gap-2">
-              <button
-                onClick={handleExportAllVCF}
-                className="flex flex-col items-center justify-center gap-1 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 py-2 rounded-lg text-[10px] font-medium transition-colors"
-              >
-                <Contact size={16} />
-                {t.vcfBackup}
-              </button>
-              <button
-                onClick={handleExportCSV}
-                className="flex flex-col items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-              >
-                <FileText size={16} />
-                {t.csvExport}
-              </button>
-              <button
-                onClick={handleExportJSON}
-                className="flex flex-col items-center justify-center gap-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-              >
-                <FileText size={16} />
-                {t.jsonExport}
-              </button>
-              <button
-                onClick={handleExportImages}
-                className="flex flex-col items-center justify-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg text-[10px] font-medium transition-colors shadow-sm"
-              >
-                <ImageIcon size={16} />
-                {t.imgExport}
-              </button>
-            </div>
-
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept=".json"
-                className="hidden"
-              />
-              <button
-                onClick={handleRestoreClick}
-                className="flex items-center justify-center gap-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-2 rounded-lg text-xs font-medium transition-colors"
-                title={t.restoreBackup || "Restore Backup"}
-              >
-                <Upload size={14} />
-                <span className="truncate">{t.restoreBackup || "Restore"}</span>
-              </button>
-
-              <button
-                onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
-                className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
-                title={t.clearHistory}
-              >
-                <Trash2 size={14} />
-                <span className="truncate">{t.clearHistory}</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Load More Button Removed (Infinite Scroll) */}
-      </div>
+      {/* Load More Button Removed (Infinite Scroll) */}
+    </div >
     </>
   );
 };

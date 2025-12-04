@@ -29,11 +29,9 @@ export const useSmartStreetLoader = ({
                     console.log("[SmartLoader] Data Saver enabled. Skipping auto-load.");
                     return;
                 }
-                // 'slow-2g', '2g', '3g', or '4g'
-                if (conn.effectiveType && ['slow-2g', '2g'].includes(conn.effectiveType)) {
-                    console.log(`[SmartLoader] Connection too slow (${conn.effectiveType}). Skipping auto-load.`);
-                    return;
-                }
+                // We removed the strict 'effectiveType' check to allow auto-loading more often.
+                // The street DB is large (~20MB) but we want it to load if possible.
+                // Users can still cancel or we rely on the browser's own throttling if really slow.
             }
 
             // 2. Check Storage
