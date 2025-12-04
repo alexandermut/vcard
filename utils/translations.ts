@@ -213,6 +213,33 @@ export const translations = {
     faqAiTitle: "KI-Verarbeitung",
     faqAiDesc: "Für die Texterkennung werden Bilder kurzzeitig an die konfigurierte KI (Google Gemini oder OpenAI) gesendet, analysiert und sofort wieder gelöscht. Bei Nutzung von Ollama (Lokal) verlassen Daten Ihren PC nie.",
     faqAiTips: "Sicherheit: Nutzen Sie für sensible Daten ein lokales LLM (Ollama), um 100% offline zu arbeiten.",
+
+    // Section: Settings
+    faqSectionSettings: "6. Einstellungen & KI",
+    faqLlmTitle: "KI-Anbieter wählen",
+    faqLlmDesc: "Wählen Sie zwischen Google Gemini (schnell & präzise, Cloud), OpenAI (Alternative, Cloud) oder Ollama (Lokal, Datenschutz).",
+    faqLlmTips: "Empfehlung: 'Google Gemini Flash' bietet aktuell das beste Verhältnis aus Geschwindigkeit und Genauigkeit für Visitenkarten.",
+
+    faqKeyTitle: "API Keys",
+    faqKeyDesc: "Für Cloud-KI benötigen Sie einen API-Key. Dieser wird verschlüsselt nur in Ihrem Browser gespeichert.",
+    faqKeyTips: "Kostenlos: Google bietet einen großzügigen kostenlosen Tarif für Gemini an. Klicken Sie auf 'Key generieren', um einen zu erstellen.",
+
+    // Section: Troubleshooting
+    faqSectionTrouble: "7. Problemlösung",
+    faqCamTitle: "Kamera funktioniert nicht",
+    faqCamDesc: "Stellen Sie sicher, dass Sie dem Browser Zugriff auf die Kamera erlaubt haben. Prüfen Sie auch, ob eine andere App die Kamera blockiert.",
+    faqOllamaTitle: "Ollama Verbindung",
+    faqOllamaDesc: "Damit der Browser auf Ollama zugreifen kann, müssen Sie Ollama mit 'OLLAMA_ORIGINS=\"*\"' starten.",
+    faqOllamaTips: "Anleitung: Schauen Sie in die README oder auf GitHub für den genauen Startbefehl.",
+
+    // Section: App / PWA
+    faqSectionApp: "8. App & Installation",
+    faqPwaTitle: "Als App installieren",
+    faqPwaDesc: "Sie können diese Webseite wie eine echte App installieren. Klicken Sie dazu in Chrome/Edge in der Adressleiste auf das Installieren-Icon.",
+    faqPwaTips: "Vorteil: Die App funktioniert dann auch offline (mit lokalem LLM) und startet schneller.",
+
+    faqShortcutsTitle: "Tastenkürzel",
+    faqShortcutsDesc: "Strg+V: Bild einfügen | Esc: Fenster schließen | Drag & Drop: Dateien überall ablegen.",
   },
   en: {
     appTitle: "Kontakte.me",
@@ -287,6 +314,33 @@ export const translations = {
     faqAiTitle: "AI Processing",
     faqAiDesc: "For text recognition, images are briefly sent to the configured AI (Google Gemini or OpenAI), analyzed, and immediately deleted. When using Ollama (Local), data never leaves your PC.",
     faqAiTips: "Security: Use a local LLM (Ollama) for sensitive data to work 100% offline.",
+
+    // Section: Settings
+    faqSectionSettings: "6. Settings & AI",
+    faqLlmTitle: "Choose AI Provider",
+    faqLlmDesc: "Choose between Google Gemini (fast & accurate, Cloud), OpenAI (Alternative, Cloud), or Ollama (Local, Privacy).",
+    faqLlmTips: "Recommendation: 'Google Gemini Flash' currently offers the best balance of speed and accuracy for business cards.",
+
+    faqKeyTitle: "API Keys",
+    faqKeyDesc: "Cloud AI requires an API Key. It is stored encrypted only in your browser.",
+    faqKeyTips: "Free: Google offers a generous free tier for Gemini. Click 'Generate Key' to create one.",
+
+    // Section: Troubleshooting
+    faqSectionTrouble: "7. Troubleshooting",
+    faqCamTitle: "Camera not working",
+    faqCamDesc: "Ensure you have granted camera access to the browser. Also check if another app is blocking the camera.",
+    faqOllamaTitle: "Ollama Connection",
+    faqOllamaDesc: "For the browser to access Ollama, you must start Ollama with 'OLLAMA_ORIGINS=\"*\"'.",
+    faqOllamaTips: "Guide: Check the README or GitHub for the exact start command.",
+
+    // Section: App / PWA
+    faqSectionApp: "8. App & Installation",
+    faqPwaTitle: "Install as App",
+    faqPwaDesc: "You can install this website like a real app. Click the install icon in the address bar in Chrome/Edge.",
+    faqPwaTips: "Benefit: The app then works offline (with local LLM) and launches faster.",
+
+    faqShortcutsTitle: "Shortcuts",
+    faqShortcutsDesc: "Ctrl+V: Paste image | Esc: Close window | Drag & Drop: Drop files anywhere.",
 
 
 

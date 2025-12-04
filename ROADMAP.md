@@ -52,6 +52,8 @@ This file tracks the current development status and planned features.
 - [x] **Batch Upload:** Process multiple images/PDFs at once.
 - [x] **PDF Support:** Import and process PDF files.
 - [x] **One-Click Backup:** ZIP export with all vCards and Images.
+- [x] **Unified Sidebar UI:** Refactored all modals (Scan, Help, Settings, etc.) to consistent sidebars.
+- [x] **Advanced Help & Manual:** Comprehensive guide with tips, tricks, and troubleshooting.
 
 ### Performance & Memory Optimization 🚀
 - [x] **Virtualization:** Implement `react-virtuoso` for History and Notes lists (>1000 contacts).
@@ -110,22 +112,22 @@ This file tracks the current development status and planned features.
 ### Phase 1: Foundation & False Positive Elimination (Week 1-2)
 
 #### 1.1 Create Infrastructure
-- [ ] **Create `utils/parserAnchors.ts`** - Centralized anchor management
-  - [ ] Export blacklist prefixes as const arrays
-  - [ ] Export legal forms as categorized objects
-  - [ ] Export industry keywords
-  - [ ] Provide utility functions: `isBlacklisted()`, `hasLegalForm()`, `fuzzyMatch()`
+- [x] **Create `utils/parserAnchors.ts`** - Centralized anchor management
+  - [x] Export blacklist prefixes as const arrays
+  - [x] Export legal forms as categorized objects
+  - [x] Export industry keywords
+  - [x] Provide utility functions: `isBlacklisted()`, `hasLegalForm()`, `fuzzyMatch()`
 
-- [ ] **Create `utils/anchorDetection.ts`** - Anchor detection engine
-  - [ ] `detectPLZ(text: string): AnchorMatch[]` - Find all PLZ with positions
-  - [ ] `detectAreaCodes(text: string): AnchorMatch[]` - Find area codes
-  - [ ] `detectStreets(text: string): AnchorMatch[]` - Fuzzy street matching
-  - [ ] `detectCities(text: string): AnchorMatch[]` - City name matching
-  - [ ] Return format: `{ value: string, position: [start, end], weight: number }`
+- [x] **Create `utils/anchorDetection.ts`** - Anchor detection engine
+  - [x] `detectPLZ(text: string): AnchorMatch[]` - Find all PLZ with positions
+  - [x] `detectAreaCodes(text: string): AnchorMatch[]` - Find area codes
+  - [x] `detectStreets(text: string): AnchorMatch[]` - Fuzzy street matching
+  - [x] `detectCities(text: string): AnchorMatch[]` - City name matching
+  - [x] Return format: `{ value: string, position: [start, end], weight: number }`
 
 #### 1.2 Blacklist Implementation ⚡
-- [ ] **Phone Number False Positives**
-  - [ ] Create regex negative lookahead for 40+ blacklist prefixes
+- [x] **Phone Number False Positives**
+  - [x] Create regex negative lookahead for 40+ blacklist prefixes
   - **Prefix Catalog (Numbers to EXCLUDE):**
     - **Tax/Registration (9):** `USt-ID`, `USt.ID`, `Umsatzsteuer-ID`, `VAT`, `VAT-ID`, `VAT No`, `UID`, `Steuernummer`, `St.-Nr.`, `Steuer-Nr.`
     - **Trade Registry (8):** `Handelsregister`, `HRB`, `HRA`, `HR`, `Registernummer`, `Reg.-Nr.`, `Firmenbuchnummer`, `FN`
@@ -133,8 +135,8 @@ This file tracks the current development status and planned features.
     - **Business IDs (8):** `Artikelnummer`, `Art.-Nr.`, `Bestellnummer`, `Best.-Nr.`, `Kundennummer`, `Kd.-Nr.`, `Rechnungsnummer`, `Rechn.-Nr.`
     - **Personal IDs (6):** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
     - **Dates (3):** `geb.`, `geboren`, `Geburtsdatum`
-  - [ ] Pattern: `(?<!(?:USt-ID|IBAN|...):\s*)\d+` (negative lookbehind)
-  - [ ] Test with edge cases: "IBAN: DE12 3456..." vs "Tel: 030 123456"
+  - [x] Pattern: `(?<!(?:USt-ID|IBAN|...):\s*)\d+` (negative lookbehind)
+  - [x] Test with edge cases: "IBAN: DE12 3456..." vs "Tel: 030 123456"
 
 #### 1.3 Legal Forms Database
 - [ ] **Implement Company Detection**

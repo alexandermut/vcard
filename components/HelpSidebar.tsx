@@ -63,6 +63,27 @@ export const HelpSidebar: React.FC<HelpSidebarProps> = ({ isOpen, onClose, lang 
                 { icon: Shield, title: t.faqPrivacyTitle, desc: t.faqPrivacyDesc, color: "text-slate-500" },
                 { icon: Shield, title: t.faqAiTitle, desc: t.faqAiDesc, tips: t.faqAiTips, color: "text-slate-400" },
             ]
+        },
+        {
+            title: t.faqSectionSettings,
+            items: [
+                { icon: Layers, title: t.faqLlmTitle, desc: t.faqLlmDesc, tips: t.faqLlmTips, color: "text-orange-500" },
+                { icon: Layers, title: t.faqKeyTitle, desc: t.faqKeyDesc, tips: t.faqKeyTips, color: "text-orange-400" },
+            ]
+        },
+        {
+            title: t.faqSectionTrouble,
+            items: [
+                { icon: Lightbulb, title: t.faqCamTitle, desc: t.faqCamDesc, color: "text-red-500" },
+                { icon: Lightbulb, title: t.faqOllamaTitle, desc: t.faqOllamaDesc, tips: t.faqOllamaTips, color: "text-red-400" },
+            ]
+        },
+        {
+            title: t.faqSectionApp,
+            items: [
+                { icon: Download, title: t.faqPwaTitle, desc: t.faqPwaDesc, tips: t.faqPwaTips, color: "text-teal-500" },
+                { icon: Lightbulb, title: t.faqShortcutsTitle, desc: t.faqShortcutsDesc, color: "text-teal-400" },
+            ]
         }
     ];
 

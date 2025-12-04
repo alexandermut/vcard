@@ -23,6 +23,8 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
 *   **Complete History:** All scans are stored locally (IndexedDB with Blob optimization).
 *   **Export:** vCard (.vcf), CSV (Excel-compatible), and Image Download (ZIP).
 *   **Cross-Platform:** Works as an installable PWA on Desktop, iOS, and Android.
+*   **Unified Sidebar UI:** Modern, consistent sidebar interface for all tools (Scan, Settings, History, Help).
+*   **Advanced Help & Manual:** Comprehensive offline documentation with tips, tricks, and troubleshooting guides.
 *   **UI/UX:** Dark Mode (Default), Responsive Design, Standalone pages for Imprint & Privacy.
 
 ---
