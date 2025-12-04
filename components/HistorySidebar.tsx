@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, Calendar, MapPin, Download, Trash2, Clock, Filter, Check, MoreVertical, List as ListIcon, LayoutGrid, Upload, Loader2, Image as ImageIcon, History as HistoryIcon, Contact, FileText, Merge, Users } from 'lucide-react';
 import * as ReactWindow from 'react-window';
 // @ts-ignore
-const FixedSizeList = ReactWindow.FixedSizeList;
+const FixedSizeList = ReactWindow.FixedSizeList || (ReactWindow.default ? ReactWindow.default.FixedSizeList : undefined);
 import AutoSizer from 'react-virtualized-auto-sizer';
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
