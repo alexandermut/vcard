@@ -835,7 +835,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
       )}
 
       {/* Load More Button Removed (Infinite Scroll) */}
-    </div >
+    </div>
     </>
   );
 };
