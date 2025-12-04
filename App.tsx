@@ -24,7 +24,7 @@ import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
-import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory } from './utils/db';
+import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory, countStreets } from './utils/db';
 import { ChatModal } from './components/ChatModal';
 import { NotesModal } from './components/NotesModal';
 import { FailedScansModal } from './components/FailedScansModal';
@@ -275,6 +275,16 @@ const App: React.FC = () => {
       // Load failed scans count
       const failed = await getFailedScans();
       setFailedScansCount(failed.length);
+
+      // Check Street DB status
+      try {
+        const streetCount = await countStreets();
+        if (streetCount > 0) {
+          setStreetDbStatus('ready');
+        }
+      } catch (e) {
+        console.error("Failed to check street count", e);
+      }
     };
     loadHistory();
   }, []);

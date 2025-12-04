@@ -21,17 +21,13 @@ export const useSmartStreetLoader = ({
         const checkAndLoad = async () => {
             hasChecked.current = true; // Only check once per session
 
-            // 1. Check Connection
+            // 1. Check Connection (Log only, don't block)
             const nav = navigator as any;
             if (nav.connection) {
                 const conn = nav.connection;
                 if (conn.saveData) {
-                    console.log("[SmartLoader] Data Saver enabled. Skipping auto-load.");
-                    return;
+                    console.warn("[SmartLoader] Data Saver enabled. Proceeding anyway (user can cancel).");
                 }
-                // We removed the strict 'effectiveType' check to allow auto-loading more often.
-                // The street DB is large (~20MB) but we want it to load if possible.
-                // Users can still cancel or we rely on the browser's own throttling if really slow.
             }
 
             // 2. Check Storage
@@ -42,31 +38,25 @@ export const useSmartStreetLoader = ({
                         const freeSpaceBytes = estimate.quota - estimate.usage;
                         const freeSpaceMB = freeSpaceBytes / (1024 * 1024);
 
-                        if (freeSpaceMB < minFreeSpaceMB) {
-                            console.warn(`[SmartLoader] Low storage (${Math.round(freeSpaceMB)}MB free). Skipping auto-load.`);
+                        // Lower limit to 10MB
+                        if (freeSpaceMB < 10) {
+                            console.warn(`[SmartLoader] Very low storage (${Math.round(freeSpaceMB)}MB free). Skipping auto-load.`);
                             return;
                         }
                         console.log(`[SmartLoader] Storage check passed (${Math.round(freeSpaceMB)}MB free).`);
                     }
                 } catch (e) {
                     console.warn("[SmartLoader] Storage estimate failed", e);
-                    // Continue if check fails? Maybe safer to skip.
-                    return;
                 }
             }
 
-            // 3. Trigger Load (via Idle Callback to be nice)
-            const idleCallback = (window as any).requestIdleCallback || ((cb: any) => setTimeout(cb, 1000));
-
-            idleCallback(() => {
-                console.log("[SmartLoader] Conditions met. Starting auto-load...");
-                onLoad();
-            }, { timeout: 5000 });
+            // 3. Trigger Load immediately
+            console.log("[SmartLoader] Conditions met. Starting auto-load...");
+            onLoad();
         };
 
-        // Delay initial check slightly to let app settle
-        const timer = setTimeout(checkAndLoad, 2000);
+        const timer = setTimeout(checkAndLoad, 1000);
         return () => clearTimeout(timer);
 
-    }, [enabled, status, onLoad, minFreeSpaceMB]);
+    }, [enabled, status, onLoad]);
 };
