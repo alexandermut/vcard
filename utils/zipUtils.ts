@@ -60,7 +60,8 @@ export const restoreBackupZip = async (file: File): Promise<number> => {
         const loadedZip = await zip.loadAsync(file);
 
         // Prioritize JSON backup for full restoration
-        const jsonFile = Object.values(loadedZip.files).find(f => f.name.endsWith('.json') && !f.dir);
+        const files = loadedZip.files || {};
+        const jsonFile = Object.values(files).find(f => f.name.endsWith('.json') && !f.dir);
 
         if (jsonFile) {
             const content = await jsonFile.async('string');
@@ -99,7 +100,7 @@ export const restoreBackupZip = async (file: File): Promise<number> => {
                         if (!imgFile) {
                             const id = contact.id;
                             // Look for files starting with ID in images/
-                            const match = Object.values(loadedZip.files).find(f => f.name.includes(`images/${id}_`));
+                            const match = Object.values(files).find(f => f.name.includes(`images/${id}_`));
                             if (match) imgFile = match;
                         }
 
@@ -132,13 +133,13 @@ export const restoreBackupZip = async (file: File): Promise<number> => {
         }
 
         // Fallback: Check for vCard file
-        const vcardFile = Object.values(loadedZip.files).find(f => f.name.endsWith('.vcf') && !f.dir);
+        const vcardFile = Object.values(files).find(f => f.name.endsWith('.vcf') && !f.dir);
         if (vcardFile) {
             throw new Error("ZIP enthält nur vCards. Bitte nutze den vCard-Import.");
         }
 
         // Fallback: Check for CSV file
-        const csvFile = Object.values(loadedZip.files).find(f => f.name.endsWith('.csv') && !f.dir);
+        const csvFile = Object.values(files).find(f => f.name.endsWith('.csv') && !f.dir);
         if (csvFile) {
             throw new Error("ZIP enthält nur CSV. Bitte nutze den CSV-Import.");
         }
