@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { X, Search, Link as LinkIcon, Plus, ExternalLink, Globe, Linkedin, Facebook, Instagram } from 'lucide-react';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
-interface SocialSearchModalProps {
+interface SocialSearchSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   initialName: string;
@@ -13,14 +14,16 @@ interface SocialSearchModalProps {
   lang: Language;
 }
 
-export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
+export const SocialSearchSidebar: React.FC<SocialSearchSidebarProps> = ({
   isOpen, onClose, initialName, initialOrg, onAddUrl, initialPlatform, lang
 }) => {
+  useEscapeKey(onClose, isOpen);
+  const t = translations[lang];
+
   const [name, setName] = useState(initialName);
   const [org, setOrg] = useState(initialOrg);
   const [foundUrl, setFoundUrl] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('LINKEDIN');
-  const t = translations[lang];
 
   useEffect(() => {
     if (isOpen) {
@@ -40,8 +43,6 @@ export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
       document.body.style.overflow = '';
     };
   }, [isOpen, initialName, initialOrg, initialPlatform]);
-
-  if (!isOpen) return null;
 
   const platforms = [
     { id: 'LINKEDIN', label: 'LinkedIn', domain: 'linkedin.com/in/', icon: Linkedin, color: 'text-blue-700' },
@@ -66,8 +67,15 @@ export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
           <h2 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -79,12 +87,12 @@ export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 space-y-6 custom-scrollbar">
 
           {/* Search Parameters */}
           <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase mb-3 block">{t.searchParams}</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <input
                   type="text"
@@ -169,8 +177,8 @@ export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
             onClick={handleAdd}
             disabled={!foundUrl}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg shadow-sm flex items-center gap-2 transition-all ${!foundUrl
-                ? 'bg-slate-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98]'
+              ? 'bg-slate-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 active:scale-[0.98]'
               }`}
           >
             <Plus size={16} />
@@ -179,6 +187,6 @@ export const SocialSearchModal: React.FC<SocialSearchModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </>
   );
 };

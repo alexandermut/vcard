@@ -79,6 +79,17 @@ export default defineConfig({
   base: './',
   build: {
     outDir: 'dist',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'tesseract-vendor': ['tesseract.js'],
+          'ui-vendor': ['lucide-react', 'sonner'],
+          'image-vendor': ['smartcrop', 'browser-image-compression'],
+          'utils-vendor': ['idb', 'comlink', 'jszip'],
+        },
+      },
+    },
   },
   server: {
     proxy: {

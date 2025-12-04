@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { X, RefreshCw, Trash2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { FailedScan, getFailedScans, deleteFailedScan } from '../utils/db';
 import { toast } from 'sonner';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
-interface FailedScansModalProps {
+interface FailedScansSidebarProps {
     isOpen: boolean;
     onClose: () => void;
     onRetry: (images: string[], mode: 'vision' | 'hybrid') => void;
 }
 
-export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onClose, onRetry }) => {
+export const FailedScansSidebar: React.FC<FailedScansSidebarProps> = ({ isOpen, onClose, onRetry }) => {
+    useEscapeKey(onClose, isOpen);
     const [scans, setScans] = useState<FailedScan[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -81,14 +83,19 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
         }
     };
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+        <>
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
+                    onClick={onClose}
+                />
+            )}
+
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
-                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-white dark:bg-slate-950 shrink-0">
                     <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         <AlertTriangle size={20} className="text-red-500" />
                         Fehlgeschlagene Scans
@@ -99,7 +106,7 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50">
+                <div className="flex-1 overflow-y-auto p-4 bg-slate-50 dark:bg-slate-900/50 custom-scrollbar">
                     {loading ? (
                         <div className="flex justify-center p-8">
                             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -111,9 +118,9 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
                     ) : (
                         <div className="space-y-4">
                             {scans.map(scan => (
-                                <div key={scan.id} className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row gap-4">
+                                <div key={scan.id} className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col gap-4">
                                     {/* Images */}
-                                    <div className="flex gap-2 overflow-x-auto sm:w-1/3 shrink-0 pb-2 sm:pb-0">
+                                    <div className="flex gap-2 overflow-x-auto pb-2 sm:pb-0 custom-scrollbar">
                                         {scan.images.map((img, i) => (
                                             <div key={i} className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700">
                                                 <img src={img} alt={`Scan ${i}`} className="w-full h-full object-cover" />
@@ -160,7 +167,7 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
 
                 {/* Footer */}
                 {scans.length > 0 && (
-                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex justify-end">
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex justify-end shrink-0">
                         <button
                             onClick={handleDeleteAll}
                             className="text-red-500 hover:text-red-700 text-sm font-medium px-4 py-2"
@@ -170,6 +177,6 @@ export const FailedScansModal: React.FC<FailedScansModalProps> = ({ isOpen, onCl
                     </div>
                 )}
             </div>
-        </div>
+        </>
     );
 };

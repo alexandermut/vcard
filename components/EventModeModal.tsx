@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Tag } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { Language } from '../types';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
 interface EventModeModalProps {
     isOpen: boolean;
     onClose: () => void;
-    isActive: boolean;
-    eventName: string;
+    isActive: boolean; // This prop is now managed internally by localActive, but kept for initial state
+    eventName: string; // This prop is now managed internally by localName, but kept for initial state
     onSave: (active: boolean, name: string) => void;
     lang: Language;
 }
@@ -15,6 +16,7 @@ interface EventModeModalProps {
 export const EventModeModal: React.FC<EventModeModalProps> = ({
     isOpen, onClose, isActive, eventName, onSave, lang
 }) => {
+    useEscapeKey(onClose, isOpen);
     const [localActive, setLocalActive] = useState(isActive);
     const [localName, setLocalName] = useState(eventName);
 

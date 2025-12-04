@@ -10,7 +10,10 @@ interface QRScannerModalProps {
     lang: string;
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const QRScannerModal: React.FC<QRScannerModalProps> = ({ isOpen, onClose, onScan, lang }) => {
+    useEscapeKey(onClose, isOpen);
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);

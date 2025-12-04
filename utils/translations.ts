@@ -165,36 +165,54 @@ export const translations = {
     faqSectionScan: "1. Scannen & Importieren",
     faqScanTitle: "Wie scanne ich Visitenkarten?",
     faqScanDesc: "Nutzen Sie den 'Scannen' Button für einzelne Karten oder 'Stapel-Upload' für mehrere auf einmal. Sie können Fotos direkt aufnehmen oder Dateien (Bilder/PDFs) per Drag & Drop in das Fenster ziehen.",
+    faqScanTips: "Tipp: Achten Sie auf gute Beleuchtung und einen dunklen Hintergrund für beste Ergebnisse. Bei glänzenden Karten hilft es, den Blitz auszuschalten, um Reflexionen zu vermeiden.",
+
     faqQrTitle: "QR-Codes scannen",
     faqQrDesc: "Klicken Sie auf das QR-Icon im Header, um digitale Visitenkarten direkt über die Webcam zu erfassen.",
+    faqQrTips: "Hinweis: Der Scanner erkennt automatisch vCards. Halten Sie den Code ruhig und parallel zur Kamera.",
+
+    faqBatchTitle: "Stapel-Verarbeitung",
+    faqBatchDesc: "Laden Sie bis zu 50 Bilder gleichzeitig hoch. Die KI verarbeitet diese im Hintergrund, während Sie weiterarbeiten können.",
+    faqBatchTips: "Pro-Tipp: Sie können auch mehrseitige PDFs hochladen – jede Seite wird als separate Karte erkannt.",
 
     // Section: Editing
     faqSectionEdit: "2. Bearbeiten & KI",
     faqEditTitle: "Daten korrigieren & optimieren",
     faqEditDesc: "Tippen Sie direkt in die Vorschau oder nutzen Sie den Text-Editor links. Der 'AI' Button (Zauberstab) nutzt künstliche Intelligenz, um Fehler zu korrigieren und fehlende Daten zu ergänzen.",
+    faqEditTips: "Tipp: Wenn die KI Felder falsch zuordnet, korrigieren Sie diese manuell im Text-Editor und drücken Sie erneut auf 'AI', um die Struktur neu zu analysieren.",
+
     faqSocialTitle: "Social Media Suche",
     faqSocialDesc: "Klicken Sie auf 'Recherche starten' in der Vorschau. Die App sucht automatisch nach LinkedIn, Xing oder Firmenwebseiten passend zum Kontakt.",
+    faqSocialTips: "Trick: Nutzen Sie die gefundene LinkedIn-URL, um das Profilbild des Kontakts automatisch zu laden (Zukunftsmusik/Feature-Idee).",
 
     // Section: Notes
     faqSectionNotes: "3. Notizen & Organisation",
     faqNotesTitle: "Notizen verwalten",
     faqNotesDesc: "Zu jedem Kontakt können Sie Notizen erfassen (Notiz-Icon). Diese sind durchsuchbar und werden mit dem Kontakt gespeichert. Nutzen Sie das Stift-Icon in der Seitenleiste, um Notizen nachträglich zu ändern.",
+    faqNotesTips: "Organisation: Nutzen Sie Hashtags in Notizen (z.B. #Messe2024), um Kontakte später über die Suche einfach zu gruppieren.",
+
     faqHybridTitle: "Hybrid-Modus",
     faqHybridDesc: "Aktivieren Sie im Scan-Fenster den 'Hybrid-Modus', wenn Sie eine Visitenkarte zusammen mit handschriftlichen Notizen fotografieren. Die KI trennt und speichert beides korrekt.",
+    faqHybridTips: "Wichtig: Schreiben Sie deutlich. Die KI kann auch krakelige Handschrift lesen, aber je klarer, desto besser.",
 
     // Section: Data
     faqSectionData: "4. Daten & Export",
     faqHistoryTitle: "Verlauf & Speichern",
     faqHistoryDesc: "Gespeicherte Kontakte landen im 'Verlauf'. Von dort können Sie sie jederzeit wieder aufrufen, durchsuchen oder als CSV/JSON exportieren.",
+    faqHistoryTips: "Suche: Die Suche im Verlauf durchsucht Namen, Firmen, Orte und Ihre Notizen gleichzeitig.",
+
     faqExportTitle: "Export-Formate",
     faqExportDesc: "Laden Sie Kontakte als VCF (für Outlook/Handy), CSV (für Excel) oder JSON herunter. Auch die Originalbilder können als ZIP gesichert werden.",
+    faqExportTips: "Backup: Nutzen Sie den JSON-Export als vollständiges Backup Ihrer Datenbank. Sie können diese Datei jederzeit über 'Backup laden' wiederherstellen.",
 
     // Section: Privacy
     faqSectionPrivacy: "5. Datenschutz & Technik",
     faqPrivacyTitle: "Wo liegen meine Daten?",
     faqPrivacyDesc: "Ihre Daten (Bilder, Texte, Datenbank) liegen ausschließlich lokal in Ihrem Browser (IndexedDB). Nichts wird auf unseren Servern gespeichert.",
+
     faqAiTitle: "KI-Verarbeitung",
     faqAiDesc: "Für die Texterkennung werden Bilder kurzzeitig an die konfigurierte KI (Google Gemini oder OpenAI) gesendet, analysiert und sofort wieder gelöscht. Bei Nutzung von Ollama (Lokal) verlassen Daten Ihren PC nie.",
+    faqAiTips: "Sicherheit: Nutzen Sie für sensible Daten ein lokales LLM (Ollama), um 100% offline zu arbeiten.",
   },
   en: {
     appTitle: "Kontakte.me",
@@ -221,36 +239,54 @@ export const translations = {
     faqSectionScan: "1. Scanning & Import",
     faqScanTitle: "How to scan business cards?",
     faqScanDesc: "Use the 'Scan' button for single cards or 'Batch Upload' for multiple. You can take photos directly or drag & drop files (Images/PDFs) into the window.",
+    faqScanTips: "Tip: Ensure good lighting and a dark background for best results. For glossy cards, turn off the flash to avoid reflections.",
+
     faqQrTitle: "Scanning QR Codes",
     faqQrDesc: "Click the QR icon in the header to capture digital business cards directly via webcam.",
+    faqQrTips: "Note: The scanner automatically detects vCards. Hold the code steady and parallel to the camera.",
+
+    faqBatchTitle: "Batch Processing",
+    faqBatchDesc: "Upload up to 50 images at once. The AI processes them in the background while you continue working.",
+    faqBatchTips: "Pro Tip: You can also upload multi-page PDFs – each page is recognized as a separate card.",
 
     // Section: Editing
     faqSectionEdit: "2. Editing & AI",
     faqEditTitle: "Correcting & Optimizing Data",
     faqEditDesc: "Type directly into the preview or use the text editor on the left. The 'AI' button (Magic Wand) uses artificial intelligence to fix errors and complete missing data.",
+    faqEditTips: "Tip: If the AI misassigns fields, correct them manually in the text editor and press 'AI' again to re-analyze the structure.",
+
     faqSocialTitle: "Social Media Search",
     faqSocialDesc: "Click 'Start Research' in the preview. The app automatically searches for LinkedIn, Xing, or company websites matching the contact.",
+    faqSocialTips: "Trick: Use the found LinkedIn URL to automatically load the contact's profile picture (Future feature idea).",
 
     // Section: Notes
     faqSectionNotes: "3. Notes & Organization",
     faqNotesTitle: "Managing Notes",
     faqNotesDesc: "You can add notes to any contact (Note icon). These are searchable and stored with the contact. Use the pencil icon in the sidebar to edit notes later.",
+    faqNotesTips: "Organization: Use hashtags in notes (e.g., #TradeFair2024) to easily group contacts later via search.",
+
     faqHybridTitle: "Hybrid Mode",
     faqHybridDesc: "Enable 'Hybrid Mode' in the scan window when photographing a business card alongside handwritten notes. The AI separates and saves both correctly.",
+    faqHybridTips: "Important: Write clearly. The AI can read messy handwriting, but the clearer, the better.",
 
     // Section: Data
     faqSectionData: "4. Data & Export",
     faqHistoryTitle: "History & Storage",
     faqHistoryDesc: "Saved contacts go to 'History'. From there, you can recall, search, or export them as CSV/JSON at any time.",
+    faqHistoryTips: "Search: The history search scans names, companies, locations, and your notes simultaneously.",
+
     faqExportTitle: "Export Formats",
     faqExportDesc: "Download contacts as VCF (for Outlook/Mobile), CSV (for Excel), or JSON. Original images can also be saved as ZIP.",
+    faqExportTips: "Backup: Use the JSON export as a full backup of your database. You can restore this file anytime via 'Restore Backup'.",
 
     // Section: Privacy
     faqSectionPrivacy: "5. Privacy & Tech",
     faqPrivacyTitle: "Where is my data?",
     faqPrivacyDesc: "Your data (images, text, database) resides exclusively locally in your browser (IndexedDB). Nothing is stored on our servers.",
+
     faqAiTitle: "AI Processing",
     faqAiDesc: "For text recognition, images are briefly sent to the configured AI (Google Gemini or OpenAI), analyzed, and immediately deleted. When using Ollama (Local), data never leaves your PC.",
+    faqAiTips: "Security: Use a local LLM (Ollama) for sensitive data to work 100% offline.",
 
 
 

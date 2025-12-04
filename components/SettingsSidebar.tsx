@@ -46,6 +46,8 @@ interface SettingsSidebarProps {
     setConcurrentScans: (value: number) => void; // ✅ NEW
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     isOpen, onClose, onSave, apiKey, lang, setLang, isDarkMode, setIsDarkMode, errorMessage,
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
@@ -53,6 +55,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
     onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod, concurrentScans, setConcurrentScans
 }) => {
+    useEscapeKey(onClose, isOpen);
     const [hasSystemKey, setHasSystemKey] = useState(false);
     const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
     const { isAuthenticated } = useGoogleContactsAuth();
@@ -108,7 +111,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             )}
 
             {/* Sidebar Panel */}
-            <div className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -122,7 +125,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white dark:bg-slate-900">
+                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-white dark:bg-slate-900 min-h-0">
 
                     {errorMessage && (
                         <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">

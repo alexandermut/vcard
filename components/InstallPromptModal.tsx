@@ -8,9 +8,10 @@ interface InstallPromptModalProps {
     lang: Language;
 }
 
-export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ isOpen, onClose, lang }) => {
-    if (!isOpen) return null;
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
+export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ isOpen, onClose, onInstall, lang }) => {
+    useEscapeKey(onClose, isOpen);
     const isGerman = lang === 'de';
 
     // Lock body scroll

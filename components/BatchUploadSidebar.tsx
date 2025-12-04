@@ -4,8 +4,9 @@ import { Language, ScanJob } from '../types';
 import { translations } from '../utils/translations';
 import { convertPdfToImages } from '../utils/pdfUtils';
 import { toast } from 'sonner';
+import { useEscapeKey } from '../hooks/useEscapeKey';
 
-interface BatchUploadModalProps {
+interface BatchUploadSidebarProps {
     isOpen: boolean;
     onClose: () => void;
     onAddJobs: (jobs: File[][], mode: 'vision' | 'hybrid') => void;
@@ -13,6 +14,7 @@ interface BatchUploadModalProps {
     onRemoveJob: (id: string) => void;
     lang: Language;
 }
+
 interface QueueItemProps {
     job: ScanJob;
     onRemove: (id: string) => void;
@@ -71,7 +73,8 @@ const QueueItem: React.FC<QueueItemProps> = ({ job, onRemove, getStatusIcon }) =
         </div>
     );
 };
-export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
+
+export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
     isOpen,
     onClose,
     onAddJobs,
@@ -79,6 +82,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     onRemoveJob,
     lang
 }) => {
+    useEscapeKey(onClose, isOpen);
     // Each "Job" is an array of files (e.g. 1 image or N PDF pages)
     const [selectedJobs, setSelectedJobs] = useState<File[][]>([]);
     const [isDragging, setIsDragging] = useState(false);
@@ -98,8 +102,6 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
             document.body.style.overflow = '';
         };
     }, [isOpen]);
-
-    if (!isOpen) return null;
 
     const processFiles = async (files: FileList | null) => {
         if (!files) return;
@@ -183,8 +185,15 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
     const errorCount = queue.filter(j => j.status === 'error').length;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800">
+        <>
+            {isOpen && (
+                <div
+                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
+                    onClick={onClose}
+                />
+            )}
+
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
@@ -209,7 +218,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 </div>
 
                 {/* Content */}
-                <div className="p-6 overflow-y-auto bg-white dark:bg-slate-900 space-y-4">
+                <div className="p-6 overflow-y-auto bg-white dark:bg-slate-900 space-y-4 flex-1 custom-scrollbar">
 
                     {/* Mode Selector */}
                     <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
@@ -275,7 +284,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                                     {t.startProcessing}
                                 </button>
                             </div>
-                            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto custom-scrollbar">
                                 {selectedJobs.map((jobFiles, index) => (
                                     <div key={index} className="relative group">
                                         <img
@@ -323,7 +332,7 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                                     )}
                                 </div>
                             </div>
-                            <div className="space-y-1 max-h-64 overflow-y-auto">
+                            <div className="space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
                                 {queue.map((job) => (
                                     <QueueItem
                                         key={job.id}
@@ -344,6 +353,6 @@ export const BatchUploadModal: React.FC<BatchUploadModalProps> = ({
                 </div>
 
             </div>
-        </div>
+        </>
     );
 };

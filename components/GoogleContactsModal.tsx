@@ -12,8 +12,11 @@ interface GoogleContactsModalProps {
     onImport: (vcards: string[]) => void;
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const GoogleContactsModal: React.FC<GoogleContactsModalProps> = ({ isOpen, onClose, onImport }) => {
-    const { isAuthenticated, login, token } = useGoogleContactsAuth();
+    useEscapeKey(onClose, isOpen);
+    const { isAuthenticated, login, logout, isLoading: authLoading } = useGoogleContactsAuth();
     const [activeTab, setActiveTab] = useState<'overview' | 'import' | 'sync' | 'tools'>('overview');
 
     // UI State

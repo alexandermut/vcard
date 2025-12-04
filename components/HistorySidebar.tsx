@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Calendar, MapPin, Download, Trash2, Clock, Filter, Check, MoreVertical, List as ListIcon, LayoutGrid, Upload, Loader2, Image as ImageIcon, History as HistoryIcon, Contact, FileText, Merge, Users } from 'lucide-react';
-import * as ReactWindow from 'react-window';
-import AutoSizer from 'react-virtualized-auto-sizer';
-
-// Robust import for FixedSizeList to handle ESM/CJS differences
-const FixedSizeList = ((ReactWindow as any).FixedSizeList || (ReactWindow as any).List || (ReactWindow as any).default?.FixedSizeList || (ReactWindow as any).default?.List) as any;
+import { Virtuoso } from 'react-virtuoso';
 import JSZip from 'jszip';
 import { HistoryItem, Language } from '../types';
 import { translations } from '../utils/translations';
@@ -272,15 +268,15 @@ class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, 
   }
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory, onBulkEnhance
 }) => {
+  useEscapeKey(onClose, isOpen);
   // ... (rest of component logic)
 
-  if (!FixedSizeList || !AutoSizer) {
-    console.error('HistorySidebar dependencies missing:', { FixedSizeList, AutoSizer });
-    return null;
-  }
+
 
   // Safety check for history prop
   if (!history || !Array.isArray(history)) {
@@ -511,7 +507,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
         />
       )}
 
-      <div className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
           <div className="flex justify-between items-center mb-3">
@@ -593,7 +589,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
+        <div className="flex-1 overflow-hidden p-4 min-h-0">
           {history.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
               <HistoryIcon size={48} className="mb-4 opacity-20" />
@@ -638,14 +634,19 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   </div>
                 ) : (
                   // VIRTUALIZED LIST (For performance with many items)
-                  <AutoSizer>
-                    {({ height, width }) => (
-                      <FixedSizeList
-                        height={height}
-                        width={width}
-                        itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                        itemSize={viewMode === 'grid' ? 176 : 110}
-                        itemData={{
+                  // VIRTUALIZED LIST (react-virtuoso)
+                  <Virtuoso
+                    style={{ height: '100%' }}
+                    className="custom-scrollbar"
+                    data={itemsWithImageURLs}
+                    endReached={() => {
+                      if (hasMore) onLoadMore();
+                    }}
+                    itemContent={(index, item) => (
+                      <HistoryRow
+                        index={index}
+                        style={{}} // Virtuoso handles layout
+                        data={{
                           items: itemsWithImageURLs,
                           viewMode,
                           searchQuery,
@@ -660,17 +661,16 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                           selectedIds,
                           onToggleSelection: toggleSelection
                         }}
-                        onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                          const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                          if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                            onLoadMore();
-                          }
-                        }}
-                      >
-                        {HistoryRow}
-                      </FixedSizeList>
+                      />
                     )}
-                  </AutoSizer>
+                    components={{
+                      Footer: () => hasMore ? (
+                        <div className="flex justify-center items-center py-4">
+                          <Loader2 className="animate-spin text-blue-500" size={24} />
+                        </div>
+                      ) : null
+                    }}
+                  />
                 )}
               </LocalErrorBoundary>
             )

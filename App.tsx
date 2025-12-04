@@ -10,24 +10,24 @@ import { generateJSON, downloadJSON, restoreJSON } from './utils/jsonUtils';
 import { generateBackupZip, restoreBackupZip, downloadZip } from './utils/zipUtils';
 import { HistorySidebar } from './components/HistorySidebar';
 import { SettingsSidebar } from './components/SettingsSidebar';
-import { BatchUploadModal } from './components/BatchUploadModal';
+import { BatchUploadSidebar } from './components/BatchUploadSidebar';
+import { EventModeModal } from './components/EventModeModal';
 import { NotesSidebar } from './components/NotesSidebar';
 import { ChatSidebar } from './components/ChatSidebar';
-import { ScanModal } from './components/ScanModal';
+import { ScanSidebar } from './components/ScanSidebar';
 import { QueueIndicator } from './components/QueueIndicator';
-import { QRCodeModal } from './components/QRCodeModal';
-import { SocialSearchModal } from './components/SocialSearchModal';
-import { LegalModal } from './components/LegalModal';
-import { HelpModal } from './components/HelpModal';
+import { QRCodeSidebar } from './components/QRCodeSidebar';
+import { SocialSearchSidebar } from './components/SocialSearchSidebar';
+import { LegalSidebar } from './components/LegalSidebar';
+import { HelpSidebar } from './components/HelpSidebar';
 import { Editor } from './components/Editor';
 import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
 import { HistoryItem, VCardData, Language } from './types';
 import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory, countStreets } from './utils/db';
-import { ChatModal } from './components/ChatModal';
-import { NotesModal } from './components/NotesModal';
-import { FailedScansModal } from './components/FailedScansModal';
+
+import { FailedScansSidebar } from './components/FailedScansSidebar';
 import { QRScannerModal } from './components/QRScannerModal';
 import { ingestStreets } from './utils/streetIngestion';
 import { enrichAddress } from './utils/addressEnricher';
@@ -232,7 +232,7 @@ const App: React.FC = () => {
   const [streetDbProgress, setStreetDbProgress] = useState(0);
   const [streetDbError, setStreetDbError] = useState<string | null>(null);
 
-  const handleLoadStreetDb = async () => {
+  const handleLoadStreetDb = useCallback(async () => {
     try {
       setStreetDbStatus('loading');
       setStreetDbError(null);
@@ -245,7 +245,7 @@ const App: React.FC = () => {
       setStreetDbStatus('error');
       setStreetDbError((e as Error).message || "Unbekannter Fehler");
     }
-  };
+  }, []);
 
   // Smart Loader
   useSmartStreetLoader({
@@ -1182,7 +1182,7 @@ const App: React.FC = () => {
         setConcurrentScans={(value) => setCustomConfig({ concurrentScans: value })}
       />
 
-      <BatchUploadModal
+      <BatchUploadSidebar
         isOpen={isBatchUploadOpen}
         onClose={() => setIsBatchUploadOpen(false)}
         onAddJobs={handleBatchUploadFiles}
@@ -1191,19 +1191,22 @@ const App: React.FC = () => {
         lang={lang}
       />
 
-      <ScanModal
+      <ScanSidebar
         isOpen={isScanOpen}
-        onClose={() => { setIsScanOpen(false); setDroppedFile(null); }}
+        onClose={() => {
+          setIsScanOpen(false);
+          setDroppedFile(null);
+        }}
         onScanComplete={(vcard) => {
           setVcardString(vcard);
-          addToHistory(vcard);
+          setIsScanOpen(false);
         }}
         onAddToQueue={(front, back, mode) => {
           const images = [front];
           if (back) images.push(back);
           addJob(images, mode);
         }}
-        apiKey={getKeyToUse()}
+        apiKey={getKeyToUse() || ''}
         initialFile={droppedFile}
         lang={lang}
       />
@@ -1217,7 +1220,7 @@ const App: React.FC = () => {
         onOpenFailedScans={() => setIsFailedScansOpen(true)}
       />
 
-      <FailedScansModal
+      <FailedScansSidebar
         isOpen={isFailedScansOpen}
         onClose={() => setIsFailedScansOpen(false)}
         onRetry={(images, mode) => {
@@ -1225,13 +1228,13 @@ const App: React.FC = () => {
         }}
       />
 
-      <QRCodeModal
+      <QRCodeSidebar
         isOpen={isQROpen}
         onClose={() => setIsQROpen(false)}
         vcardString={vcardString}
       />
 
-      <SocialSearchModal
+      <SocialSearchSidebar
         isOpen={isSocialSearchOpen}
         onClose={() => setIsSocialSearchOpen(false)}
         initialName={parsedData.data.fn || ''}
@@ -1282,13 +1285,8 @@ const App: React.FC = () => {
         onClose={() => setIsNotesOpen(false)}
         onSelectContact={(id) => {
           setIsNotesOpen(false);
-          // Find contact and open it
           const contact = history.find(h => h.id === id);
           if (contact) {
-            // We need a way to open preview for a specific ID.
-            // For now, just load it into editor? Or maybe we need a PreviewSidebar too?
-            // The user didn't ask for PreviewSidebar.
-            // Let's just load it.
             handleLoadHistoryItem(contact);
           }
         }}
@@ -1297,14 +1295,14 @@ const App: React.FC = () => {
 
 
 
-      <LegalModal
+      <LegalSidebar
         isOpen={isLegalOpen}
         onClose={() => setIsLegalOpen(false)}
         initialTab={legalTab}
       />
 
 
-      <HelpModal
+      <HelpSidebar
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
         lang={lang}

@@ -35,7 +35,10 @@ const ContactImage = ({ src, alt, className }: { src: string | Blob, alt: string
     return <img src={url} alt={alt} className={className} />;
 };
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const DuplicateFinderModal: React.FC<DuplicateFinderModalProps> = ({ isOpen, onClose, history, onUpdateHistory }) => {
+    useEscapeKey(onClose, isOpen);
     const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
     const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
     const [isScanning, setIsScanning] = useState(false);

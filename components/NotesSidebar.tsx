@@ -14,7 +14,10 @@ interface NotesSidebarProps {
     filterContactId?: string | null;
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onSelectContact, lang, filterContactId }) => {
+    useEscapeKey(onClose, isOpen);
     const [notes, setNotes] = useState<Note[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
@@ -159,7 +162,7 @@ ${note.content}
                 />
             )}
 
-            <div className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -197,7 +200,7 @@ ${note.content}
                 </div>
 
                 {/* List */}
-                <div className="flex-1 overflow-hidden p-4 custom-scrollbar">
+                <div className="flex-1 overflow-hidden p-4 min-h-0 custom-scrollbar">
                     {notes.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center">
                             <StickyNote size={48} className="mb-4 opacity-20" />

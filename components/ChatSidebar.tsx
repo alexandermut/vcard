@@ -14,7 +14,10 @@ interface ChatSidebarProps {
     lang: string;
 }
 
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
 export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, history, apiKey, llmConfig, lang }) => {
+    useEscapeKey(onClose, isOpen);
     const { messages, sendMessage, isLoading, clearChat } = useChat(history, apiKey, llmConfig);
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -56,7 +59,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
                 />
             )}
 
-            <div className={`fixed top-0 right-0 h-full w-80 sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900/50">
@@ -75,7 +78,7 @@ export const ChatSidebar: React.FC<ChatSidebarProps> = ({ isOpen, onClose, histo
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/50 dark:bg-slate-950/50">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-slate-50/50 dark:bg-slate-950/50 min-h-0">
                     {messages.length === 0 && (
                         <div className="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-600 text-center p-8">
                             <Database size={48} className="mb-4 opacity-20" />

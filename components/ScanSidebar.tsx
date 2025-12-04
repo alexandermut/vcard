@@ -7,7 +7,7 @@ import { autoCropImage } from '../utils/cropUtils';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
-interface ScanModalProps {
+interface ScanSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onScanComplete: (vcard: string) => void;
@@ -17,9 +17,12 @@ interface ScanModalProps {
   lang: Language;
 }
 
-export const ScanModal: React.FC<ScanModalProps> = ({
+import { useEscapeKey } from '../hooks/useEscapeKey';
+
+export const ScanSidebar: React.FC<ScanSidebarProps> = ({
   isOpen, onClose, onScanComplete, onAddToQueue, apiKey, initialFile, lang
 }) => {
+  useEscapeKey(onClose, isOpen);
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [originalFrontImage, setOriginalFrontImage] = useState<string | null>(null);
@@ -71,8 +74,6 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     }
   };
 
-
-
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -117,8 +118,6 @@ export const ScanModal: React.FC<ScanModalProps> = ({
     return () => window.removeEventListener('paste', handlePaste);
   }, [isOpen, frontImage, backImage]);
 
-  if (!isOpen) return null;
-
   const processScan = async () => {
     if (!frontImage) return;
 
@@ -134,8 +133,15 @@ export const ScanModal: React.FC<ScanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh] border border-slate-200 dark:border-slate-800 transition-colors">
+    <>
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
+          onClick={onClose}
+        />
+      )}
+
+      <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
         <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
           <h2 className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -147,7 +153,7 @@ export const ScanModal: React.FC<ScanModalProps> = ({
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900">
+        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-slate-900 custom-scrollbar">
 
           {/* Mode Selector */}
           <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
@@ -374,6 +380,6 @@ export const ScanModal: React.FC<ScanModalProps> = ({
           </p>
         </div>
       </div>
-    </div>
+    </>
   );
 };
