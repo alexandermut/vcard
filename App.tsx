@@ -152,10 +152,13 @@ const App: React.FC = () => {
   const handleLoadHistoryItem = async (item: HistoryItem) => {
     setVcardString(item.vcard);
 
+    // ✅ NEW: Lazy load images from DB
+    const images = await getHistoryItemImages(item.id);
+
     // Convert Blob images to base64 strings if needed
-    if (item.images) {
+    if (images && images.length > 0) {
       const stringImages = await Promise.all(
-        item.images.map(async (img) => {
+        images.map(async (img) => {
           if (typeof img === 'string') return img;
           // Convert Blob to base64
           return new Promise<string>((resolve) => {
@@ -262,7 +265,7 @@ const App: React.FC = () => {
       await migrateFromLocalStorage();
       await migrateBase64ToBlob();
       await migrateKeywords(); // Add search index
-      const items = await getHistoryPaged(HISTORY_LIMIT);
+      const items = await getHistoryPaged(HISTORY_LIMIT, undefined, true);
       const count = await countHistory(); // ✅ NEW: Load total count
       setHistory(items);
       setHistoryCount(count); // ✅ NEW: Set total count
@@ -301,7 +304,7 @@ const App: React.FC = () => {
   const handleLoadMoreHistory = async () => {
     if (!history.length) return;
     const lastItem = history[history.length - 1];
-    const newItems = await getHistoryPaged(HISTORY_LIMIT, lastItem.timestamp);
+    const newItems = await getHistoryPaged(HISTORY_LIMIT, lastItem.timestamp, true);
 
     if (newItems.length > 0) {
       setHistory(prev => [...prev, ...newItems]);
@@ -316,7 +319,7 @@ const App: React.FC = () => {
   const handleSearchHistory = async (query: string) => {
     if (!query.trim()) {
       // Reset to normal paged view
-      const items = await getHistoryPaged(HISTORY_LIMIT);
+      const items = await getHistoryPaged(HISTORY_LIMIT, undefined, true);
       setHistory(items);
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
       return;
@@ -409,7 +412,7 @@ const App: React.FC = () => {
       const count = await restoreJSON(text);
 
       // Reload history
-      const items = await getHistoryPaged(HISTORY_LIMIT);
+      const items = await getHistoryPaged(HISTORY_LIMIT, undefined, true);
       setHistory(items);
       setHasMoreHistory(items.length >= HISTORY_LIMIT);
       setHistoryCount(await countHistory()); // Update total count
@@ -596,7 +599,10 @@ const App: React.FC = () => {
     }
 
     // Refresh UI - Prepend new item to visible history instead of reloading all
-    setHistory(prev => [itemToSave, ...prev.slice(0, HISTORY_LIMIT - 1)]);
+    // Optimization: Don't store images in state
+    const itemForState = { ...itemToSave };
+    delete itemForState.images;
+    setHistory(prev => [itemForState, ...prev.slice(0, HISTORY_LIMIT - 1)]);
     const newCount = await countHistory(); // ✅ NEW: Update total count
     setHistoryCount(newCount);
     setCurrentHistoryId(itemToSave.id);
@@ -615,41 +621,35 @@ const App: React.FC = () => {
   const handleBulkEnhance = async (ids: string[]) => {
     if (ids.length === 0) return;
 
-    // Filter items that have images
-    const itemsToEnhance = history.filter(item => ids.includes(item.id) && item.images && item.images.length > 0);
+    toast.info(`${ids.length} Kontakte werden vorbereitet...`);
 
-    if (itemsToEnhance.length === 0) {
+    let addedCount = 0;
+
+    for (const id of ids) {
+      // ✅ FIXED: Fetch images from DB as they are not in state anymore
+      const images = await getHistoryItemImages(id);
+
+      if (images && images.length > 0) {
+        const processedImages = images.map((img, idx) => {
+          if (img instanceof Blob) {
+            return new File([img], `bulk_enhance_${id}_${idx}.jpg`, { type: img.type });
+          }
+          return img as string | File;
+        });
+
+        addJob(processedImages, 'vision');
+        addedCount++;
+      }
+    }
+
+    if (addedCount === 0) {
       toast.error("Keine der ausgewählten Kontakte haben Bilder zum Verbessern.");
       return;
     }
 
-    toast.info(`${itemsToEnhance.length} Kontakte zur Warteschlange hinzugefügt...`);
-
-    // Add to queue
-    for (const item of itemsToEnhance) {
-      if (item.images) {
-        // Convert Blobs to Base64 if necessary, or pass as is if useScanQueue handles it.
-        // useScanQueue expects (string | File)[].
-        // item.images is (string | Blob)[].
-        // We need to convert Blob to File or just pass string.
-        // If it's a Blob, we can cast it to File (it's a subclass) or keep as Blob if supported.
-        // Let's check useScanQueue types. It says (string | File)[].
-        // Blob is not strictly File in TS, but compatible in JS.
-        // Let's convert Blobs to Files to be safe and provide a name.
-
-        const processedImages = item.images.map((img, idx) => {
-          if (img instanceof Blob) {
-            return new File([img], `bulk_enhance_${item.id}_${idx}.jpg`, { type: img.type });
-          }
-          return img;
-        });
-
-        addJob(processedImages, 'vision'); // Use 'vision' mode for enhancement
-      }
-    }
-
-    setIsHistoryOpen(false); // Close sidebar to show progress
-    setIsBatchUploadOpen(true); // ✅ NEW: Open Batch Upload Modal to show progress
+    toast.success(`${addedCount} Kontakte zur Warteschlange hinzugefügt.`);
+    setIsHistoryOpen(false);
+    setIsBatchUploadOpen(true);
   };
 
   // Update HistorySidebar props

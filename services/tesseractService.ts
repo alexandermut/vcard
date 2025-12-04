@@ -6,8 +6,20 @@ import { preprocessImage } from '../utils/tesseractPreprocessing';
 let tesseractWorker: Worker | null = null;
 let currentLanguage: Language | null = null;
 
+export interface OCRLine {
+    text: string;
+    confidence: number;
+    bbox: {
+        x0: number;
+        y0: number;
+        x1: number;
+        y1: number;
+    };
+}
+
 export interface TesseractResult {
     text: string;
+    lines: OCRLine[];
     confidence: number;
     processingTime: number;
 }
@@ -150,8 +162,16 @@ export const scanWithTesseract = async (
         console.log(`[Tesseract] Confidence: ${data.confidence.toFixed(2)}%`);
         console.log(`[Tesseract] Text length: ${data.text.length} chars`);
 
+        // Extract lines with bounding boxes
+        const lines: OCRLine[] = ((data as any).lines || []).map((line: any) => ({
+            text: line.text.trim(),
+            confidence: line.confidence,
+            bbox: line.bbox
+        })).filter((l: OCRLine) => l.text.length > 0);
+
         return {
             text: data.text,
+            lines,
             confidence: data.confidence,
             processingTime,
         };

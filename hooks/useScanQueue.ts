@@ -4,7 +4,7 @@ import { scanBusinessCard, ImageInput } from '../services/aiService';
 import { Language } from '../types';
 import type { LLMConfig } from './useLLMConfig';
 import { scanWithTesseract } from '../services/tesseractService';
-import { parseImpressumToVCard } from '../utils/regexParser';
+import { parseImpressumToVCard, parseSpatialToVCard } from '../utils/regexParser';
 import { resizeImage } from '../utils/imageUtils';
 import { addFailedScan } from '../utils/db';
 import { wrap } from 'comlink';
@@ -132,7 +132,13 @@ export const useScanQueue = (
           // Tesseract Only (Offline)
           console.log('[OCR] Mode: Tesseract Only');
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
-          vcard = parseImpressumToVCard(tesseractResult.text);
+
+          // Use Spatial Parser if lines are available, otherwise fallback
+          if (tesseractResult.lines && tesseractResult.lines.length > 0) {
+            vcard = parseSpatialToVCard(tesseractResult.lines);
+          } else {
+            vcard = parseImpressumToVCard(tesseractResult.text);
+          }
 
           // Pass raw OCR text to parent for parser field
           if (onOCRRawText) onOCRRawText(tesseractResult.text);
@@ -151,7 +157,11 @@ export const useScanQueue = (
           const [tesseractRes, geminiRes] = await Promise.allSettled([
             (async () => {
               const result = await scanWithTesseract(rawImages[0], lang, true);
-              return { vcard: parseImpressumToVCard(result.text), confidence: result.confidence, method: 'tesseract' as const, rawText: result.text };
+              // Use Spatial Parser
+              const vcard = (result.lines && result.lines.length > 0)
+                ? parseSpatialToVCard(result.lines)
+                : parseImpressumToVCard(result.text);
+              return { vcard, confidence: result.confidence, method: 'tesseract' as const, rawText: result.text };
             })(),
             (async () => {
               if (!apiKey && llmConfig.provider !== 'custom') {
@@ -188,7 +198,12 @@ export const useScanQueue = (
 
           // 1. Always run Tesseract first (offline)
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
-          const tesseractVCard = parseImpressumToVCard(tesseractResult.text);
+
+          // Use Spatial Parser
+          const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
+            ? parseSpatialToVCard(tesseractResult.lines)
+            : parseImpressumToVCard(tesseractResult.text);
+
           console.log(`[OCR] Auto: Tesseract completed (${tesseractResult.confidence}%)`);
 
           // 2. If API key available, also run Gemini and compare

@@ -10,18 +10,18 @@ interface SyntheticEdgeCase {
         fn?: string;
         org?: string;
         title?: string;
-        tel?: string;
+        tel?: string | Array<{ value: string; type: string }>;
         cell?: string;
         fax?: string;
         email?: string;
         url?: string;
-        adr?: string;
+        adr?: string | Array<{ city: string; zip: string; street: string; country?: string }>;
     };
 }
 
 describe('Synthetic Edge Cases', () => {
     syntheticEdgeCases.forEach((testCase: SyntheticEdgeCase) => {
-        it(`should handle ${testCase.id}`, () => {
+        it(`should handle ${testCase.id} `, () => {
             const vcard = parseImpressumToVCard(testCase.text);
             const parsed = parseVCardString(vcard);
             const data = parsed.data;
@@ -37,25 +37,21 @@ describe('Synthetic Edge Cases', () => {
             if (expected.title) {
                 expect(data.title).toBe(expected.title);
             }
+
             if (expected.tel) {
-                const tel = (data.tel || []).find(t => t.type.includes('VOICE') && !t.type.includes('CELL') && !t.type.includes('FAX'));
-                // Note: The parser might return multiple types or different formatting.
-                // We check if we found *a* number that matches the expected value.
-                // The parser returns E.164 (e.g. +49...)
-                // The expected data also has E.164.
-                const found = (data.tel || []).some(t => t.value === expected.tel);
-                if (expected.tel === "") {
-                    // Expect NO tel
-                    // But we might have other numbers (fax, cell).
-                    // The test case implies "tel" field in expected object maps to a landline/generic number.
-                    // If expected.tel is empty, we shouldn't find a matching landline?
-                    // Or maybe we shouldn't find ANY number that is classified as TEL?
-                    // Let's assume if expected.tel is "", we check that no number matches the "tel" classification logic?
-                    // But for now, let's just check positive matches.
+                if (Array.isArray(expected.tel)) {
+                    expected.tel.forEach(exp => {
+                        const found = (data.tel || []).some(t => t.value === exp.value);
+                        if (!found) console.log(`DEBUG FAILURE ${testCase.id}: Expected tel ${exp.value} in`, data.tel);
+                        expect(found).toBe(true);
+                    });
                 } else {
-                    expect((data.tel || []).some(t => t.value === expected.tel)).toBe(true);
+                    const found = (data.tel || []).some(t => t.value === expected.tel);
+                    if (!found) console.log(`DEBUG FAILURE ${testCase.id}: Expected tel ${expected.tel} in`, data.tel);
+                    expect(found).toBe(true);
                 }
             }
+
             if (expected.cell) {
                 expect((data.tel || []).some(t => t.value === expected.cell)).toBe(true);
             }
@@ -68,25 +64,29 @@ describe('Synthetic Edge Cases', () => {
             if (expected.url) {
                 expect((data.url || []).some(u => u.value.includes(expected.url!))).toBe(true);
             }
+
             if (expected.adr) {
-                // Address comparison is tricky because of formatting.
-                // We'll check if the full address string contains the expected parts.
-                // The parser returns "street;city;;zip;country" joined by semicolons in value.
-                // But parseVCardString might parse it into object.
-                // Let's check data.adr array.
-                const expectedParts = expected.adr.split(',').map(p => p.trim());
-                const found = (data.adr || []).some(a => {
-                    // parseVCardString returns an object for adr: { street, city, zip, country, ... }
-                    // We construct a string from values to check inclusion
-                    const val = Object.values(a.value).join(' ');
-                    // Check if every part of expected string (split by space to be safe) is in the value
-                    return expectedParts.every(part => {
-                        // Split part into tokens (e.g. "8000 Zürich" -> "8000", "Zürich")
-                        const tokens = part.split(/\s+/);
-                        return tokens.every(t => val.includes(t));
+                if (Array.isArray(expected.adr)) {
+                    expected.adr.forEach(exp => {
+                        const found = (data.adr || []).some(a =>
+                            a.value.city === exp.city &&
+                            a.value.zip === exp.zip &&
+                            (exp.street ? a.value.street === exp.street : true)
+                        );
+                        if (!found) console.log(`DEBUG FAILURE ${testCase.id}: Expected adr ${JSON.stringify(exp)} in`, data.adr);
+                        expect(found).toBe(true);
                     });
-                });
-                expect(found).toBe(true);
+                } else {
+                    const expectedParts = expected.adr.split(',').map(p => p.trim());
+                    const found = (data.adr || []).some(a => {
+                        const val = Object.values(a.value).join(' ');
+                        return expectedParts.every(part => {
+                            const tokens = part.split(/\s+/);
+                            return tokens.every(t => val.includes(t));
+                        });
+                    });
+                    expect(found).toBe(true);
+                }
             }
         });
     });

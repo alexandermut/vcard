@@ -20,7 +20,14 @@ export const GoogleContactsProvider: React.FC<{ children: ReactNode }> = ({ chil
         },
         onError: (errorResponse) => {
             console.error("Google Login Failed", errorResponse);
-            toast.warning("Google Login fehlgeschlagen oder abgebrochen.");
+
+            if (errorResponse.error === 'popup_closed_by_user') {
+                toast.info("Google Login abgebrochen.");
+            } else if (errorResponse.error === 'access_denied') {
+                toast.error("Zugriff verweigert. Bitte Domain in Google Cloud Console freigeben.");
+            } else {
+                toast.error(`Google Login fehlgeschlagen: ${errorResponse.error_description || errorResponse.error}`);
+            }
         },
         scope: 'https://www.googleapis.com/auth/contacts',
         flow: 'implicit',

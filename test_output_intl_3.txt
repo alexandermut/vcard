@@ -1,0 +1,143 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.14 [39m[90m/Users/alexandermut/Desktop/kontakte.me[39m
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle intl-us-address 
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      John Doe
+      Acme Corp
+      123 Main St
+      New York, NY 10001
+      USA
+      Tel: +1 212 555 1234
+    
+Lines: [
+  [32m'John Doe'[39m,
+  [32m'Acme Corp'[39m,
+  [32m'123 Main St'[39m,
+  [32m'New York, NY 10001'[39m,
+  [32m'USA'[39m,
+  [32m'Tel: +1 212 555 1234'[39m
+]
+DEBUG consumePhones: Found +12125551234 (Type: WORK,VOICE)
+DEBUG consumeAddress US: ZIP=10001 City=New York
+DEBUG consumeAddress PUSH: Street="123 Main St" City="New York" Zip="10001"
+DEBUG FINAL data.fn: "John Doe"
+DEBUG FAILURE intl-us-address: Expected [object Object] in [ { type: [32m'WORK'[39m, value: [32m'+12125551234'[39m } ]
+DEBUG FAILURE vCard: BEGIN:VCARD
+VERSION:3.0
+N;CHARSET=utf-8:Doe;John;;;
+FN;CHARSET=utf-8:John Doe
+ORG;CHARSET=utf-8:Acme Corp
+ADR;CHARSET=utf-8;TYPE=WORK:;;123 Main St;New York;;10001;USA
+TEL;CHARSET=utf-8;TYPE=WORK,VOICE:+12125551234
+END:VCARD
+
+[90mstdout[2m | utils/edgeCases.test.ts[2m > [22m[2mSynthetic Edge Cases[2m > [22m[2mshould handle intl-complex-name 
+[22m[39m--- PARSER DEBUG ---
+Clean Text:
+ 
+      Prof. Dr. John Smith PhD
+      University of Example
+      Musterstr. 1
+      12345 Berlin
+    
+Lines: [
+  [32m'Prof. Dr. John Smith PhD'[39m,
+  [32m'University of Example'[39m,
+  [32m'Musterstr. 1'[39m,
+  [32m'12345 Berlin'[39m
+]
+DEBUG consumeAddress Anchor: ZIP=12345 City=Berlin
+DEBUG consumeAddress PUSH: Street="Musterstr. 1" City="Berlin" Zip="12345"
+DEBUG FINAL data.fn: "Prof. Dr. John Smith"
+
+ [31m❯[39m utils/edgeCases.test.ts [2m([22m[2m43 tests[22m[2m | [22m[31m2 failed[39m[2m | [22m[33m41 skipped[39m[2m)[22m[32m 16[2mms[22m[39m
+     [2m[90m↓[39m[22m should handle synth_format_dots 
+     [2m[90m↓[39m[22m should handle synth_format_slashes_mixed 
+     [2m[90m↓[39m[22m should handle synth_sticky_text 
+     [2m[90m↓[39m[22m should handle synth_pipe_separator 
+     [2m[90m↓[39m[22m should handle syn_sticky_text_v2 
+     [2m[90m↓[39m[22m should handle syn_newlines_mess 
+     [2m[90m↓[39m[22m should handle synth_ocr_l_for_1 
+     [2m[90m↓[39m[22m should handle synth_ocr_o_for_0 
+     [2m[90m↓[39m[22m should handle syn_ocr_errors_v2 
+     [2m[90m↓[39m[22m should handle syn_typo_labels 
+     [2m[90m↓[39m[22m should handle synth_ocr_spaces_in_numbers 
+     [2m[90m↓[39m[22m should handle synth_role_bottom 
+     [2m[90m↓[39m[22m should handle synth_multi_role 
+     [2m[90m↓[39m[22m should handle syn_multi_role_academic 
+     [2m[90m↓[39m[22m should handle syn_mixed_formats_doctor 
+     [2m[90m↓[39m[22m should handle synth_anchor_match 
+     [2m[90m↓[39m[22m should handle synth_anchor_mismatch 
+     [2m[90m↓[39m[22m should handle syn_address_weird 
+     [2m[90m↓[39m[22m should handle synth_inline_address 
+     [2m[90m↓[39m[22m should handle synth_mobile_check_hard 
+     [2m[90m↓[39m[22m should handle synth_fake_mobile 
+     [2m[90m↓[39m[22m should handle syn_no_name_service 
+     [2m[90m↓[39m[22m should handle synth_no_labels 
+     [2m[90m↓[39m[22m should handle synth_url_typo 
+     [2m[90m↓[39m[22m should handle syn_legal_disclaimer 
+     [2m[90m↓[39m[22m should handle synth_email_spaced 
+     [2m[90m↓[39m[22m should handle synth_no_http 
+     [2m[90m↓[39m[22m should handle synth_swiss_format 
+     [2m[90m↓[39m[22m should handle synth_austria_format 
+     [2m[90m↓[39m[22m should handle syn_international_us 
+     [2m[90m↓[39m[22m should handle synth_impressum_nested 
+     [2m[90m↓[39m[22m should handle synth_opening_hours_trap 
+     [2m[90m↓[39m[22m should handle synth_iban_trap 
+     [2m[90m↓[39m[22m should handle synth_date_trap 
+     [2m[90m↓[39m[22m should handle synth_noble_names 
+     [2m[90m↓[39m[22m should handle synth_postbox_co 
+     [2m[90m↓[39m[22m should handle synth_service_numbers 
+     [2m[90m↓[39m[22m should handle synth_complex_legal_forms_kg 
+     [2m[90m↓[39m[22m should handle synth_complex_legal_forms_ev 
+     [2m[90m↓[39m[22m should handle synth_industry_keywords_praxis 
+     [2m[90m↓[39m[22m should handle synth_industry_keywords_kanzlei 
+[31m     [31m×[31m should handle intl-us-address [39m[32m 13[2mms[22m[39m
+[31m     [31m×[31m should handle intl-complex-name [39m[32m 2[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle intl-us-address 
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m61:35[22m[39m
+    [90m 59| [39m                        console[33m.[39m[34mlog[39m([32m'DEBUG FAILURE vCard:'[39m[33m,[39m vcard)[33m;[39m
+    [90m 60| [39m                    }
+    [90m 61| [39m                    [34mexpect[39m(found)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                  [31m^[39m
+    [90m 62| [39m                }
+    [90m 63| [39m            }
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m utils/edgeCases.test.ts[2m > [22mSynthetic Edge Cases[2m > [22mshould handle intl-complex-name 
+[31m[1mAssertionError[22m: expected 'Prof. Dr. John Smith' to be 'Prof. Dr. John Smith PhD' // Object.is equality[39m
+
+Expected: [32m"Prof. Dr. John Smith[7m PhD[27m"[39m
+Received: [31m"Prof. Dr. John Smith"[39m
+
+[36m [2m❯[22m utils/edgeCases.test.ts:[2m32:33[22m[39m
+    [90m 30| [39m
+    [90m 31| [39m            [35mif[39m (expected[33m.[39mfn) {
+    [90m 32| [39m                [34mexpect[39m(data[33m.[39mfn)[33m.[39m[34mtoBe[39m(expected[33m.[39mfn)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m 33| [39m            }
+    [90m 34| [39m            [35mif[39m (expected[33m.[39morg) {
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[33m41 skipped[39m[90m (43)[39m
+[2m   Start at [22m 18:08:25
+[2m   Duration [22m 484ms[2m (transform 153ms, setup 39ms, import 184ms, tests 16ms, environment 186ms)[22m
+

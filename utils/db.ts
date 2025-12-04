@@ -302,7 +302,7 @@ export const getHistory = async (): Promise<HistoryItem[]> => {
     return items.reverse();
 };
 
-export const getHistoryPaged = async (limit: number, lastTimestamp?: number): Promise<HistoryItem[]> => {
+export const getHistoryPaged = async (limit: number, lastTimestamp?: number, excludeImages = false): Promise<HistoryItem[]> => {
     const db = await initDB();
     const tx = db.transaction(STORE_NAME, 'readonly');
     const index = tx.store.index('by-date');
@@ -320,15 +320,21 @@ export const getHistoryPaged = async (limit: number, lastTimestamp?: number): Pr
     while (cursor && items.length < limit) {
         const item = cursor.value;
 
-        // ✅ FIXED: Don't create Object URLs here - let components do it on-demand
-        // This prevents memory leaks from unreleased URLs
-        // Components should handle Blob → URL conversion with proper cleanup
+        // Optimization: Remove images from list view to save memory
+        if (excludeImages) {
+            delete item.images;
+        }
 
         items.push(item);
         cursor = await cursor.continue();
     }
 
     return items;
+};
+
+export const getHistoryItemImages = async (id: string): Promise<(string | Blob)[] | undefined> => {
+    const item = await getHistoryItem(id);
+    return item?.images;
 };
 
 export const getHistoryItem = async (id: string): Promise<HistoryItem | undefined> => {
@@ -479,7 +485,8 @@ export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
         );
 
         if (allTermsMatch) {
-            // ✅ FIXED: Don't create Object URLs - components handle it
+            // Optimization: Remove images from search results to save memory
+            delete item.images;
             uniqueItems.set(item.id, item);
         }
 

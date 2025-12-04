@@ -5,6 +5,8 @@ import { findNumbers } from 'libphonenumber-js';
 import { getMobileRegexPattern } from './mobilePrefixes';
 import { germanLandlinePrefixes } from './landlinePrefixes';
 import { landlineMap, plzMap } from './landlineData';
+import { parseInternationalAddress } from './addressParserIntl';
+import { parseComplexName } from './nameParserIntl';
 
 // --- Types ---
 
@@ -13,6 +15,7 @@ interface Line {
   clean: string;
   isConsumed: boolean;
   type?: 'EMAIL' | 'PHONE' | 'URL' | 'ADDRESS' | 'JOB' | 'META' | 'ORG' | 'NAME' | null;
+  bbox?: { x0: number; y0: number; x1: number; y1: number };
 }
 
 interface ParserData {
@@ -468,6 +471,17 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
       const isStreet = /^[A-Za-zäöüß\s.-]{3,}\s\d+(\s?[a-z])?$/i.test(line.clean);
       if (isStreet) {
         // Look ahead for City
+        if (!line.isConsumed) {
+          const intlAddress = parseInternationalAddress(line.clean);
+          if (intlAddress && intlAddress.street && intlAddress.city && intlAddress.zip) {
+            street = intlAddress.street;
+            city = intlAddress.city;
+            zip = intlAddress.zip;
+            country = intlAddress.country || country; // Keep existing country guess if available, or use parser's
+            line.isConsumed = true;
+            line.type = 'ADDRESS';
+          }
+        }
         if (i + 1 < lines.length) {
           const nextLine = lines[i + 1];
           // City should be capitalized word(s), no digits
@@ -569,7 +583,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 
 const consumeJobAndTax = (lines: Line[], data: ParserData) => {
   const re_job = /Geschäftsführerin|Geschäftsführung|Geschäftsführer|Inhaberin|Inhaber|Inh\.|Vorstand|Vorstände|Gesellschafter|Manager|Director|CEO|CTO|CFO|Founder|Gründer|Vertreten durch|Mittelstandsberater|Berater|Vorstandsvorsitzender/i;
-  const re_ustid = /((Ust|Umsatz)\S+(\s|:))(DE(\s)?.*\d{1,9})/i;
+  const re_ustid = /((Ust|Umsatz|VAT)\S*(\s|:))(DE(\s)?.*\d{1,9})/i;
   const re_stnr = /(?:Steuer+[-\s|:.A-Za-z]*)\D(.*\d{1,9})/i;
 
   lines.forEach(line => {
@@ -658,8 +672,10 @@ const consumeJobAndTax = (lines: Line[], data: ParserData) => {
   });
 };
 
+import { getLegalFormsRegex } from './parserAnchors';
+
 const consumeCompany = (lines: Line[], data: ParserData) => {
-  const re_legal_form = /(?:^|\s)(AG|SE|eG|e\.K\.|e\.Kfr\.|e\.V\.|GbR|gGmbH|GmbH|KGaA|KdöR|AöR|KG|OHG|PartG|PartG mbB|UG|Inc\.|Ltd\.|LLC|Corp\.|Limited|Support|Hotline|Service|Praxis|Kanzlei|Agentur|Friseur|Salon|Studio)(?:$|\s|[.,])/i;
+  const re_legal_form = getLegalFormsRegex();
 
   lines.forEach(line => {
     if (line.isConsumed) return;
@@ -770,6 +786,32 @@ const consumeNameHeuristic = (lines: Line[], data: ParserData) => {
         }
       }
 
+      // 2. Check if line looks like a name (2-4 words, no digits, no common blacklist words)
+      // This check is now redundant because isName() already filters.
+      // We can directly try to parse with Namefully if isName() is true.
+      // The original `words` variable is not available here, it was inside the `if (line.clean.includes(','))` block.
+      // We should use `line.clean` directly.
+      // The `isName(line.clean)` check already ensures it's likely a name.
+      // Let's add a word count check here to refine.
+      const currentLineWords = line.clean.split(/\s+/);
+      if (currentLineWords.length >= 2 && currentLineWords.length <= 6 && !/\d/.test(line.clean)) {
+        // Use Namefully to parse
+        const complexName = parseComplexName(line.clean);
+        if (complexName && complexName.first && complexName.last) {
+
+          let fn = `${complexName.first} ${complexName.last}`;
+          if (complexName.prefix) fn = `${complexName.prefix} ${fn}`;
+          if (complexName.suffix) fn = `${fn} ${complexName.suffix}`;
+
+          data.fn = fn;
+          data.n = `${complexName.last};${complexName.first};${complexName.middle || ''};${complexName.prefix || ''};${complexName.suffix || ''}`;
+
+          line.isConsumed = true;
+          line.type = 'NAME';
+          return;
+        }
+      }
+
       const words = line.clean.split(/\s+/);
       // If isName returns true, we trust it.
       // But we need to split into First/Last for N field.
@@ -828,6 +870,69 @@ const sanitizeText = (text: string): string => {
     .replace(/\u00A0/g, ' ') // Non-breaking space
     .replace(/[\u2000-\u200B]/g, ' ') // Zero-width spaces
     .replace(/\t/g, ' ');
+};
+
+export const parseSpatialToVCard = (ocrLines: { text: string; bbox: any }[]): string => {
+  // 1. Convert to internal Line format
+  // Sort by Y (top to bottom) primarily, then X (left to right)
+  const sortedLines = [...ocrLines].sort((a, b) => {
+    // Threshold for "same line" (e.g. 10px difference)
+    const yDiff = Math.abs(a.bbox.y0 - b.bbox.y0);
+    if (yDiff < 10) {
+      return a.bbox.x0 - b.bbox.x0;
+    }
+    return a.bbox.y0 - b.bbox.y0;
+  });
+
+  const lines: Line[] = sortedLines
+    .map(l => ({
+      original: l.text,
+      clean: l.text.trim(),
+      isConsumed: false,
+      bbox: l.bbox
+    }))
+    .filter(l => l.clean.length > 0);
+
+  // 2. Initialize Data
+  const data: ParserData = {
+    fn: "", n: "", org: "", title: "",
+    tel: [], email: [], url: [], adr: [], note: []
+  };
+
+  // 3. Run Extractors (Standard Pipeline)
+  consumeMeta(lines);
+  consumeEmails(lines, data);
+  consumeUrls(lines, data);
+  consumePhones(lines, data);
+  consumeCompany(lines, data);
+  consumeJobAndTax(lines, data);
+  consumeAddress(lines, data);
+
+  // 4. Spatial Heuristics (Boosters)
+  // If we still miss Name or Address, use position
+
+  // Header (Top 30%): Likely Name or Company
+  const maxY = Math.max(...lines.map(l => l.bbox?.y1 || 0));
+  const headerThreshold = maxY * 0.3;
+  // const footerThreshold = maxY * 0.7; // Unused for now
+
+  // Try to find Name in Header if missing
+  if (!data.fn) {
+    const headerLines = lines.filter(l => !l.isConsumed && (l.bbox?.y0 || 0) < headerThreshold);
+    consumeNameHeuristic(headerLines, data);
+  }
+
+  // Try to find Address in Footer if missing
+  // (Address extractor usually relies on ZIP/City anchors, but maybe we can relax it for footer?)
+  // For now, let's just run the standard name heuristic on the rest if still missing
+  if (!data.fn) {
+    consumeNameHeuristic(lines, data);
+  }
+
+  consumeLeftovers(lines, data);
+
+  // 5. Build VCard
+  return buildVCard(data);
 };
 
 export const parseImpressumToVCard = (text: string): string => {
@@ -989,6 +1094,10 @@ export const parseImpressumToVCard = (text: string): string => {
   }
 
   // 6. Construct vCard
+  return buildVCard(data);
+};
+
+export const buildVCard = (data: ParserData): string => {
   console.log(`DEBUG FINAL data.fn: "${data.fn}"`);
   const vcard = [
     "BEGIN:VCARD",

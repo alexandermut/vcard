@@ -557,5 +557,87 @@ export const syntheticEdgeCases = [
             org: "Support Hotline",
             tel: "+498001234567"
         }
+    },
+    // =================================================================
+    // KATEGORIE 12: RECHTSFORMEN & BRANCHEN (Der neue DB-Test)
+    // =================================================================
+    {
+        id: "synth_complex_legal_forms_kg",
+        text: `
+      Musterfirma GmbH & Co. KG
+      Industriestraße 1
+      12345 Musterstadt
+    `,
+        expected: {
+            org: "Musterfirma GmbH & Co. KG",
+            adr: "Industriestraße 1, 12345 Musterstadt"
+        }
+    },
+    {
+        id: "synth_complex_legal_forms_ev",
+        text: `
+      Verein für Sport e.V.
+      Sportplatz 1
+      12345 Musterstadt
+    `,
+        expected: {
+            org: "Verein für Sport e.V.",
+            adr: "Sportplatz 1, 12345 Musterstadt"
+        }
+    },
+    {
+        id: "synth_industry_keywords_praxis",
+        text: `
+      Zahnarztpraxis Dr. Bohrer
+      Behandlung von Karies
+      Termine: 030 123456
+    `,
+        expected: {
+            org: "Zahnarztpraxis Dr. Bohrer", // Should match via "Praxis"
+            tel: "+4930123456"
+        }
+    },
+    {
+        id: "synth_industry_keywords_kanzlei",
+        text: `
+      Rechtsanwaltskanzlei Recht & Ordnung
+      Anwaltstr. 1
+      10115 Berlin
+    `,
+        expected: {
+            org: "Rechtsanwaltskanzlei Recht & Ordnung", // Should match via "Kanzlei"
+            adr: "Anwaltstr. 1, 10115 Berlin"
+        }
+    },
+    {
+        id: 'intl-us-address',
+        text: `
+      John Doe
+      Acme Corp
+      123 Main St
+      New York, NY 10001
+      USA
+      Tel: +1 212 555 1234
+    `,
+        expected: {
+            fn: 'John Doe',
+            org: 'Acme Corp',
+            tel: [{ value: '+12125551234', type: 'WORK' }],
+            adr: [{ city: 'New York', zip: '10001', street: '123 Main St', country: 'USA' }]
+        }
+    },
+    {
+        id: 'intl-complex-name',
+        text: `
+      Prof. Dr. John Smith PhD
+      University of Example
+      Musterstr. 1
+      12345 Berlin
+    `,
+        expected: {
+            fn: 'Prof. Dr. John Smith',
+            org: 'University of Example',
+            adr: [{ city: 'Berlin', zip: '12345', street: 'Musterstr. 1' }]
+        }
     }
 ];

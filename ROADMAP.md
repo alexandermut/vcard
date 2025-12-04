@@ -199,7 +199,7 @@ This file tracks the current development status and planned features.
         - [ ] Name/Title: High probability at **Top/Center**.
     - [ ] **Alignment Detection:** Detect Left-aligned vs. Centered layouts.
 
-#### 2.4 Icon & Visual Element Detection
+#### 2.4 Icon & Visual Element Detection (BACKLOG)
 - [ ] **Goal:** Use icons as strong anchors for field identification.
 - [ ] **Tasks:**
     - [ ] **Icon Recognition (OpenCV.js):** Detect common icons (Phone handset, Envelope, Globe, LinkedIn logo).
@@ -303,8 +303,14 @@ This file tracks the current development status and planned features.
     - [ ] **Adaptive Weighting:** Increase weight for patterns the user frequently validates.
 
 ### Phase 7: Internationalization (Beyond DACH)
-- [ ] **Goal:** Support global address and phone formats.
+- [ ] **Goal:** Support global address and phone formats using specialized libraries.
 - [ ] **Tasks:**
+    - [ ] **Address Parsing (`ilib-address`):**
+        - [ ] Evaluate `ilib-address` for locale-aware parsing (e.g., US vs. FR formats).
+        - [ ] Replace regex-based address parser for non-DACH regions.
+    - [ ] **Name Parsing (`namefully` / `humanname`):**
+        - [ ] Integrate `namefully` to handle complex names (suffixes, compound last names).
+        - [ ] Improve separation of Title, First, and Last names.
     - [ ] **US/UK Address Support:** Parse "City, State ZIP" formats.
     - [ ] **International Phone Formats:** Handle `(555) 123-4567` and other styles.
 
