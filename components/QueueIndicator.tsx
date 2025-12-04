@@ -44,7 +44,7 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, failedCou
             {t.batchQueue}
           </p>
           <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-col">
-            {processing > 0 && <span>{t.processing} (1)</span>}
+            {processing > 0 && <span>{t.processing}: {processing}</span>}
             {pending > 0 && <span>{t.waiting}: {pending}</span>}
             {errors > 0 && <span className="text-red-500 font-medium">{errors} {t.errors}</span>}
             {failedCount > 0 && (

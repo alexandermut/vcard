@@ -225,13 +225,48 @@ const HistoryRow = React.memo(({ index, style, data }: HistoryRowProps) => {
 
 
 
+// ... (imports)
+
+class LocalErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("HistorySidebar List Error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center text-red-500 p-4 text-center">
+          <p className="font-bold mb-2">Fehler beim Laden der Liste</p>
+          <p className="text-xs">Bitte Seite neu laden.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   isOpen, onClose, history, historyCount, onLoad, onDelete, onClear, onLoadMore, hasMore, onSearch, onRestore, lang, onUpdateHistory
 }) => {
+  // ... (rest of component logic)
+
   if (!FixedSizeList || !AutoSizer) {
     console.error('HistorySidebar dependencies missing:', { FixedSizeList, AutoSizer });
     return null;
   }
+
+  // Safety check for history prop
+  if (!history || !Array.isArray(history)) {
+    console.error('HistorySidebar: history prop is invalid', history);
+    return null;
+  }
+
   const t = translations[lang];
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [searchQuery, setSearchQuery] = useState('');
@@ -544,36 +579,38 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             </div>
           ) : (
             isOpen && (
-              <AutoSizer>
-                {({ height, width }) => (
-                  <FixedSizeList
-                    height={height}
-                    width={width}
-                    itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
-                    itemSize={viewMode === 'grid' ? 176 : 110}
-                    itemData={{
-                      items: itemsWithImageURLs,
-                      viewMode,
-                      searchQuery,
-                      onLoad,
-                      onClose,
-                      onDelete,
-                      handleDownloadSingle,
-                      handleSaveToGoogle,
-                      t,
-                      hasMore
-                    }}
-                    onScroll={({ scrollOffset }: { scrollOffset: number }) => {
-                      const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
-                      if (hasMore && scrollOffset + height >= totalHeight - 200) {
-                        onLoadMore();
-                      }
-                    }}
-                  >
-                    {HistoryRow}
-                  </FixedSizeList>
-                )}
-              </AutoSizer>
+              <LocalErrorBoundary>
+                <AutoSizer>
+                  {({ height, width }) => (
+                    <FixedSizeList
+                      height={height}
+                      width={width}
+                      itemCount={itemsWithImageURLs.length + (hasMore ? 1 : 0)}
+                      itemSize={viewMode === 'grid' ? 176 : 110}
+                      itemData={{
+                        items: itemsWithImageURLs,
+                        viewMode,
+                        searchQuery,
+                        onLoad,
+                        onClose,
+                        onDelete,
+                        handleDownloadSingle,
+                        handleSaveToGoogle,
+                        t,
+                        hasMore
+                      }}
+                      onScroll={({ scrollOffset }: { scrollOffset: number }) => {
+                        const totalHeight = (itemsWithImageURLs.length + (hasMore ? 1 : 0)) * (viewMode === 'grid' ? 176 : 110);
+                        if (hasMore && scrollOffset + height >= totalHeight - 200) {
+                          onLoadMore();
+                        }
+                      }}
+                    >
+                      {HistoryRow}
+                    </FixedSizeList>
+                  )}
+                </AutoSizer>
+              </LocalErrorBoundary>
             )
           )}
         </div>

@@ -89,8 +89,8 @@ export const translations = {
 
     // Queue
     batchQueue: "Verarbeitung",
-    processing: "Verarbeite...",
-    waiting: "Wartend",
+    processing: "Bearbeitung",
+    waiting: "Warteschlange",
     errors: "Fehler",
 
     // Settings Modal
@@ -322,8 +322,8 @@ export const translations = {
 
     // Queue
     batchQueue: "Processing",
-    processing: "Processing...",
-    waiting: "Waiting",
+    processing: "Processing",
+    waiting: "Queued",
     errors: "Errors",
 
     // Settings Modal
