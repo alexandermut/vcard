@@ -639,5 +639,27 @@ export const syntheticEdgeCases = [
             org: 'University of Example',
             adr: [{ city: 'Berlin', zip: '12345', street: 'Musterstr. 1' }]
         }
+    },
+    {
+        id: 'user_report_title_newline',
+        text: `
+      Geschäftsleitung:
+
+      Thomas Mau
+    `,
+        expected: {
+            fn: 'Thomas Mau',
+            title: 'Geschäftsleitung'
+        }
+    },
+    {
+        id: 'user_report_url_dupe',
+        text: `
+      Web: www.webseite.de
+      URL: http://webseite.de
+    `,
+        expected: {
+            url: 'https://www.webseite.de' // Expecting deduplication or at least one valid URL
+        }
     }
 ];

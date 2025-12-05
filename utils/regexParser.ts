@@ -154,7 +154,17 @@ const consumeUrls = (lines: Line[], data: ParserData) => {
         else if (lower.includes('tiktok')) type = 'TIKTOK';
         else if (lower.includes('medium')) type = 'MEDIUM';
 
-        data.url.push({ type, value: cleanUrl });
+        // Check for duplicates (ignore protocol and www for comparison)
+        const normalizeForCheck = (u: string) => u.replace(/^https?:\/\/(?:www\.)?/, '').replace(/\/$/, '');
+        const currentNormalized = normalizeForCheck(cleanUrl);
+
+        const isDuplicate = data.url.some(existing => {
+          return normalizeForCheck(existing.value) === currentNormalized;
+        });
+
+        if (!isDuplicate) {
+          data.url.push({ type, value: cleanUrl });
+        }
       });
       line.isConsumed = true;
       line.type = 'URL';
@@ -701,7 +711,7 @@ const consumeName = (lines: Line[], data: ParserData) => {
     if (line.isConsumed && line.type !== 'JOB') continue;
 
     // Check if line contains any of the keywords
-    if (/Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director/i.test(line.clean)) {
+    if (/Geschäftsführer|Inhaber|Vorstand|GF|CEO|Director|Geschäftsleitung/i.test(line.clean)) {
       const match = line.clean.match(re_context);
       if (match) {
         const fullName = match[1].trim();
@@ -715,6 +725,32 @@ const consumeName = (lines: Line[], data: ParserData) => {
           line.type = 'NAME';
         }
         return;
+      } else {
+        // Look ahead: Title found, but no name on same line?
+        // e.g. "Geschäftsleitung:" \n "Thomas Mau"
+        // Check if next line looks like a name
+        const lineIndex = lines.indexOf(line);
+        if (lineIndex !== -1 && lineIndex + 1 < lines.length) {
+          const nextLine = lines[lineIndex + 1];
+          if (!nextLine.isConsumed && isName(nextLine.clean)) {
+            // Found name on next line!
+            const fullName = nextLine.clean;
+            const parts = fullName.split(' ');
+            data.fn = fullName;
+            data.n = `${parts[parts.length - 1]};${parts[0]}`;
+
+            // Consume both
+            if (!line.isConsumed) {
+              line.isConsumed = true;
+              line.type = 'JOB'; // The first line was the title
+              // Also ensure data.title is set if not already
+              if (!data.title) data.title = line.clean.replace(/:$/, '');
+            }
+            nextLine.isConsumed = true;
+            nextLine.type = 'NAME';
+            return;
+          }
+        }
       }
     }
   }
