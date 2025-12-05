@@ -133,50 +133,118 @@ export const scanWithTesseract = async (
             imageData = base64Image.split(',')[1];
         }
 
-        // Preprocess image for better OCR accuracy
-        let processedImage = `data:image/png;base64,${imageData}`;
+        const originalImage = `data:image/png;base64,${imageData}`;
+        let processedImage = originalImage;
 
+        // --- ATTEMPT 1: With Preprocessing (if enabled) ---
         if (enablePreprocessing) {
             try {
                 if (onProgress) onProgress(20);
                 console.log('[Tesseract] Preprocessing image...');
-                processedImage = await preprocessImage(processedImage);
+                processedImage = await preprocessImage(originalImage);
                 console.log('[Tesseract] Preprocessing completed successfully');
                 if (onProgress) onProgress(30);
             } catch (preprocessError) {
-                // Fallback: Use original image if preprocessing fails
                 console.warn('[Tesseract] Preprocessing failed, using original image:', preprocessError);
-                processedImage = `data:image/png;base64,${imageData}`;
+                processedImage = originalImage;
                 if (onProgress) onProgress(30);
             }
         }
 
-        // Perform OCR
-        console.log('[Tesseract] Starting OCR recognition...');
-        const { data } = await worker.recognize(processedImage, {
+        // Perform OCR (Attempt 1)
+        console.log('[Tesseract] Starting OCR recognition (Attempt 1)...');
+        const result1 = await worker.recognize(processedImage, {
             rotateAuto: true,
         });
-        console.log('[Tesseract] OCR recognition completed');
+        console.log('[Tesseract] OCR recognition completed (Attempt 1)');
 
+        const text1 = result1.data.text.trim();
+        const conf1 = result1.data.confidence;
+
+        // Check quality of Attempt 1
+        const isPoorResult = text1.length < 15 || conf1 < 40;
+
+        // --- ATTEMPT 2: Retry without Preprocessing (if needed) ---
+        // Only if we used preprocessing AND the result is poor
+        if (enablePreprocessing && isPoorResult) {
+            console.warn(`[Tesseract] Attempt 1 yielded poor results (Len: ${text1.length}, Conf: ${conf1}). Retrying without preprocessing...`);
+
+            if (onProgress) onProgress(50); // Reset progress slightly
+
+            const result2 = await worker.recognize(originalImage, {
+                rotateAuto: true,
+            });
+
+            const text2 = result2.data.text.trim();
+            const conf2 = result2.data.confidence;
+
+            console.log(`[Tesseract] Attempt 2 Result - Len: ${text2.length}, Conf: ${conf2}`);
+
+            // If Attempt 2 is better, use it
+            // "Better" = significantly more text, or better confidence if text length is comparable
+            const attempts = [
+                { r: result1, t: text1, c: conf1 },
+                { r: result2, t: text2, c: conf2 }
+            ];
+
+            // Simple heuristic: prefer the one with more text (assuming business cards have content)
+            // But if text length is close, prefer higher confidence.
+            const bestAttempt = attempts.reduce((prev, curr) => {
+                // If one has very little text, discard it
+                if (curr.t.length < 5) return prev;
+                if (prev.t.length < 5) return curr;
+
+                // If current has 50% more text, take it
+                if (curr.t.length > prev.t.length * 1.5) return curr;
+
+                // If lengths are comparable, take higher confidence
+                return curr.c > prev.c ? curr : prev;
+            });
+
+            console.log('[Tesseract] improved result found:', bestAttempt === attempts[1]);
+
+            // Use local variable for final data to avoid TypeScript error with 'const'
+            const finalData = bestAttempt.r.data;
+
+            if (onProgress) onProgress(100);
+
+            const processingTime = Date.now() - startTime;
+
+            // Extract lines with bounding boxes
+            const lines: OCRLine[] = ((finalData as any).lines || []).map((line: any) => ({
+                text: line.text.trim(),
+                confidence: line.confidence,
+                bbox: line.bbox
+            })).filter((l: OCRLine) => l.text.length > 0);
+
+            return {
+                text: finalData.text,
+                lines,
+                confidence: finalData.confidence,
+                processingTime,
+            };
+        }
+
+        // If Attempt 1 was good enough (or no preprocessing used), return it
         if (onProgress) onProgress(100);
 
         const processingTime = Date.now() - startTime;
 
         console.log(`[Tesseract] OCR completed in ${processingTime}ms`);
-        console.log(`[Tesseract] Confidence: ${data.confidence.toFixed(2)}%`);
-        console.log(`[Tesseract] Text length: ${data.text.length} chars`);
+        console.log(`[Tesseract] Confidence: ${result1.data.confidence.toFixed(2)}%`);
+        console.log(`[Tesseract] Text length: ${result1.data.text.length} chars`);
 
         // Extract lines with bounding boxes
-        const lines: OCRLine[] = ((data as any).lines || []).map((line: any) => ({
+        const lines: OCRLine[] = ((result1.data as any).lines || []).map((line: any) => ({
             text: line.text.trim(),
             confidence: line.confidence,
             bbox: line.bbox
         })).filter((l: OCRLine) => l.text.length > 0);
 
         return {
-            text: data.text,
+            text: result1.data.text,
             lines,
-            confidence: data.confidence,
+            confidence: result1.data.confidence,
             processingTime,
         };
 

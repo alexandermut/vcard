@@ -1,4 +1,4 @@
-import { Namefully } from 'namefully';
+import { Namefully, Title } from 'namefully';
 
 export interface ParsedName {
     prefix?: string;
@@ -12,7 +12,7 @@ export const parseComplexName = (text: string): ParsedName | null => {
     try {
         // Configure to handle common suffixes and order
         const name = new Namefully(text, {
-            titling: 'us' // Handle US titles/suffixes better
+            title: Title.US // Handle US titles/suffixes better
         });
 
         return {
