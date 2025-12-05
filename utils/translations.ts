@@ -155,6 +155,7 @@ export const translations = {
     configError: "Bitte verbinden Sie zuerst die AI in den Einstellungen.",
     resetConfirm: "Möchten Sie wirklich auf die Musterkarte zurücksetzen?",
     installApp: "App installieren",
+    exportSuccess: "Export erfolgreich!",
 
 
 
@@ -478,5 +479,6 @@ export const translations = {
     configError: "Please connect to AI in settings first.",
     resetConfirm: "Do you really want to reset to the sample card?",
     installApp: "Install App",
+    exportSuccess: "Export successful!",
   }
 };

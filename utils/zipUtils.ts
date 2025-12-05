@@ -170,3 +170,49 @@ export const downloadZip = (blob: Blob, filename: string) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 };
+
+export const generateContactZip = async (item: HistoryItem, filenameBase: string): Promise<Blob> => {
+    const zip = new JSZip();
+
+    // 1. JSON
+    const jsonContent = await generateJSON([item], true);
+    zip.file(`${filenameBase}.json`, jsonContent);
+
+    // 2. CSV
+    const csvContent = generateCSV([item]);
+    zip.file(`${filenameBase}.csv`, csvContent);
+
+    // 3. VCF
+    zip.file(`${filenameBase}.vcf`, item.vcard);
+
+    // 4. Images
+    if (item.images && item.images.length > 0) {
+        // Create images folder or just put them in root? User said "zip erstellt in der der Kontakt... exportiert wird"
+        // Usually safer to put images in subfolder if there are multiple, but for single contact maybe root is fine?
+        // Let's stick to root with distinct names or 'images' folder. 'images' folder is cleaner.
+        // But for a single contact package, having them side-by-side might be expected.
+        // Let's use root for single contact ZIP for easy access.
+        // e.g. Contact.vcf, Contact.csv, Contact_front.jpg...
+
+        item.images.forEach((img, index) => {
+            try {
+                let blob: Blob | null = null;
+                if (typeof img === 'string' && img.startsWith('data:')) {
+                    blob = base64ToBlob(img);
+                } else if (img instanceof Blob) {
+                    blob = img;
+                }
+
+                if (blob) {
+                    const suffix = index === 0 ? 'front' : index === 1 ? 'back' : `img${index + 1}`;
+                    const ext = blob.type === 'image/png' ? 'png' : 'jpg';
+                    zip.file(`${filenameBase}_${suffix}.${ext}`, blob);
+                }
+            } catch (e) {
+                console.warn(`Failed to export image for ${item.name}`, e);
+            }
+        });
+    }
+
+    return await zip.generateAsync({ type: 'blob' });
+};

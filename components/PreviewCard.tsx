@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { ParsedVCard, VCardData, Language, VCardAddress } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X } from 'lucide-react';
+import { ParsedVCard, VCardData, Language, VCardAddress, HistoryItem } from '../types';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
+import { generateContactZip, downloadZip } from '../utils/zipUtils';
 import { toast } from 'sonner';
 import { translations } from '../utils/translations';
 
@@ -26,6 +27,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
+  const [isZipping, setIsZipping] = useState(false);
 
   useEffect(() => {
     setLocalData(parsed.data);
@@ -95,6 +97,31 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     }
   };
 
+  const handleZipExport = async () => {
+    setIsZipping(true);
+    try {
+      // Construct temp item
+      const tempItem: HistoryItem = {
+        id: 'export_' + Date.now(),
+        timestamp: Date.now(),
+        name: localData.fn || 'Contact',
+        org: localData.org,
+        vcard: generateVCardFromData(localData),
+        images: images || []
+      };
+
+      const filename = generateContactFilename({ fn: localData.fn, org: localData.org });
+      const blob = await generateContactZip(tempItem, filename);
+      downloadZip(blob, `${filename}.zip`);
+      toast.success(t.exportSuccess || "Export erfolgreich!");
+    } catch (e) {
+      console.error("Zip Export failed", e);
+      toast.error("ZIP Export fehlgeschlagen");
+    } finally {
+      setIsZipping(false);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden h-full flex flex-col transition-colors duration-200 relative">
       <div className="h-14 bg-gradient-to-r from-blue-600 to-indigo-600 relative shrink-0 flex justify-end items-center px-4 gap-2">
@@ -140,6 +167,14 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             title={t.share}
           >
             <Share2 size={18} />
+          </button>
+          <button
+            onClick={handleZipExport}
+            disabled={isZipping}
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50"
+            title="Alles exportieren (ZIP)"
+          >
+            <Archive size={18} />
           </button>
           <button
             onClick={onDownload}
