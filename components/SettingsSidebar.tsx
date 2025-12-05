@@ -40,10 +40,10 @@ interface SettingsSidebarProps {
     onRestoreZip: (file: File) => void;
     clearHistory: () => void;
     isExporting?: boolean;
-    ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid';
-    setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'hybrid') => void;
+    ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training';
+    setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training') => void;
     concurrentScans: number; // ✅ NEW: Parallel processing (1-5)
-    setConcurrentScans: (value: number) => void; // ✅ NEW
+    setConcurrentScans: (value: number) => void;
 }
 
 import { useEscapeKey } from '../hooks/useEscapeKey';
@@ -527,16 +527,26 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                     </div>
                                     <select
                                         value={ocrMethod}
-                                        onChange={(e) => setOcrMethod(e.target.value as 'auto' | 'tesseract' | 'gemini' | 'hybrid')}
+                                        onChange={(e) => setOcrMethod(e.target.value as 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training')}
                                         className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                     >
                                         <option value="auto">🤖 Auto (Offline-First)</option>
-                                        <option value="tesseract">🧪 Tesseract (Offline)</option>
-                                        <option value="gemini">✨ Gemini/LLM (Online)</option>
-                                        <option value="hybrid">⚡ Hybrid (Beide)</option>
+                                        <option value="tesseract">🧪 Tesseract (Offline Only)</option>
+                                        <option value="gemini">✨ Gemini (Online Only)</option>
+                                        <option value="hybrid">⚡ Hybrid (Parallel)</option>
+                                        <option value="regex-training">🛠️ Regex Training (Debug)</option>
                                     </select>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-                                        Auto nutzt primär Tesseract (offline), Gemini als optionale Verbesserung wenn API Key vorhanden
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                        {(() => {
+                                            switch (ocrMethod) {
+                                                case 'auto': return "Standard: Versucht erst den schnellen Offline-Scan (Tesseract). Nur bei unsicherem Ergebnis wird optional AI (Gemini) zur Verbesserung genutzt (Soft-Fallback).";
+                                                case 'tesseract': return "Nutzt ausschließlich die lokale Engine. 100% Datenschutz & keine Kosten. Ideal für einfache, gut lesbare Visitenkarten. Funktioniert komplett ohne Internet.";
+                                                case 'gemini': return "Sendet das Bild direkt an die Google AI. Höchste Genauigkeit, versteht Kontext und korrigiert Fehler. Benötigt Internet & API Key.";
+                                                case 'hybrid': return "Startet Offline- und Online-Scan gleichzeitig. Wählt automatisch das beste Ergebnis. Maximale Qualität, verbraucht aber mehr Ressourcen (da beide laufen).";
+                                                case 'regex-training': return "Experten-Modus: Führt beide Scans aus und erstellt einen detaillierten Vergleichs-Bericht (JSON). Hilft Entwicklern, den Offline-Parser zu trainieren.";
+                                                default: return "";
+                                            }
+                                        })()}
                                     </p>
                                 </div>
                             </div>

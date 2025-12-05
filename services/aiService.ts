@@ -285,7 +285,7 @@ const callGeminiWithRetry = async (
       contents: [
         { role: 'user', parts: [{ text: `${systemPrompt}\n\n--- BEGIN INPUT DATA ---\n${input as string}\n--- END INPUT DATA ---` }] }
       ],
-      generationConfig: {
+      config: {
         temperature: 0.1, // Very low temperature for factual extraction
         maxOutputTokens: 8192, // Increased for Pro model
       }
@@ -304,7 +304,7 @@ const callGeminiWithRetry = async (
       contents: [
         { role: 'user', parts: parts }
       ],
-      generationConfig: {
+      config: {
         temperature: 0.1,
       }
     };
@@ -448,5 +448,80 @@ export const generateContent = async (
   } catch (e) {
     console.error("Gemini Chat Error:", e);
     throw e;
+  }
+};
+
+export const analyzeRegexPerformance = async (
+  rawText: string,
+  regexVCard: string,
+  geminiVCard: string,
+  apiKey: string
+): Promise<string> => {
+  if (!apiKey) throw new Error("MISSING_KEY");
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `
+    ROLE: QA Engineer for a vCard Parser.
+    TASK: Compare two vCard outputs and generate a Test Case for the Regex Parser.
+
+    INPUTS:
+    1. RAW TEXT (OCR Output): The source text.
+    2. REGEX RESULT (Current Parsing): How the non-AI regex parser understood it.
+    3. GEMINI RESULT (Ground Truth): How YOU (the AI) understood it (assumed perfect).
+
+    GOALS:
+    1. Analyze where the Regex Parser failed compared to Ground Truth (missing fields, wrong types, garbage data).
+    2. Generate a JSON object used for regression testing.
+    3. **IMPORTANT: ANONYMIZE PII (Personally Identifiable Information)** in the 'text' and 'expected' fields.
+       - Replace names with 'Anon Ymous', 'John Doe'.
+       - Replace phones with '+49 123 456789'.
+       - Replace emails with 'test@example.com'.
+       - **CRITICAL**: PRESERVE whitespace, tabs, and layout quirks in the 'text' field! The goal is to debug the PARSER, so the STRUCTURE must be identical, only the CONTENT should be anonymized.
+
+    RAW TEXT:
+    ${rawText}
+
+    REGEX RESULT:
+    ${regexVCard}
+
+    GEMINI RESULT (Ground Truth):
+    ${geminiVCard}
+
+    OUTPUT FORMAT (JSON ONLY, NO MARKDOWN):
+    {
+      "analysis": "Brief summary of what the regex parser missed (e.g. 'Missed Fax number', 'Wrong name split').",
+      "test_case": {
+        "id": "generated_edge_case_${new Date().getTime()}",
+        "text": "${rawText.replace(/\n/g, '\\n').replace(/"/g, '\\"')}", // ANONYMIZED BUT PRESERVE LAYOUT!
+        "expected": {
+           // Extraction from GEMINI RESULT. ANONYMIZED!
+           "fn": "Anon Ymous", 
+           "n": "Ymous;Anon;;;", 
+           "org": "Example Corp",
+           "tel": [{ "value": "+49 123 45678", "type": "work" }],
+           "email": [{ "value": "anon@example.com", "type": "work" }]
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await withExponentialBackoff(
+      () => ai.models.generateContent({
+        model: "gemini-2.0-flash", // Flash is enough for analysis and fast
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json"
+        }
+      }),
+      3, 1000, 2,
+      (e: any) => e?.message?.includes('429')
+    );
+
+    return response.text || "{}";
+  } catch (e) {
+    console.error("Analysis Failed", e);
+    return JSON.stringify({ error: "Analysis failed", details: (e as Error).message });
   }
 };

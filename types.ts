@@ -46,6 +46,7 @@ export interface HistoryItem {
   images?: (string | Blob)[]; // Array of Base64 strings or Blobs (Front/Back)
   keywords?: string[]; // For search indexing
   googleResourceName?: string; // Linked Google Contact ID
+  debugAnalysis?: string; // JSON string of regex analysis for training
 }
 
 export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';
@@ -73,5 +74,5 @@ export interface Note {
 }
 
 export interface Settings {
-  ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'hybrid';
+  ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training';
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ParsedVCard, VCardData, Language, VCardAddress, HistoryItem } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive } from 'lucide-react';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive, FileJson } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
@@ -20,10 +20,11 @@ interface PreviewCardProps {
   lang: Language;
   images?: string[];
   token?: string; // Added token prop
+  debugAnalysis?: string; // JSON Test Case
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -32,6 +33,24 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
   useEffect(() => {
     setLocalData(parsed.data);
   }, [parsed]);
+
+  // ... (existing helper functions) ...
+
+  const handleDownloadAnalysis = () => {
+    if (!debugAnalysis) return;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const filename = `regex_testcase_${timestamp}.json`;
+    const blob = new Blob([debugAnalysis], { type: 'application/json' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+    toast.success("Test Case downloaded!");
+  };
 
   const updateField = (field: keyof VCardData, value: string) => {
     const newData = { ...localData, [field]: value };
@@ -46,6 +65,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     setLocalData(newData);
     onUpdate(generateVCardFromData(newData));
   };
+
 
   const updateAddressField = (index: number, key: keyof VCardAddress, value: string) => {
     const newAdr = [...(localData.adr || [])];
@@ -133,6 +153,15 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               title={t.notes || "Notes"}
             >
               <StickyNote size={18} />
+            </button>
+          )}
+          {debugAnalysis && (
+            <button
+              onClick={handleDownloadAnalysis}
+              className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-500/30 transition-colors"
+              title="Download Regex Test Case (Debug)"
+            >
+              <FileJson size={18} />
             </button>
           )}
           <button

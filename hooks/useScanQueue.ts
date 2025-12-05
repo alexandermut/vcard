@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ScanJob } from '../types';
-import { scanBusinessCard, ImageInput } from '../services/aiService';
+import { scanBusinessCard, ImageInput, analyzeRegexPerformance } from '../services/aiService';
 import { Language } from '../types';
 import type { LLMConfig } from './useLLMConfig';
 import { scanWithTesseract } from '../services/tesseractService';
@@ -29,8 +29,8 @@ export const useScanQueue = (
   apiKey: string,
   lang: Language,
   llmConfig: LLMConfig,
-  ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid',
-  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid') => Promise<void> | void,
+  ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training',
+  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string) => Promise<void> | void,
   onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
@@ -126,9 +126,38 @@ export const useScanQueue = (
         );
 
         let vcard: string;
+        let analysisResult: string | undefined = undefined;
 
         // OCR Method Selection Logic
-        if (ocrMethod === 'tesseract') {
+        if (ocrMethod === 'regex-training') {
+          console.log('[OCR] Mode: Regex Training (Dual Scan & Analysis)');
+
+          // 1. Run Tesseract (Offline) for Baseline
+          const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
+            ? parseSpatialToVCard(tesseractResult.lines)
+            : parseImpressumToVCard(tesseractResult.text);
+
+          // 2. Run Gemini (Online) for Ground Truth
+          if (!apiKey) throw new Error('API Key required for Regex Training Mode');
+          const geminiVCard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+
+          // 3. Analyze Differences
+          console.log('[OCR] Analyzing Regex Performance...');
+          analysisResult = await analyzeRegexPerformance(
+            tesseractResult.text,
+            tesseractVCard,
+            geminiVCard,
+            apiKey
+          );
+
+          // 4. Pass raw OCR text to parent for debug/display
+          if (onOCRRawText) onOCRRawText(tesseractResult.text);
+
+          // 5. Use Gemini Result for User (Best Quality)
+          vcard = geminiVCard;
+
+        } else if (ocrMethod === 'tesseract') {
           // Tesseract Only (Offline)
           console.log('[OCR] Mode: Tesseract Only');
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
@@ -179,6 +208,9 @@ export const useScanQueue = (
           if (geminiVCard && tesseractVCard) {
             // Both succeeded - choose better confidence
             vcard = geminiVCard.confidence >= tesseractVCard.confidence ? geminiVCard.vcard : tesseractVCard.vcard;
+            // Always expose raw Tesseract text for debugging/tab
+            if (onOCRRawText && tesseractVCard.rawText) onOCRRawText(tesseractVCard.rawText);
+
             console.log(`[OCR] Hybrid: Selected ${geminiVCard.confidence >= tesseractVCard.confidence ? 'Gemini' : 'Tesseract'} (Gemini: ${geminiVCard.confidence}%, Tesseract: ${tesseractVCard.confidence}%)`);
           } else if (geminiVCard) {
             vcard = geminiVCard.vcard;
@@ -239,7 +271,7 @@ export const useScanQueue = (
         // Safety timeout for onJobComplete (saving)
         const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));
         await Promise.race([
-          onJobComplete(vcard, rawImages, job.mode),
+          onJobComplete(vcard, rawImages, job.mode, analysisResult),
           saveTimeout
         ]);
 

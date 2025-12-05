@@ -458,17 +458,11 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
       <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
-              <HistoryIcon size={20} className="text-blue-600 dark:text-blue-400" />
-              <h3>{t.historyTitle} ({historyCount})</h3>
-            </div>
-
+        <div className="p-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex justify-between items-center">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-100 font-semibold">
+            <HistoryIcon size={20} className="text-blue-600 dark:text-blue-400" />
+            <h3>{t.historyTitle} ({historyCount})</h3>
           </div>
-
-          {/* Selection Toggle */}
-
 
           <div className="flex items-center gap-2">
             {/* Selection Toggle */}
@@ -477,13 +471,13 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                 setIsSelectionMode(!isSelectionMode);
                 setSelectedIds(new Set()); // Clear selection when toggling
               }}
-              className={`p-1.5 rounded-md transition-colors mr-1 ${isSelectionMode ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+              className={`p-1.5 rounded-md transition-colors ${isSelectionMode ? 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
               title={isSelectionMode ? "Auswahl beenden" : "Auswählen"}
             >
               <Check size={20} className={isSelectionMode ? "stroke-2" : ""} />
             </button>
 
-            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500 ml-2">
+            <button onClick={onClose} className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors text-slate-500">
               <X size={20} />
             </button>
           </div>

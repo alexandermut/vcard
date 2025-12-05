@@ -7,7 +7,7 @@ interface LogoProps {
 }
 
 export const Logo: React.FC<LogoProps> = ({ className = "", height = 40, variant = 'full' }) => {
-    // Icon: "◎"
+    // Icon: "◉"
     if (variant === 'icon') {
         return (
             <svg
@@ -22,12 +22,12 @@ export const Logo: React.FC<LogoProps> = ({ className = "", height = 40, variant
             .logo-symbol { font-family: system-ui, -apple-system, sans-serif; font-weight: 800; }
           `}
                 </style>
-                <text x="50" y="70" textAnchor="middle" className="logo-symbol" fontSize="80" fill="currentColor">◎</text>
+                <text x="50" y="70" textAnchor="middle" className="logo-symbol" fontSize="80" fill="currentColor">◉</text>
             </svg>
         );
     }
 
-    // Full Logo: "k◎ntakte.me"
+    // Full Logo: "k◉ntakte.me"
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -42,7 +42,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "", height = 40, variant
         `}
             </style>
 
-            <text x="0" y="60" className="logo-text" fontSize="60" fill="currentColor">k◎ntakte.me</text>
+            <text x="0" y="60" className="logo-text" fontSize="60" fill="currentColor">k◉ntakte.me</text>
         </svg>
     );
 };

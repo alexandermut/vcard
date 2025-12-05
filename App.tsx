@@ -76,8 +76,9 @@ const App: React.FC = () => {
   // Config State
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
-  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'hybrid'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, or hybrid
+  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, hybrid, or regex-training (debug)
   const [ocrRawText, setOcrRawText] = useState<string | undefined>(undefined); // Raw OCR text from Tesseract for parser field
+  const [currentDebugAnalysis, setCurrentDebugAnalysis] = useState<string | undefined>(undefined); // Regex analysis JSON
 
 
 
@@ -92,23 +93,17 @@ const App: React.FC = () => {
     hasSystemKey
   } = useLLMConfig();
 
+
   // Scan Queue (Batch Processing with auto-retry)
   const { queue, addJob, removeJob, clearErrors } = useScanQueue(
     getKeyToUse() || '',
     lang,
     llmConfig,
     ocrMethod,
-    async (vcard, images, mode) => {
+    async (vcard, images, mode, debugAnalysis) => {
       setVcardString(vcard);
       setCurrentImages(images);
-
-      // Auto-save to history on successful scan
-      try {
-        await addToHistory(vcard, undefined, images, mode);
-      } catch (err) {
-        console.error("Failed to save to history:", err);
-        toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
-      }
+      setCurrentDebugAnalysis(debugAnalysis);
 
       // 1. Enrich Address (if Street DB is ready)
       let finalVCard = vcard;
@@ -116,19 +111,19 @@ const App: React.FC = () => {
         try {
           const parsed = parseVCardString(vcard);
           // Timeout for enrichment
-          const enrichPromise = enrichAddress(parsed.data);
-          const timeoutPromise = new Promise<void>((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 5000)
+          const enrichPromise = new Promise<VCardData | null>((resolve) => {
+            enrichAddress(parsed.data).then(resolve).catch(() => resolve(null));
+          });
+          const timeoutPromise = new Promise<null>((resolve) =>
+            setTimeout(() => resolve(null), 5000)
           );
 
-          try {
-            await Promise.race([enrichPromise, timeoutPromise]);
-            if (parsed.data.adr && parsed.data.adr.length > 0) {
-              finalVCard = generateVCardFromData(parsed.data); // Assuming generateVCardFromData is the correct function
-              setVcardString(finalVCard);
-            }
-          } catch (timeoutError) {
-            console.warn('Address enrichment timed out, using original vCard');
+          const enriched = await Promise.race([enrichPromise, timeoutPromise]);
+
+          if (enriched) {
+            finalVCard = generateVCardFromData(enriched);
+          } else {
+            console.warn('Address enrichment timed out or failed, using original vCard');
           }
         } catch (enrichError) {
           console.warn('Address enrichment failed:', enrichError);
@@ -140,7 +135,7 @@ const App: React.FC = () => {
 
       // Auto-save to history on successful scan
       try {
-        await addToHistory(finalVCard, undefined, images, mode);
+        await addToHistory(finalVCard, undefined, images, mode, debugAnalysis);
       } catch (err) {
         console.error("Failed to save to history:", err);
         toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
@@ -435,7 +430,7 @@ const App: React.FC = () => {
 
   // ...
 
-  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid'): Promise<{ status: 'saved' | 'duplicate' | 'error', savedVCard?: string }> => {
+  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string): Promise<{ status: 'saved' | 'duplicate' | 'error', savedVCard?: string }> => {
     console.log("addToHistory called", { strLength: str?.length, hasParsed: !!parsed, images: scanImages?.length, mode });
 
     const p = parsed || parseVCardString(str);
@@ -451,22 +446,6 @@ const App: React.FC = () => {
     let vcardToSave = str;
 
     // --- EVENT MODE INJECTION REMOVED ---
-    // User requested to move to backlog.
-    /*
-    try {
-      if (eventModeActive && eventName && eventName.trim().length > 0) {
-        console.log("Injecting Event Tag:", eventName);
-        if (!newData.categories) newData.categories = [];
-        if (!newData.categories.includes(eventName)) {
-          newData.categories.push(eventName);
-          // Regenerate vCard string with new category
-          vcardToSave = generateVCardFromData(newData);
-        }
-      }
-    } catch (e) {
-      console.error("Error injecting event tag:", e);
-    }
-    */
 
     // Get latest history from DB to ensure we check against current state
     const currentHistory = await getHistory();
@@ -474,8 +453,6 @@ const App: React.FC = () => {
     // 1. Check for exact string duplicate
     if (currentHistory.length > 0 && currentHistory[0].vcard === vcardToSave) {
       console.log("Exact duplicate detected - skipping save");
-      // Optional: Notify user?
-      // toast.info("Kontakt ist bereits der neueste Eintrag.");
       return { status: 'duplicate' };
     }
 
@@ -545,7 +522,8 @@ const App: React.FC = () => {
           name: mergedData.fn || oldItem.name,
           org: mergedData.org || oldItem.org,
           vcard: mergedString,
-          images: mergedImages
+          images: mergedImages,
+          debugAnalysis: debugAnalysis // Update analysis if new scan
         };
       } else {
         // Fallback
@@ -555,7 +533,8 @@ const App: React.FC = () => {
           name: newFn || oldItem.name,
           org: newData.org || oldItem.org,
           vcard: vcardToSave,
-          images: mergedImages
+          images: mergedImages,
+          debugAnalysis: debugAnalysis
         };
       }
     } else {
@@ -566,7 +545,8 @@ const App: React.FC = () => {
         name: newFn || 'Unbekannt',
         org: newData.org,
         vcard: vcardToSave,
-        images: scanImages
+        images: scanImages,
+        debugAnalysis: debugAnalysis
       };
     }
 
@@ -1521,6 +1501,7 @@ const App: React.FC = () => {
                   toast.error(t.noteSaveFirst);
                 }
               }}
+              debugAnalysis={currentDebugAnalysis}
             />
           </div>
         </div>

@@ -11,6 +11,7 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
 *   **Hybrid Parser:**
     *   *Offline:* Lightning-fast signature detection via complex regex patterns (optimized for DACH addresses).
     *   *Online (AI):* Google Gemini 3 Pro for "forensic" data extraction, correction, and enrichment.
+    *   *Transparent Editor:* Dedicated tabs for "Regex Parser" (Input), "vCard Code" (Output), and "OCR / Tesseract" (Raw Debug View).
 *   **Smart Scan:** Simply photograph business cards (front & back). The AI extracts all data.
 *   **QR Code Scanner:** Integrated scanner for vCard QR codes. Supports direct vCard data and download links (CORS-Safe).
 *   **Batch Queue:** Scan multiple cards in succession – processing runs asynchronously in the background.
@@ -25,6 +26,8 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
 *   **Cross-Platform:** Works as an installable PWA on Desktop, iOS, and Android.
 *   **Unified Sidebar UI:** Modern, consistent sidebar interface for all tools (Scan, Settings, History, Help).
 *   **Advanced Help & Manual:** Comprehensive offline documentation with tips, tricks, and troubleshooting guides.
+*   **Flexible OCR Methods:** Choose between Auto (Offline-First), Tesseract (Offline Only), Gemini (Online Only), Hybrid (Parallel), or Regex-Training (Debug).
+*   **Regex Training Mode:** Special debug mode that runs dual scans to generate training data for improving the offline parser.
 *   **UI/UX:** Dark Mode (Default), Responsive Design, Standalone pages for Imprint & Privacy.
 
 ---

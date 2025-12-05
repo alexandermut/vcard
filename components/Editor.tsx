@@ -21,18 +21,17 @@ interface EditorProps {
 export const Editor: React.FC<EditorProps> = ({
   value, onChange, onOptimize, onUndo, canUndo, onReset, onImageDrop, onClearImages, isOptimizing, lang, ocrRawText
 }) => {
-  const [activeTab, setActiveTab] = useState<'text' | 'code'>('text');
+  const [activeTab, setActiveTab] = useState<'text' | 'code' | 'tesseract'>('text');
   const [rawText, setRawText] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const t = translations[lang];
 
   const lastTextRef = React.useRef(value);
 
-  // Populate rawText when OCR result is provided
+  // When OCR result is provided, switch to Tesseract tab but DON'T auto-fill parser
   React.useEffect(() => {
     if (ocrRawText) {
-      setRawText(ocrRawText);
-      setActiveTab('text'); // Switch to text tab to show OCR result
+      setActiveTab('tesseract');
     }
   }, [ocrRawText]);
 
@@ -131,6 +130,21 @@ export const Editor: React.FC<EditorProps> = ({
             <Code size={14} />
             {t.codeTab}
           </button>
+
+          {/* ✅ NEW: Tesseract Tab */}
+          {ocrRawText && (
+            <button
+              onClick={() => setActiveTab('tesseract')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'tesseract'
+                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                }`}
+            >
+              <FileText size={14} />
+              OCR / Tesseract
+            </button>
+          )}
+
         </div>
 
         <div className="flex gap-2 items-center self-end sm:self-auto">
@@ -202,7 +216,7 @@ export const Editor: React.FC<EditorProps> = ({
             spellCheck={false}
             placeholder={t.textPlaceholder}
           />
-        ) : (
+        ) : activeTab === 'code' ? (
           <textarea
             className="absolute inset-0 w-full h-full p-4 font-mono text-sm text-slate-800 dark:text-slate-200 bg-transparent resize-none focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 dark:focus:ring-blue-500/40 placeholder-slate-400 dark:placeholder-slate-600"
             value={value}
@@ -210,6 +224,26 @@ export const Editor: React.FC<EditorProps> = ({
             spellCheck={false}
             placeholder="BEGIN:VCARD..."
           />
+        ) : (
+          /* Tesseract Read-Only View */
+          <div className="absolute inset-0 w-full h-full relative">
+            <div className="absolute top-2 right-2 z-10">
+              <button
+                onClick={() => {
+                  handleRawTextChange(ocrRawText || '');
+                  setActiveTab('text');
+                }}
+                className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs rounded hover:bg-blue-200"
+              >
+                Use in Parser
+              </button>
+            </div>
+            <textarea
+              className="absolute inset-0 w-full h-full p-4 font-mono text-sm text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 resize-none focus:outline-none"
+              value={ocrRawText}
+              readOnly
+            />
+          </div>
         )}
       </div>
 
@@ -218,11 +252,11 @@ export const Editor: React.FC<EditorProps> = ({
         <span>
           {activeTab === 'text'
             ? `${rawText.length} ${t.chars}`
-            : `${value.split('\n').length} ${t.lines}`
+            : activeTab === 'code' ? `${value.split('\n').length} ${t.lines}` : `${ocrRawText?.length || 0} ${t.chars}`
           }
         </span>
         <span className="uppercase">
-          {activeTab === 'text' ? 'Regex Parser' : 'vCard 3.0'}
+          {activeTab === 'text' ? 'Regex Parser' : activeTab === 'code' ? 'vCard 3.0' : 'Tesseract Raw'}
         </span>
       </div>
     </div>

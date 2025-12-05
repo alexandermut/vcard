@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, HelpCircle, Scan, Edit3, StickyNote, Download, Shield, ChevronDown, ChevronUp, Lightbulb, Layers } from 'lucide-react';
+import { X, HelpCircle, Scan, Edit3, StickyNote, Download, Shield, ChevronDown, ChevronUp, Lightbulb, Layers, FileText, Sparkles, Zap, Hammer } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { Language } from '../types';
 import { useEscapeKey } from '../hooks/useEscapeKey';
@@ -69,6 +69,13 @@ export const HelpSidebar: React.FC<HelpSidebarProps> = ({ isOpen, onClose, lang 
             items: [
                 { icon: Layers, title: t.faqLlmTitle, desc: t.faqLlmDesc, tips: t.faqLlmTips, color: "text-orange-500" },
                 { icon: Layers, title: t.faqKeyTitle, desc: t.faqKeyDesc, tips: t.faqKeyTips, color: "text-orange-400" },
+
+                // Detailed OCR Method Descriptions
+                { icon: Scan, title: "🤖 Auto (Offline-First)", desc: "Standard: Versucht erst den schnellen Offline-Scan (Tesseract). Nur bei unsicherem Ergebnis wird optional AI (Gemini) zur Verbesserung genutzt (Soft-Fallback).", color: "text-blue-500" },
+                { icon: FileText, title: "🧪 Tesseract (Offline Only)", desc: "Nutzt ausschließlich die lokale Engine. 100% Datenschutz & keine Kosten. Ideal für einfache, gut lesbare Visitenkarten. Funktioniert komplett ohne Internet.", color: "text-green-600" },
+                { icon: Sparkles, title: "✨ Gemini (Online Only)", desc: "Sendet das Bild direkt an die Google AI. Höchste Genauigkeit, versteht Kontext und korrigiert Fehler. Benötigt Internet & API Key.", color: "text-purple-500" },
+                { icon: Zap, title: "⚡ Hybrid (Parallel)", desc: "Startet Offline- und Online-Scan gleichzeitig. Wählt automatisch das beste Ergebnis. Maximale Qualität, verbraucht aber mehr Ressourcen (da beide laufen).", color: "text-yellow-500" },
+                { icon: Hammer, title: "🛠️ Regex Training (Debug)", desc: "Experten-Modus: Führt beide Scans aus und erstellt einen detaillierten Vergleichs-Bericht (JSON). Hilft Entwicklern, den Offline-Parser zu trainieren.", color: "text-red-500" },
             ]
         },
         {
@@ -76,6 +83,7 @@ export const HelpSidebar: React.FC<HelpSidebarProps> = ({ isOpen, onClose, lang 
             items: [
                 { icon: Lightbulb, title: t.faqCamTitle, desc: t.faqCamDesc, color: "text-red-500" },
                 { icon: Lightbulb, title: t.faqOllamaTitle, desc: t.faqOllamaDesc, tips: t.faqOllamaTips, color: "text-red-400" },
+                { icon: FileText, title: "Tesseract / Regex Debugging", desc: "Nutze den 'OCR / Tesseract' Tab im Editor, um das rohe Ergebnis des Offline-Scanners zu sehen. Mit 'Use in Parser' kannst du es manuell testen.", color: "text-red-300" },
             ]
         },
         {

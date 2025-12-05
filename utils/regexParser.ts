@@ -691,7 +691,9 @@ const consumeCompany = (lines: Line[], data: ParserData) => {
     if (line.isConsumed) return;
 
     if (re_legal_form.test(line.clean)) {
-      data.org = line.clean;
+      // Clean trailing digits (page numbers, OCR noise)
+      // e.g. "Company GmbH 9" -> "Company GmbH"
+      data.org = line.clean.replace(/\s+\d{1,2}$/, '');
       line.isConsumed = true;
       line.type = 'ORG';
     }
@@ -878,6 +880,8 @@ const consumeLeftovers = (lines: Line[], data: ParserData) => {
       org = org.replace(/^(?:Ihr Team von|Your Team from|Dein Team von)\s*/i, '');
       // Strip trailing punctuation
       org = org.replace(/[.,;:]+$/, '');
+      // Strip trailing digits (page numbers, OCR noise)
+      org = org.replace(/\s+\d{1,2}$/, '');
       data.org = org;
       firstUnconsumed.isConsumed = true;
       firstUnconsumed.type = 'ORG';
