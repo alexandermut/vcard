@@ -5,12 +5,12 @@ import { useEscapeKey } from '../hooks/useEscapeKey';
 interface LegalSidebarProps {
     isOpen: boolean;
     onClose: () => void;
-    initialTab?: 'imprint' | 'privacy';
+    initialTab?: 'imprint' | 'privacy' | 'licenses';
 }
 
 export const LegalSidebar: React.FC<LegalSidebarProps> = ({ isOpen, onClose, initialTab = 'imprint' }) => {
     useEscapeKey(onClose, isOpen);
-    const [activeTab, setActiveTab] = useState<'imprint' | 'privacy'>(initialTab);
+    const [activeTab, setActiveTab] = useState<'imprint' | 'privacy' | 'licenses'>(initialTab);
 
     useEffect(() => {
         if (isOpen) {
@@ -58,6 +58,16 @@ export const LegalSidebar: React.FC<LegalSidebarProps> = ({ isOpen, onClose, ini
                             <Shield size={14} />
                             Datenschutz
                         </button>
+                        <button
+                            onClick={() => setActiveTab('licenses')}
+                            className={`text-xs font-semibold flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors ${activeTab === 'licenses'
+                                ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
+                                }`}
+                        >
+                            <div className="rotate-45"><Scale size={14} /></div>
+                            Lizenzen
+                        </button>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-full">
                         <X size={20} />
@@ -70,7 +80,7 @@ export const LegalSidebar: React.FC<LegalSidebarProps> = ({ isOpen, onClose, ini
                     {activeTab === 'imprint' && (
                         <div className="space-y-6">
                             <h1 className="text-xl font-bold border-b border-slate-100 dark:border-slate-800 pb-2">Impressum</h1>
-
+                            {/* ... Imprint Content ... */}
                             <section>
                                 <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Angaben gemäß § 5 DDG</h2>
                                 <p className="text-sm">
@@ -127,6 +137,7 @@ export const LegalSidebar: React.FC<LegalSidebarProps> = ({ isOpen, onClose, ini
 
                     {activeTab === 'privacy' && (
                         <div className="space-y-6">
+                            {/* ... Privacy Content (Keep exactly as is) ... */}
                             <h1 className="text-xl font-bold border-b border-slate-100 dark:border-slate-800 pb-2">Datenschutzerklärung</h1>
 
                             <div className="bg-slate-100 dark:bg-slate-800 p-2 rounded text-xs inline-block">
@@ -221,6 +232,62 @@ export const LegalSidebar: React.FC<LegalSidebarProps> = ({ isOpen, onClose, ini
                                     <li><strong>Datenlöschung:</strong> Sie können Ihre lokalen Daten jederzeit löschen, indem Sie in der App "Alle Daten löschen" wählen oder Ihren Browser-Cache leeren.</li>
                                 </ul>
                             </section>
+                        </div>
+                    )}
+
+                    {activeTab === 'licenses' && (
+                        <div className="space-y-6">
+                            <h1 className="text-xl font-bold border-b border-slate-100 dark:border-slate-800 pb-2">Open Source Lizenzen</h1>
+                            <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                                Dieses Projekt nutzt folgende Open Source Bibliotheken. Ein großer Dank geht an die Entwickler und die Community!
+                            </p>
+
+                            <section>
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Core & Framework</h2>
+                                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <li><strong>React</strong> (MIT) - <a href="https://react.dev/" className="hover:underline">Facebook/Meta</a></li>
+                                    <li><strong>Vite</strong> (MIT) - <a href="https://vitejs.dev/" className="hover:underline">Yuxi (Evan) You</a></li>
+                                    <li><strong>TypeScript</strong> (Apache 2.0) - <a href="https://www.typescriptlang.org/" className="hover:underline">Microsoft</a></li>
+                                    <li><strong>Tailwind CSS</strong> (MIT) - <a href="https://tailwindcss.com/" className="hover:underline">Tailwind Labs</a></li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">AI & Processing</h2>
+                                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <li><strong>@google/genai</strong> (Apache 2.0) - Google Gemini SDK</li>
+                                    <li><strong>tesseract.js</strong> (Apache 2.0) - OCR Engine (basiert auf Tesseract)</li>
+                                    <li><strong>namefully</strong> (MIT) - Namenserkennung</li>
+                                    <li><strong>libphonenumber-js</strong> (MIT) - Telefonnummer-Validierung</li>
+                                    <li><strong>smartcrop</strong> (MIT) - Bildzuschnitt</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Storage & Daten</h2>
+                                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <li><strong>idb</strong> (ISC) - IndexedDB Wrapper</li>
+                                    <li><strong>jszip</strong> (MIT) - ZIP Archivierung</li>
+                                    <li><strong>OpenPLZ API</strong> (ODbL) - Straßenverzeichnis Datenbasis</li>
+                                </ul>
+                            </section>
+
+                            <section>
+                                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">UI & Icons</h2>
+                                <ul className="space-y-2 text-xs text-slate-600 dark:text-slate-400">
+                                    <li><strong>Lucide React</strong> (ISC) - Icons</li>
+                                    <li><strong>Sonner</strong> (MIT) - Toast Notifications</li>
+                                    <li><strong>react-virtuoso</strong> (MIT) - Virtualisiertes Listen-Rendering</li>
+                                    <li><strong>@fontsource/inter</strong> (OFL-1.1) - Schriftart Inter</li>
+                                </ul>
+                            </section>
+
+                            <div className="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800 text-center">
+                                <p className="text-xs text-slate-400">
+                                    Kontakte.me © 2025 Alexander Mut. <br />
+                                    Lizenziert unter der MIT Lizenz.
+                                </p>
+                            </div>
                         </div>
                     )}
 
