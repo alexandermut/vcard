@@ -49,10 +49,14 @@ export const initializeTesseract = async (lang: Language): Promise<Worker> => {
 
     try {
         const worker = await createWorker(tesseractLang, 1, {
+            workerPath: '/tesseract/worker.min.js',
+            corePath: '/tesseract/tesseract-core.wasm.js',
+            langPath: '/tesseract',
+            gzip: true,
             logger: (m: LoggerMessage) => {
                 console.log('[Tesseract] Worker log:', m.status, m.progress);
                 if (m.status === 'loading language traineddata') {
-                    console.log(`[Tesseract] Downloading ${tesseractLang}.traineddata...`);
+                    console.log(`[Tesseract] Loading ${tesseractLang}.traineddata...`);
                 }
             }
         });
