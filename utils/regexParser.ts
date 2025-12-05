@@ -799,7 +799,10 @@ const consumeNameHeuristic = (lines: Line[], data: ParserData) => {
         const complexName = parseComplexName(line.clean);
         if (complexName && complexName.first && complexName.last) {
 
-          let fn = `${complexName.first} ${complexName.last}`;
+          let fn = complexName.first;
+          if (complexName.middle) fn += ` ${complexName.middle}`;
+          fn += ` ${complexName.last}`;
+
           if (complexName.prefix) fn = `${complexName.prefix} ${fn}`;
           if (complexName.suffix) fn = `${fn} ${complexName.suffix}`;
 
