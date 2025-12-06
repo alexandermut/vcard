@@ -21,10 +21,12 @@ interface PreviewCardProps {
   images?: string[];
   token?: string; // Added token prop
   debugAnalysis?: string; // JSON Test Case
+  ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'; // OCR Method for training mode check
+  vcardString?: string; // Original vCard string to extract raw text
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis, ocrMethod, vcardString
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -37,19 +39,123 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
   // ... (existing helper functions) ...
 
   const handleDownloadAnalysis = () => {
-    if (!debugAnalysis) return;
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const filename = `regex_testcase_${timestamp}.json`;
-    const blob = new Blob([debugAnalysis], { type: 'application/json' });
-    const href = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = href;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(href);
-    toast.success("Test Case downloaded!");
+
+    let realTestCase: any;
+    let anonymizedTestCase: any;
+
+    if (debugAnalysis) {
+      // Use existing analysis from scan (already contains both versions from AI)
+      try {
+        const parsed = JSON.parse(debugAnalysis);
+        realTestCase = parsed;
+        // The AI should already provide anonymized data, but we'll ensure it exists
+        anonymizedTestCase = parsed;
+      } catch (e) {
+        toast.error('Fehler beim Parsen der Debug-Daten');
+        return;
+      }
+    } else if (ocrMethod === 'regex-training' && vcardString) {
+      // Generate test case from manually entered text
+      // Extract raw text from vCard
+      const textLines = vcardString
+        .split('\n')
+        .filter(line => !line.startsWith('BEGIN:') && !line.startsWith('END:') && !line.startsWith('VERSION:') && !line.startsWith('REV:'))
+        .map(line => line.replace(/^[A-Z]+[;:].*?:/g, '').trim())
+        .filter(line => line.length > 0)
+        .join('\n');
+
+      // REAL VERSION (with actual data)
+      realTestCase = {
+        analysis: "Manual test case - REAL DATA (for local training only)",
+        test_case: {
+          id: `manual_real_${Date.now()}`,
+          text: textLines || vcardString,
+          expected: {
+            fn: localData.fn || '',
+            n: localData.n || '',
+            org: localData.org || '',
+            title: localData.title || '',
+            tel: localData.tel?.map(t => ({ value: t.value, type: t.type })) || [],
+            email: localData.email?.map(e => ({ value: e.value, type: e.type })) || [],
+            url: localData.url?.map(u => ({ value: u.value, type: u.type })) || [],
+            adr: localData.adr?.map(a => ({
+              value: {
+                street: a.value.street || '',
+                city: a.value.city || '',
+                zip: a.value.zip || '',
+                country: a.value.country || ''
+              },
+              type: a.type
+            })) || []
+          }
+        }
+      };
+
+      // ANONYMIZED VERSION (structure-preserving)
+      anonymizedTestCase = {
+        analysis: "Manual test case - ANONYMIZED (safe for repository)",
+        test_case: {
+          id: `manual_anon_${Date.now()}`,
+          text: textLines || vcardString, // Keep structure, will be manually anonymized
+          expected: {
+            fn: localData.fn ? 'Max Mustermann' : '',
+            n: localData.n ? 'Mustermann;Max;;;' : '',
+            org: localData.org ? (localData.org.includes('GmbH') ? 'Musterfirma GmbH' : localData.org.includes('AG') ? 'Beispiel AG' : 'Example Corp') : '',
+            title: localData.title ? 'Geschäftsführer' : '',
+            tel: localData.tel?.map((t, idx) => ({
+              value: t.value ? (t.value.startsWith('+49') ? `+49 89 ${1234567 + idx}` : `+1 555 ${1000 + idx}`) : '',
+              type: t.type
+            })) || [],
+            email: localData.email?.map((e, idx) => ({
+              value: e.value ? `max.mustermann${idx > 0 ? idx + 1 : ''}@example.com` : '',
+              type: e.type
+            })) || [],
+            url: localData.url?.map(u => ({ value: 'https://example.com', type: u.type })) || [],
+            adr: localData.adr?.map(a => ({
+              value: {
+                street: a.value.street ? 'Hauptstraße 1' : '',
+                city: a.value.city || '', // Keep city for structure
+                zip: a.value.zip || '', // Keep ZIP for validation tests
+                country: a.value.country || 'Deutschland'
+              },
+              type: a.type
+            })) || []
+          }
+        }
+      };
+    } else {
+      toast.error('Keine Test-Daten verfügbar. Bitte scannen Sie eine Visitenkarte im Regex-Training Modus.');
+      return;
+    }
+
+    // Download REAL version
+    const realFilename = `real_testcase_${timestamp}.json`;
+    const realBlob = new Blob([JSON.stringify(realTestCase, null, 2)], { type: 'application/json' });
+    const realHref = URL.createObjectURL(realBlob);
+    const realLink = document.createElement('a');
+    realLink.href = realHref;
+    realLink.download = realFilename;
+    document.body.appendChild(realLink);
+    realLink.click();
+    document.body.removeChild(realLink);
+    URL.revokeObjectURL(realHref);
+
+    // Download ANONYMIZED version (after short delay to avoid browser blocking)
+    setTimeout(() => {
+      const anonFilename = `anon_testcase_${timestamp}.json`;
+      const anonBlob = new Blob([JSON.stringify(anonymizedTestCase, null, 2)], { type: 'application/json' });
+      const anonHref = URL.createObjectURL(anonBlob);
+      const anonLink = document.createElement('a');
+      anonLink.href = anonHref;
+      anonLink.download = anonFilename;
+      document.body.appendChild(anonLink);
+      anonLink.click();
+      document.body.removeChild(anonLink);
+      URL.revokeObjectURL(anonHref);
+
+      toast.success("2 Test Cases heruntergeladen: Real (lokal) + Anonymisiert (Repo)");
+    }, 300);
   };
 
   const updateField = (field: keyof VCardData, value: string) => {
@@ -155,7 +261,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               <StickyNote size={18} />
             </button>
           )}
-          {debugAnalysis && (
+          {(debugAnalysis || ocrMethod === 'regex-training') && (
             <button
               onClick={handleDownloadAnalysis}
               className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-500/30 transition-colors"

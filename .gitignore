@@ -25,3 +25,9 @@ dist-ssr
 
 # Local Testfiles (do not commit)
 src/data/realContacts.js
+
+# Real test cases with personal data (local training only)
+tests/real_cases/
+
+# Debug test outputs (local debugging only)
+tests/debug_outputs/

@@ -1490,6 +1490,8 @@ const App: React.FC = () => {
                 }
               }}
               debugAnalysis={currentDebugAnalysis}
+              ocrMethod={ocrMethod}
+              vcardString={vcardString}
             />
           </div>
         </div>

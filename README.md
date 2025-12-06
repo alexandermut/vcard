@@ -37,6 +37,9 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
 *   **Frontend:** React 18, TypeScript, Vite
 *   **Styling:** Tailwind CSS
 *   **AI Engine:** Google Gemini API (`gemini-3-pro-preview`) via `@google/genai` SDK
+*   **OCR Engine:** Tesseract.js (Offline OCR with German language support)
+*   **Worker Management:** Comlink (Type-safe Web Worker communication)
+*   **Image Processing:** browser-image-compression (Worker-based compression)
 *   **Utilities:** `jszip` (Export), `qrcode` (Gen), `jsqr` (Scan), `lucide-react` (Icons)
 *   **Hosting:** GitHub Pages (Static Site)
 
@@ -68,6 +71,21 @@ The app operates on a **"Privacy First"** principle: Data is stored only in the 
 The application includes a built-in Regex Debugger for testing and refining parsing logic. By default, this tool is hidden.
 To access it, append `?debug_regex=true` to the URL:
 `http://localhost:5173/?debug_regex=true`
+
+### 🧪 Regex Training Mode
+Enable **Regex Training Mode** in Settings → OCR Method → "🛠️ Regex Training (Debug)" to:
+- Generate **dual test cases** (real + anonymized) for parser improvement
+- Compare Tesseract (offline) vs. Gemini (online) results
+- Export training data with structure-preserving anonymization
+
+**Test Case Workflow:**
+1. Scan a business card in Regex Training mode
+2. Click the 🔴 JSON button in the preview
+3. Two files download:
+   - `real_testcase_*.json` → Save to `tests/real_cases/` (local training only, .gitignore)
+   - `anon_testcase_*.json` → Save to `data/test_cases/` (safe for Git commits)
+
+See [`tests/TEST_CASE_WORKFLOW.md`](tests/TEST_CASE_WORKFLOW.md) for details.
 
 ### ⚠️ Important Note on Local LLMs (Ollama)
 If you want to use **local models (e.g., Ollama)**, you **must** use the app via `http://localhost:5173` (the dev server).
@@ -109,16 +127,19 @@ This project wouldn't exist without these amazing open source libraries:
 *   **[qrcode](https://github.com/soldair/node-qrcode)** (MIT) - QR Code Generation
 *   **[smartcrop](https://github.com/jwagner/smartcrop.js)** (MIT) - Intelligent Image Cropping
 *   **[PDF.js](https://mozilla.github.io/pdf.js/)** (Apache 2.0) - PDF Rendering & Conversion
+*   **[Tesseract.js](https://github.com/naptha/tesseract.js)** (Apache 2.0) - Offline OCR Engine with German support
+*   **[browser-image-compression](https://github.com/Donaldcwl/browser-image-compression)** (MIT) - Professional image compression
 
 ### Data & Storage
 *   **[idb](https://github.com/jakearchibald/idb)** (ISC) - IndexedDB Wrapper
 *   **[JSZip](https://stuk.github.io/jszip/)** (MIT) - ZIP File Creation
 *   **[libphonenumber-js](https://github.com/catamphetamine/libphonenumber-js)** (MIT) - Phone Number Validation
 
-### UI Components
+### UI Components & Workers
 *   **[Lucide React](https://lucide.dev/)** (ISC) - Beautiful Icons
 *   **[Sonner](https://sonner.emilkowal.ski/)** (MIT) - Toast Notifications
 *   **[react-virtuoso](https://virtuoso.dev/)** (MIT) - Virtualized List Rendering
+*   **[Comlink](https://github.com/GoogleChromeLabs/comlink)** (Apache 2.0) - Type-safe Web Worker RPC
 
 ### PWA & Fonts
 *   **[Vite Plugin PWA](https://vite-pwa-org.netlify.app/)** (MIT) - PWA Capabilities

@@ -76,6 +76,15 @@ This file tracks the current development status and planned features.
 - [x] Privacy Policy (Google Cloud & AI specific)
 - [x] **Failed Scans Gallery:** View and retry failed scans.
 
+### Parser Training & Development Tools 🧪
+- [x] **Regex Training Mode:** Special OCR mode that runs dual scans (Tesseract + Gemini) for parser improvement
+- [x] **Dual Test Case Export:** Generate both real and anonymized test cases simultaneously
+- [x] **Structure-Preserving Anonymization:** Keep ZIP codes, cities, area codes for realistic testing
+- [x] **Test Case Workflow Documentation:** Complete guide for local training vs. repository commits
+- [x] **Git-Safe Test Organization:** Separate directories for real (`tests/real_cases/`) and anonymized (`data/test_cases/`) data
+- [x] **JSON Export Button:** One-click export in preview card when in training mode
+- [x] **Tesseract.js Integration:** Offline OCR engine with German language support
+
 ---
 
 ## 🚧 In Progress / Next Up

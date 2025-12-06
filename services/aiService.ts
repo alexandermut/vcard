@@ -473,11 +473,22 @@ export const analyzeRegexPerformance = async (
     GOALS:
     1. Analyze where the Regex Parser failed compared to Ground Truth (missing fields, wrong types, garbage data).
     2. Generate a JSON object used for regression testing.
-    3. **IMPORTANT: ANONYMIZE PII (Personally Identifiable Information)** in the 'text' and 'expected' fields.
-       - Replace names with 'Anon Ymous', 'John Doe'.
-       - Replace phones with '+49 123 456789'.
-       - Replace emails with 'test@example.com'.
-       - **CRITICAL**: PRESERVE whitespace, tabs, and layout quirks in the 'text' field! The goal is to debug the PARSER, so the STRUCTURE must be identical, only the CONTENT should be anonymized.
+    3. **IMPORTANT: STRUCTURE-PRESERVING ANONYMIZATION** for the 'text' and 'expected' fields:
+       
+       ANONYMIZE THESE (Personal Data):
+       - Names → "Max Mustermann", "Erika Musterfrau", "Hans Schmidt", "Dr. Klaus Weber"
+       - Emails → "max.mustermann@example.com", "info@musterfirma.de"
+       - Companies → Keep legal form! "Siemens AG" → "Musterfirma AG", "Bosch GmbH" → "Beispiel GmbH"
+       - Streets → Generic German: "Hauptstraße 1", "Bahnhofstraße 12", "Gartenweg 5a"
+       - URLs → "https://example.com", "https://linkedin.com/in/example"
+       
+       KEEP THESE (Structural Data - needed for parser validation):
+       - **ZIP codes** → KEEP ORIGINAL (e.g. "80331", "10115") - public data, crucial for validation
+       - **Cities** → KEEP ORIGINAL or use major cities (München, Berlin, Hamburg)
+       - **Phone area codes** → KEEP PREFIX (e.g. "+49 89" for München, "+49 30" for Berlin), replace rest: "+49 89 12345678"
+       - **Fax prefixes** → Same as phone
+       - **Country** → Keep (Deutschland, Österreich, Schweiz)
+       - **Whitespace/Tabs/Newlines** → PRESERVE EXACTLY! The goal is parser debugging, so structure matters!
 
     RAW TEXT:
     ${rawText}
@@ -493,14 +504,24 @@ export const analyzeRegexPerformance = async (
       "analysis": "Brief summary of what the regex parser missed (e.g. 'Missed Fax number', 'Wrong name split').",
       "test_case": {
         "id": "generated_edge_case_${new Date().getTime()}",
-        "text": "${rawText.replace(/\n/g, '\\n').replace(/"/g, '\\"')}", // ANONYMIZED BUT PRESERVE LAYOUT!
+        "text": "<ANONYMIZED but structure-preserved raw text>",
         "expected": {
-           // Extraction from GEMINI RESULT. ANONYMIZED!
-           "fn": "Anon Ymous", 
-           "n": "Ymous;Anon;;;", 
-           "org": "Example Corp",
-           "tel": [{ "value": "+49 123 45678", "type": "work" }],
-           "email": [{ "value": "anon@example.com", "type": "work" }]
+           // Extraction from GEMINI RESULT, ANONYMIZED with structure preservation!
+           "fn": "Max Mustermann", 
+           "n": "Mustermann;Max;Peter;Dr.;", 
+           "org": "Musterfirma GmbH",
+           "title": "Geschäftsführer",
+           "tel": [{ "value": "+49 89 12345678", "type": "work" }],
+           "email": [{ "value": "max.mustermann@example.com", "type": "work" }],
+           "adr": [{ 
+             "value": { 
+               "street": "Hauptstraße 1", 
+               "city": "<KEEP ORIGINAL CITY>", 
+               "zip": "<KEEP ORIGINAL ZIP>", 
+               "country": "Deutschland" 
+             },
+             "type": "work"
+           }]
         }
       }
     }

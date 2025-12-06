@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, HelpCircle, Scan, Edit3, StickyNote, Download, Shield, ChevronDown, ChevronUp, Lightbulb, Layers, FileText, Sparkles, Zap, Hammer } from 'lucide-react';
+import { X, HelpCircle, Scan, Edit3, StickyNote, Download, Shield, ChevronDown, ChevronUp, Lightbulb, Layers, FileText, FileJson, Sparkles, Zap, Hammer } from 'lucide-react';
 import { translations } from '../utils/translations';
 import { Language } from '../types';
 import { useEscapeKey } from '../hooks/useEscapeKey';
@@ -62,6 +62,31 @@ export const HelpSidebar: React.FC<HelpSidebarProps> = ({ isOpen, onClose, lang 
             items: [
                 { icon: Shield, title: t.faqPrivacyTitle, desc: t.faqPrivacyDesc, color: "text-slate-500" },
                 { icon: Shield, title: t.faqAiTitle, desc: t.faqAiDesc, tips: t.faqAiTips, color: "text-slate-400" },
+            ]
+        },
+        {
+            title: "🧪 Regex Training & Entwicklung",
+            items: [
+                {
+                    icon: Hammer,
+                    title: "Regex Training Modus",
+                    desc: "Spezial-Modus für Entwickler: Führt Tesseract (offline) UND Gemini (online) parallel aus. Vergleicht beide Ergebnisse und erstellt einen detaillierten JSON-Bericht zur Parser-Verbesserung.",
+                    tips: "Aktiviere 'Regex Training' in den Einstellungen → OCR Methode. Klicke nach dem Scan auf den roten 🔴 JSON-Button im Preview.",
+                    color: "text-red-500"
+                },
+                {
+                    icon: FileJson,
+                    title: "Dual Test Case Export",
+                    desc: "Exportiert ZWEI JSON-Dateien: (1) real_testcase_*.json mit echten Daten für lokales Training (wird von Git ignoriert), (2) anon_testcase_*.json mit anonymisierten Daten für Repository-Commits.",
+                    tips: "Echte Daten in tests/real_cases/, anonymisierte in data/test_cases/ speichern. Siehe tests/TEST_CASE_WORKFLOW.md für Details.",
+                    color: "text-orange-500"
+                },
+                {
+                    icon: Shield,
+                    title: "Strukturerhaltende Anonymisierung",
+                    desc: "Die anonymisierte Version behält wichtige Strukturelemente für realistische Tests: PLZ, Städte, Vorwahlen bleiben original. Namen, Firmen, Straßen werden durch generische deutsche Beispiele ersetzt.",
+                    color: "text-blue-500"
+                },
             ]
         },
         {
