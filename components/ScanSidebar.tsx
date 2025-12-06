@@ -171,6 +171,11 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
         onCapture={handleCameraCapture}
+        onQrFound={(data) => {
+          onScanComplete(data);
+          setIsCameraOpen(false);
+          onClose();
+        }}
         lang={lang}
       />
 
@@ -304,19 +309,41 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
                 <button
                   onClick={async () => {
                     try {
+                      // Check for API support (Firefox usually doesn't support read() for images)
+                      if (!navigator.clipboard || !navigator.clipboard.read) {
+                        setError('Dein Browser unterstützt diesen Button nicht. Bitte drücke Strg+V (oder Cmd+V) zum Einfügen.');
+                        return;
+                      }
+
                       const items = await navigator.clipboard.read();
+                      let foundImage = false;
+
                       for (const item of items) {
+                        // Look for image type
                         const imageType = item.types.find(type => type.startsWith('image/'));
                         if (imageType) {
                           const blob = await item.getType(imageType);
-                          const file = new File([blob], "pasted-front.png", { type: imageType });
+                          // Force filename with correct extension
+                          const ext = imageType.split('/')[1] || 'png';
+                          const file = new File([blob], `pasted-front.${ext}`, { type: imageType });
                           processFile(file, setFrontImage);
+                          foundImage = true;
+                          setError(null);
                           return;
                         }
                       }
-                    } catch (err) {
+
+                      if (!foundImage) {
+                        setError('Kein Bild in der Zwischenablage gefunden.');
+                      }
+                    } catch (err: any) {
                       console.error('Failed to paste', err);
-                      setError('Clipboard leer oder blockiert');
+                      // Handle permission denied specifically
+                      if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+                        setError('Zugriff auf Zwischenablage verweigert. Bitte erlauben oder Strg+V nutzen.');
+                      } else {
+                        setError('Fehler beim Einfügen: ' + (err.message || 'Unbekannt'));
+                      }
                     }
                   }}
                   className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -412,19 +439,37 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
                 <button
                   onClick={async () => {
                     try {
+                      if (!navigator.clipboard || !navigator.clipboard.read) {
+                        setError('Dein Browser unterstützt diesen Button nicht. Bitte drücke Strg+V (oder Cmd+V) zum Einfügen.');
+                        return;
+                      }
+
                       const items = await navigator.clipboard.read();
+                      let foundImage = false;
+
                       for (const item of items) {
                         const imageType = item.types.find(type => type.startsWith('image/'));
                         if (imageType) {
                           const blob = await item.getType(imageType);
-                          const file = new File([blob], "pasted-back.png", { type: imageType });
+                          const ext = imageType.split('/')[1] || 'png';
+                          const file = new File([blob], `pasted-back.${ext}`, { type: imageType });
                           processFile(file, setBackImage);
+                          foundImage = true;
+                          setError(null);
                           return;
                         }
                       }
-                    } catch (err) {
+
+                      if (!foundImage) {
+                        setError('Kein Bild in der Zwischenablage gefunden.');
+                      }
+                    } catch (err: any) {
                       console.error('Failed to paste', err);
-                      setError('Clipboard leer oder blockiert');
+                      if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
+                        setError('Zugriff auf Zwischenablage verweigert. Bitte erlauben oder Strg+V nutzen.');
+                      } else {
+                        setError('Fehler beim Einfügen: ' + (err.message || 'Unbekannt'));
+                      }
                     }
                   }}
                   className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"

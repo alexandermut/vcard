@@ -18,6 +18,7 @@
     "comlink": "^4.4.2",
     "idb": "^8.0.3",
     "ilib-address": "^1.0.2",
+    "jscanify": "^1.4.0",
     "jsqr": "^1.4.0",
     "jszip": "^3.10.1",
     "libphonenumber-js": "^1.12.30",

@@ -97,7 +97,7 @@ export default defineConfig({
       '/ollama': {
         target: 'http://127.0.0.1:11434',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/ollama/, ''),
+        rewrite: (path: string) => path.replace(/^\/ollama/, ''),
       },
     },
   },
@@ -109,4 +109,4 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './tests/setup.ts',
   },
-});
+} as any);

@@ -28,7 +28,7 @@ import { HistoryItem, VCardData, Language } from './types';
 import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory, countStreets, getHistoryItemImages } from './utils/db';
 
 import { FailedScansSidebar } from './components/FailedScansSidebar';
-import { QRScannerModal } from './components/QRScannerModal';
+
 import { ingestStreets } from './utils/streetIngestion';
 import { enrichAddress } from './utils/addressEnricher';
 import {
@@ -66,7 +66,7 @@ const App: React.FC = () => {
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+
   const [isDragging, setIsDragging] = useState(false);
   const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
   const [failedScansCount, setFailedScansCount] = useState(0);
@@ -1177,9 +1177,40 @@ const App: React.FC = () => {
           setIsScanOpen(false);
           setDroppedFile(null);
         }}
-        onScanComplete={(vcard) => {
-          setVcardString(vcard);
+        onScanComplete={(data) => {
           setIsScanOpen(false);
+
+          // Check if it's a URL to a vCard
+          const isUrl = data.trim().match(/^https?:\/\//i);
+
+          if (isUrl) {
+            // Open URL in new tab (avoids CORS issues)
+            const userChoice = window.confirm(
+              'Der QR-Code enthält einen Link:\n\n' + data + '\n\nMöchtest du diesen Link in einem neuen Tab öffnen? (Die vCard kannst du dann herunterladen und hier hochladen.)'
+            );
+
+            if (userChoice) {
+              window.open(data, '_blank', 'noopener,noreferrer');
+            }
+          } else {
+            // Check if it looks like a vCard
+            if (data.includes('BEGIN:VCARD') || data.includes('MECARD:')) {
+              setVcardString(data);
+              addToHistory(data);
+            } else {
+              // Try to parse anyway, or just set it
+              // If it's just text, maybe we want to set it?
+              // The old logic called addToHistory directly if parsed.isValid
+              const parsed = parseVCardString(data);
+              if (parsed.isValid) {
+                setVcardString(data);
+                addToHistory(data);
+              } else {
+                console.warn('QR Code scanned but invalid vCard format');
+                toast.error('Der QR-Code enthält keine gültige vCard.');
+              }
+            }
+          }
         }}
         onAddToQueue={(front, back, mode) => {
           const images = [front];
@@ -1297,39 +1328,6 @@ const App: React.FC = () => {
         lang={lang}
       />
 
-      <QRScannerModal
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onScan={async (data) => {
-          setIsQRScannerOpen(false);
-
-          // Check if it's a URL to a vCard
-          const isUrl = data.trim().match(/^https?:\/\//i);
-
-          if (isUrl) {
-            // Open URL in new tab (avoids CORS issues)
-            const userChoice = window.confirm(
-              'Der QR-Code enthält einen Link:\n\n' + data + '\n\nMöchtest du diesen Link in einem neuen Tab öffnen? (Die vCard kannst du dann herunterladen und hier hochladen.)'
-            );
-
-            if (userChoice) {
-              window.open(data, '_blank', 'noopener,noreferrer');
-            }
-          } else {
-            // Direct vCard content
-            const parsed = parseVCardString(data);
-            if (parsed.isValid) {
-              setVcardString(data);
-              addToHistory(data);
-            } else {
-              console.warn('QR Code scanned but invalid vCard format');
-              toast.error('Der QR-Code enthält keine gültige vCard.');
-            }
-          }
-        }}
-        lang={lang}
-      />
-
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1358,16 +1356,6 @@ const App: React.FC = () => {
             >
               <Upload size={18} />
               <span className="hidden lg:inline text-sm">{t.batchUpload}</span>
-            </button>
-
-            {/* 3. QR Scan */}
-            <button
-              onClick={() => setIsQRScannerOpen(true)}
-              className="flex items-center gap-2 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors"
-              title="QR Code scannen"
-            >
-              <QrCode size={18} />
-              <span className="hidden lg:inline text-sm">QR Scan</span>
             </button>
 
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>

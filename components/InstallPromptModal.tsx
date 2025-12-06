@@ -10,7 +10,7 @@ interface InstallPromptModalProps {
 
 import { useEscapeKey } from '../hooks/useEscapeKey';
 
-export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ isOpen, onClose, onInstall, lang }) => {
+export const InstallPromptModal: React.FC<InstallPromptModalProps> = ({ isOpen, onClose, lang }) => {
     useEscapeKey(onClose, isOpen);
     const isGerman = lang === 'de';
 
