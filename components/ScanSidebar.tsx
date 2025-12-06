@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText, RotateCcw } from 'lucide-react';
+import { X, Camera, Upload, Image as ImageIcon, Loader2, CheckCircle2, Sparkles, Layers, ArrowRight, Clipboard, FileText, RotateCcw, Video } from 'lucide-react';
+import { CameraCaptureModal } from './CameraCaptureModal';
 import { convertPdfToImages } from '../utils/pdfUtils';
 import { scanBusinessCard, ImageInput } from '../services/aiService';
-import { resizeImage } from '../utils/imageUtils';
+import { resizeImage, base64ToBlob } from '../utils/imageUtils';
 import { autoCropImage } from '../utils/cropUtils';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
@@ -35,6 +36,31 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
   const backInputRef = useRef<HTMLInputElement>(null);
 
   const [scanMode, setScanMode] = useState<'vision' | 'hybrid'>('vision');
+
+  // Camera Modal State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [targetSide, setTargetSide] = useState<'front' | 'back'>('front');
+
+  const handleCameraCapture = async (base64: string) => {
+    try {
+      setIsProcessingImage(true);
+      // Convert base64 to File for processing (resize/crop)
+      // Use utility instead of fetch to avoid browser limits/errors
+      const blob = base64ToBlob(base64);
+      const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+
+      if (targetSide === 'front') {
+        await processFile(file, setFrontImage);
+      } else {
+        await processFile(file, setBackImage);
+      }
+    } catch (e) {
+      console.error("Camera capture processing failed", e);
+      setError("Fehler bei der Verarbeitung der Aufnahme.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
 
   const processFile = async (file: File, setImg: (s: string) => void) => {
     try {
@@ -140,6 +166,13 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
           onClick={onClose}
         />
       )}
+
+      <CameraCaptureModal
+        isOpen={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+        lang={lang}
+      />
 
       <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
@@ -255,6 +288,43 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
                   onChange={(e) => handleFileChange(e, setFrontImage)}
                 />
               </div>
+
+              {/* Front Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setTargetSide('front');
+                    setIsCameraOpen(true);
+                  }}
+                  className="flex-1 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                >
+                  <Video size={14} />
+                  Kamera
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const items = await navigator.clipboard.read();
+                      for (const item of items) {
+                        const imageType = item.types.find(type => type.startsWith('image/'));
+                        if (imageType) {
+                          const blob = await item.getType(imageType);
+                          const file = new File([blob], "pasted-front.png", { type: imageType });
+                          processFile(file, setFrontImage);
+                          return;
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Failed to paste', err);
+                      setError('Clipboard leer oder blockiert');
+                    }
+                  }}
+                  className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Clipboard size={14} />
+                  Einfügen
+                </button>
+              </div>
             </div>
 
             {/* Back Image */}
@@ -326,36 +396,50 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
                   onChange={(e) => handleFileChange(e, setBackImage)}
                 />
               </div>
+
+              {/* Back Actions */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setTargetSide('back');
+                    setIsCameraOpen(true);
+                  }}
+                  className="flex-1 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                >
+                  <Video size={14} />
+                  Kamera
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const items = await navigator.clipboard.read();
+                      for (const item of items) {
+                        const imageType = item.types.find(type => type.startsWith('image/'));
+                        if (imageType) {
+                          const blob = await item.getType(imageType);
+                          const file = new File([blob], "pasted-back.png", { type: imageType });
+                          processFile(file, setBackImage);
+                          return;
+                        }
+                      }
+                    } catch (err) {
+                      console.error('Failed to paste', err);
+                      setError('Clipboard leer oder blockiert');
+                    }
+                  }}
+                  className="flex-1 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <Clipboard size={14} />
+                  Einfügen
+                </button>
+              </div>
             </div>
           </div>
 
-          <button
-            onClick={async () => {
-              try {
-                const items = await navigator.clipboard.read();
-                for (const item of items) {
-                  const imageType = item.types.find(type => type.startsWith('image/'));
-                  if (imageType) {
-                    const blob = await item.getType(imageType);
-                    const file = new File([blob], "pasted-image.png", { type: imageType });
-                    if (!frontImage) {
-                      processFile(file, setFrontImage);
-                    } else if (!backImage) {
-                      processFile(file, setBackImage);
-                    }
-                    return; // Only paste one image at a time
-                  }
-                }
-              } catch (err) {
-                console.error('Failed to read clipboard', err);
-                setError('Clipboard access denied or empty');
-              }
-            }}
-            className="w-full mb-4 py-2 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center justify-center gap-2 transition-colors text-sm"
-          >
-            <Clipboard size={16} />
-            {t.paste}
-          </button>
+
+
+          {/* Spacer */}
+          <div className="h-2"></div>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
@@ -379,7 +463,7 @@ export const ScanSidebar: React.FC<ScanSidebarProps> = ({
             {t.batchHint}
           </p>
         </div>
-      </div>
+      </div >
     </>
   );
 };
