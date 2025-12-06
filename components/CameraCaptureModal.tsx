@@ -333,8 +333,8 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ isOpen, 
                 if (ctx) {
                     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear previous
 
-                    // --- QR CODE SCANNING (Throttled: 500ms) ---
-                    if (isQrScanEnabled && (now - qrThrottleRef.current > 500)) {
+                    // --- QR CODE SCANNING (Throttled: 300ms for better responsiveness) ---
+                    if (isQrScanEnabled && (now - qrThrottleRef.current > 300)) {
                         qrThrottleRef.current = now;
                         try {
                             // Create temporary canvas for QR analysis to avoid reading full size image
@@ -352,7 +352,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ isOpen, 
                                 qrCtx.drawImage(video, 0, 0, w, h);
                                 const imageData = qrCtx.getImageData(0, 0, w, h);
                                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                                    inversionAttempts: "dontInvert", // faster
+                                    inversionAttempts: "attemptBoth", // Try both normal and inverted for better detection
                                 });
 
                                 if (code && code.data && code.data !== "") {
@@ -372,14 +372,13 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ isOpen, 
                                     ctx.stroke();
 
                                     // PASSIVE MODE: Just set state, don't trigger callback
-                                    setDetectedQrData(code.data);
-                                } else {
-                                    // Reset if nothing found for a while? 
-                                    // Maybe not instantly to avoid flickering. 
-                                    // Let's rely on the user seeing the blue box disappearing.
-                                    // Actually, if code is null, we should probably clear the banner eventually.
-                                    // But throttling makes this tricky.
+                                    // Update state if different to avoid unnecessary re-renders
+                                    if (detectedQrData !== code.data) {
+                                        setDetectedQrData(code.data);
+                                    }
                                 }
+                                // Don't clear detectedQrData immediately - let user dismiss it manually
+                                // This prevents flicker and gives user time to see/interact with banner
                             }
                         } catch (e) {
                             console.warn("QR Scan error", e);
@@ -512,7 +511,7 @@ export const CameraCaptureModal: React.FC<CameraCaptureModalProps> = ({ isOpen, 
                                 )}
                                 {/* QR Code Banner */}
                                 {detectedQrData && isQrScanEnabled && !capturedImage && (
-                                    <div className="absolute bottom-32 left-0 right-0 flex justify-center pointer-events-auto">
+                                    <div className="absolute bottom-44 left-0 right-0 flex justify-center pointer-events-auto px-4">
                                         <div className="bg-white text-black p-4 rounded-xl shadow-2xl flex flex-col gap-2 max-w-sm animate-in slide-in-from-bottom-4">
                                             <p className="text-xs font-semibold uppercase text-gray-500">QR Code erkannt</p>
                                             <p className="text-sm font-medium truncate max-w-[200px]">{detectedQrData}</p>

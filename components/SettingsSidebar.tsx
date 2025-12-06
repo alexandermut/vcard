@@ -40,8 +40,8 @@ interface SettingsSidebarProps {
     onRestoreZip: (file: File) => void;
     clearHistory: () => void;
     isExporting?: boolean;
-    ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training';
-    setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training') => void;
+    ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training';
+    setOcrMethod: (method: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training') => void;
     concurrentScans: number; // ✅ NEW: Parallel processing (1-5)
     setConcurrentScans: (value: number) => void;
 }
@@ -252,6 +252,11 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                                 placeholder="sk-..."
                                                 className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-600 font-mono"
                                             />
+                                            <div className="mt-1 flex justify-end">
+                                                <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                                                    {t.generateKey} <ExternalLink size={8} />
+                                                </a>
+                                            </div>
                                         </div>
                                         <div>
                                             <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">{t.modelName}</label>
@@ -527,12 +532,13 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                     </div>
                                     <select
                                         value={ocrMethod}
-                                        onChange={(e) => setOcrMethod(e.target.value as 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training')}
+                                        onChange={(e) => setOcrMethod(e.target.value as 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training')}
                                         className="w-full px-3 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                                     >
                                         <option value="auto">🤖 Auto (Offline-First)</option>
                                         <option value="tesseract">🧪 Tesseract (Offline Only)</option>
                                         <option value="gemini">✨ Gemini (Online Only)</option>
+                                        <option value="openai">🟢 OpenAI (Online Only)</option>
                                         <option value="hybrid">⚡ Hybrid (Parallel)</option>
                                         <option value="regex-training">🛠️ Regex Training (Debug)</option>
                                     </select>
@@ -542,6 +548,7 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
                                                 case 'auto': return "Standard: Versucht erst den schnellen Offline-Scan (Tesseract). Nur bei unsicherem Ergebnis wird optional AI (Gemini) zur Verbesserung genutzt (Soft-Fallback).";
                                                 case 'tesseract': return "Nutzt ausschließlich die lokale Engine. 100% Datenschutz & keine Kosten. Ideal für einfache, gut lesbare Visitenkarten. Funktioniert komplett ohne Internet.";
                                                 case 'gemini': return "Sendet das Bild direkt an die Google AI. Höchste Genauigkeit, versteht Kontext und korrigiert Fehler. Benötigt Internet & API Key.";
+                                                case 'openai': return "Nutzt GPT-5.1 Vision von OpenAI. Sehr hohe Genauigkeit bei komplexen Layouts. Unterstützt mehrere Sprachen. Benötigt Internet & OpenAI API Key.";
                                                 case 'hybrid': return "Startet Offline- und Online-Scan gleichzeitig. Wählt automatisch das beste Ergebnis. Maximale Qualität, verbraucht aber mehr Ressourcen (da beide laufen).";
                                                 case 'regex-training': return "Experten-Modus: Führt beide Scans aus und erstellt einen detaillierten Vergleichs-Bericht (JSON). Hilft Entwicklern, den Offline-Parser zu trainieren.";
                                                 default: return "";

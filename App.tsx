@@ -76,7 +76,7 @@ const App: React.FC = () => {
   // Config State
   const [lang, setLang] = useState<Language>('de');
   const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
-  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, hybrid, or regex-training (debug)
+  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, hybrid, or regex-training (debug)
   const [ocrRawText, setOcrRawText] = useState<string | undefined>(undefined); // Raw OCR text from Tesseract for parser field
   const [currentDebugAnalysis, setCurrentDebugAnalysis] = useState<string | undefined>(undefined); // Regex analysis JSON
 
@@ -206,7 +206,7 @@ const App: React.FC = () => {
     if (savedDark) setIsDarkMode(JSON.parse(savedDark));
 
     const savedOcrMethod = localStorage.getItem('vcard_ocr_method');
-    if (savedOcrMethod) setOcrMethod(savedOcrMethod as 'auto' | 'tesseract' | 'gemini' | 'hybrid');
+    if (savedOcrMethod) setOcrMethod(savedOcrMethod as 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training');
   }, []);
 
   // Save Settings

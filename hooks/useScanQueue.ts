@@ -29,7 +29,7 @@ export const useScanQueue = (
   apiKey: string,
   lang: Language,
   llmConfig: LLMConfig,
-  ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'hybrid' | 'regex-training',
+  ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training',
   onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string) => Promise<void> | void,
   onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent
 ) => {
@@ -177,6 +177,14 @@ export const useScanQueue = (
           console.log('[OCR] Mode: Gemini Only');
           if (!apiKey && llmConfig.provider !== 'custom') {
             throw new Error('API Key required for Gemini mode');
+          }
+          vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
+
+        } else if (ocrMethod === 'openai') {
+          // OpenAI Only (Online - requires API key)
+          console.log('[OCR] Mode: OpenAI Only');
+          if (!apiKey && llmConfig.provider !== 'openai') {
+            throw new Error('API Key required for OpenAI mode');
           }
           vcard = await scanBusinessCard(images, llmConfig.provider, apiKey, lang, llmConfig, job.mode || 'vision');
 
