@@ -7,6 +7,8 @@ import { germanLandlinePrefixes } from './landlinePrefixes';
 import { landlineMap, plzMap } from './landlineData';
 import { parseInternationalAddress } from './addressParserIntl';
 import { parseComplexName } from './nameParserIntl';
+import { detectAnchors, AnchorMatch } from './anchorDetection';
+import { scoreCandidate } from './contextInference';
 
 // --- Types ---
 
@@ -16,6 +18,7 @@ interface Line {
   isConsumed: boolean;
   type?: 'EMAIL' | 'PHONE' | 'URL' | 'ADDRESS' | 'JOB' | 'META' | 'ORG' | 'NAME' | null;
   bbox?: { x0: number; y0: number; x1: number; y1: number };
+  anchors?: AnchorMatch[]; // Phase 2: Anchor Detection
 }
 
 interface ParserData {
@@ -207,7 +210,7 @@ const isName = (str: string) => {
   const result = capitalizedCount >= 1 && !/\d/.test(str) && hasSpace;
 
   if (str.includes('Prof') || str.includes('Schlossallee')) {
-    console.log(`DEBUG isName: "${str}" -> result=${result}, cap=${capitalizedCount}, validWords=${validWords}, hasSpace=${hasSpace}, noDigit=${!/\d/.test(str)}`);
+    // console.log(`DEBUG isName: "${str}" -> result=${result}, cap=${capitalizedCount}, validWords=${validWords}, hasSpace=${hasSpace}, noDigit=${!/\d/.test(str)}`);
   }
   return result;
 };
@@ -249,6 +252,33 @@ const consumePhones = (lines: Line[], data: ParserData) => {
       foundNumbers.forEach(res => {
         const numberObj = res.number; // E.164 format (e.g. +491711234567)
         const rawNumber = line.clean.substring(res.startsAt, res.endsAt);
+
+        // Phase 2: Anchor Overlap Check (Intelligent Parser)
+        // If this potential phone number strongly overlaps with a detected PLZ anchor, skip it.
+        // BUT ONLY if the PLZ is "conditionally verified" by a City anchor!
+        // Otherwise valid phone numbers like "040 11111" (11111 is 5 digits) gets ignored.
+        const overlappingPLZ = line.anchors?.find(a => a.type === 'PLZ' &&
+          // Check for significant overlap
+          (Math.max(a.startIndex, res.startsAt) < Math.min(a.endIndex, res.endsAt))
+        );
+
+        if (overlappingPLZ) {
+          // Check if there is a City anchor on this line
+          const hasCity = line.anchors?.some(a => a.type === 'CITY');
+          if (hasCity) {
+            // console.log(`DEBUG consumePhones: Ignored PLZ candidate ${rawNumber} due to Verified Anchor overlap.`);
+            return;
+          }
+          // If no City, we treat strict PLZ anchors as weak against a valid Phone Parse result, 
+          // UNLESS the phone number is very weak (e.g. just 5 digits).
+          // But valid phone numbers usually have prefixes.
+          // If libphonenumber parsed it, it's likely a phone or a PLZ misidentified as phone.
+          // Without a city, we favor Phone if it looks like one (e.g. has separators or prefix).
+          // If it is JUST 5 digits (e.g. "10115") libphonenumber might pick it up as +49...
+
+          // Let's rely on the REGRESSION FIX further down for pure 5-digit cases.
+          // So here we only block if verify.
+        }
 
         // REGRESSION FIX: Check if this "number" is actually a PLZ followed by a City
         // PLZ is 4 or 5 digits.
@@ -311,16 +341,26 @@ const consumePhones = (lines: Line[], data: ParserData) => {
           const prefix = germanLandlinePrefixes.find(p => normalizedForCheck.startsWith(p));
           const cityFromPrefix = prefix ? landlineMap[prefix as keyof typeof landlineMap] : null;
 
-          if (cityFromPrefix) {
+          // Phase 2: Check Anchor Confidence
+          // If we have an Area Code Anchor in this line, it's a strong signal.
+          const anchor = lines.flatMap(l => l.anchors || []).find(a => a.type === 'AREA_CODE' && normalizedForCheck.startsWith(a.value));
+
+          if (cityFromPrefix || anchor) {
             // 2. Find ZIPs in text
             const zipMatches = lines.flatMap(l => l.clean.match(/\b\d{5}\b/g) || []);
 
             // 3. Check if any ZIP maps to the same City
-            const isConfirmed = zipMatches.some(zip => {
-              const cityFromZip = plzMap[zip as keyof typeof plzMap];
-              // Fuzzy check: does one contain the other? (e.g. "Hamburg" vs "Hamburg-Mitte")
-              return cityFromZip && (cityFromZip.includes(cityFromPrefix) || cityFromPrefix.includes(cityFromZip));
-            });
+            let isConfirmed = false;
+
+            if (anchor) {
+              isConfirmed = true; // High confidence from Anchor
+            } else if (cityFromPrefix) {
+              isConfirmed = zipMatches.some(zip => {
+                const cityFromZip = plzMap[zip as keyof typeof plzMap];
+                // Fuzzy check: does one contain the other? (e.g. "Hamburg" vs "Hamburg-Mitte")
+                return cityFromZip && (cityFromZip.includes(cityFromPrefix) || cityFromPrefix.includes(cityFromZip));
+              });
+            }
 
             if (isConfirmed) {
               type = 'TEL'; // High confidence
@@ -362,7 +402,7 @@ const consumePhones = (lines: Line[], data: ParserData) => {
 
         if (!data.tel.some(t => t.value === value)) {
           data.tel.push({ type, value });
-          console.log(`DEBUG consumePhones: Found ${value} (Type: ${type})`);
+          // console.log(`DEBUG consumePhones: Found ${value} (Type: ${type})`);
           hasValidNumber = true;
         }
       });
@@ -394,7 +434,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
       zip = matchAnchor[1];
       city = matchAnchor[2];
       country = "Deutschland";
-      console.log(`DEBUG consumeAddress Anchor: ZIP=${zip} City=${city}`);
+      // console.log(`DEBUG consumeAddress Anchor: ZIP=${zip} City=${city}`);
 
       // Check if street is in the same line before ZIP
       const preZip = line.clean.substring(0, matchAnchor.index).trim();
@@ -405,6 +445,35 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
       line.isConsumed = true;
       line.type = 'ADDRESS';
     }
+    // 1b. Phase 2: Anchor Detection (Robust Fallback)
+    // Only enter this block if we actually have strong anchors to act on.
+    // Otherwise, fall through to generic regex.
+    else if (line.anchors && line.anchors.some(a => a.type === 'PLZ') && line.anchors.some(a => a.type === 'CITY')) {
+      const plzAnchor = line.anchors.find(a => a.type === 'PLZ');
+      const cityAnchor = line.anchors.find(a => a.type === 'CITY');
+
+      // Double check (redundant but safe for types)
+      if (plzAnchor && cityAnchor) {
+        zip = plzAnchor.value;
+        city = cityAnchor.value;
+        country = "Deutschland"; // Assume DE if valid 5-digit PLZ found by detector
+
+        // Try to find Street (Text surrounding anchors)
+        // Usually Street is before PLZ
+        if (plzAnchor.startIndex > 5) {
+          const preContent = line.clean.substring(0, plzAnchor.startIndex).trim();
+          // Clean trailing comma
+          const cleanPre = preContent.replace(/,$/, '').trim();
+          if (cleanPre.length > 3 && !/tel|fax|mail/i.test(cleanPre)) {
+            street = cleanPre;
+          }
+        }
+
+        line.isConsumed = true;
+        line.type = 'ADDRESS';
+        // console.log(`DEBUG consumeAddress (Anchors): ZIP=${zip} City=${city}`);
+      }
+    }
     else {
       // 2. Try US/International Format: City, State ZIP (e.g. New York, NY 10001)
       const re_us = /([A-Za-z\s]+),\s*([A-Z]{2})\s+(\d{5})/;
@@ -413,7 +482,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
         city = matchUS[1].trim();
         zip = matchUS[3];
         country = "USA";
-        console.log(`DEBUG consumeAddress US: ZIP=${zip} City=${city}`);
+        // console.log(`DEBUG consumeAddress US: ZIP=${zip} City=${city}`);
         // Street might be before in same line
         const preCity = line.clean.substring(0, matchUS.index).trim();
         if (preCity.length > 3) {
@@ -466,7 +535,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
 
             // Check if street is in the same line before ZIP (e.g. "Wienzeile 5, A-1010 Wien")
             const preZip = line.clean.substring(0, matchGeneric.index).trim();
-            console.log(`DEBUG consumeAddress Generic PreZip: "${preZip}"`);
+            // console.log(`DEBUG consumeAddress Generic PreZip: "${preZip}"`);
             if (preZip.length > 3 && !/tel|fax|mail/i.test(preZip)) {
               street = preZip.replace(/,$/, '');
             }
@@ -583,7 +652,7 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
         type: 'WORK',
         value: `;;${street};${city};;${zip};${country}`
       });
-      console.log(`DEBUG consumeAddress PUSH: Street="${street}" City="${city}" Zip="${zip}"`);
+      // console.log(`DEBUG consumeAddress PUSH: Street="${street}" City="${city}" Zip="${zip}"`);
 
       // Stop after finding one main address (usually sufficient)
       break;
@@ -766,9 +835,9 @@ const consumeName = (lines: Line[], data: ParserData) => {
     if (line.isConsumed) continue;
 
     const match = line.clean.match(re_names);
-    if (line.clean.includes('Max')) {
-      console.error('DEBUG consumeName:', { line: line.clean, match: match ? match[0] : 'null' });
-    }
+    // if (line.clean.includes('Max')) {
+    //   console.error('DEBUG consumeName:', { line: line.clean, match: match ? match[0] : 'null' });
+    // }
     if (match) {
       // Found a firstname (potentially with titles). Check if there is a lastname following.
       const nameIndex = match.index!;
@@ -861,7 +930,7 @@ const consumeNameHeuristic = (lines: Line[], data: ParserData) => {
       const first = words.slice(0, words.length - 1).join(' ');
 
       data.fn = line.clean;
-      console.log(`DEBUG consumeNameHeuristic: Set data.fn to "${data.fn}"`);
+      // console.log(`DEBUG consumeNameHeuristic: Set data.fn to "${data.fn}"`);
       data.n = `${last};${first}`;
       line.isConsumed = true;
       line.type = 'NAME';
@@ -897,7 +966,7 @@ const consumeLeftovers = (lines: Line[], data: ParserData) => {
       const parts = nextUnconsumed.clean.split(' ');
       if (parts.length >= 2 && !/\d/.test(nextUnconsumed.clean)) {
         data.fn = nextUnconsumed.clean;
-        console.log(`DEBUG consumeLeftovers: Set data.fn to "${data.fn}"`);
+        // console.log(`DEBUG consumeLeftovers: Set data.fn to "${data.fn}"`);
         data.n = `${parts[parts.length - 1]};${parts[0]}`;
         nextUnconsumed.isConsumed = true;
         nextUnconsumed.type = 'NAME';
@@ -935,6 +1004,11 @@ export const parseSpatialToVCard = (ocrLines: { text: string; bbox: any }[]): st
       bbox: l.bbox
     }))
     .filter(l => l.clean.length > 0);
+
+  // Phase 2: Anchor Detection
+  lines.forEach(l => {
+    l.anchors = detectAnchors(l.clean);
+  });
 
   // 2. Initialize Data
   const data: ParserData = {
@@ -1085,15 +1159,20 @@ export const parseImpressumToVCard = (text: string): string => {
     .map(l => ({ original: l, clean: l.trim(), isConsumed: false }))
     .filter(l => l.clean.length > 0);
 
+  // Phase 2: Anchor Detection
+  lines.forEach(l => {
+    l.anchors = detectAnchors(l.clean);
+  });
+
   // 2. Initialize Data
   const data: ParserData = {
     fn: "", n: "", org: "", title: "",
     tel: [], email: [], url: [], adr: [], note: []
   };
 
-  console.log('--- PARSER DEBUG ---');
-  console.log('Clean Text:\n', cleanText);
-  console.log('Lines:', lines.map(l => l.clean));
+  // console.log('--- PARSER DEBUG ---');
+  // console.log('Clean Text:\n', cleanText);
+  // console.log('Lines:', lines.map(l => l.clean));
 
   // 3. Run Extractors (Order Matters!)
   consumeMeta(lines);
@@ -1141,7 +1220,7 @@ export const parseImpressumToVCard = (text: string): string => {
 };
 
 export const buildVCard = (data: ParserData): string => {
-  console.log(`DEBUG FINAL data.fn: "${data.fn}"`);
+  // console.log(`DEBUG FINAL data.fn: "${data.fn}"`);
   const vcard = [
     "BEGIN:VCARD",
     "VERSION:3.0"

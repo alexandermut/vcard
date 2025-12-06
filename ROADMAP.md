@@ -154,35 +154,20 @@ This file tracks the current development status and planned features.
 ### Phase 2: Anchor-Based Context Detection (Week 3-4)
 
 #### 2.1 Multi-Pass Analysis Implementation
-- [ ] **Pass 1: Anchor Discovery** - Scan text for all anchors
-  ```typescript
-  interface AnchorMap {
-    plz: AnchorMatch[];        // Weight: 10
-    areaCode: AnchorMatch[];   // Weight: 9
-    city: AnchorMatch[];       // Weight: 8
-    street: AnchorMatch[];     // Weight: 7
-    firstName: AnchorMatch[];  // Weight: 6
-    emailDomain: AnchorMatch[]; // Weight: 5
-  }
-  ```
-  - [ ] Run detection in parallel (Promise.all for performance)
-  - [ ] Index anchors by text position for proximity lookup
+- [ ] **Pass 1: Anchor Discovery** - Scan text for all anchors <!-- id: 51 -->
+    - [ ] Create `utils/anchorDetection.ts` <!-- id: 52 -->
+    - [ ] Implement `detectPLZ` with extensive validation <!-- id: 53 -->
+    - [ ] Implement `detectAreaCodes` using `landlineData.ts` <!-- id: 54 -->
+    - [ ] Implement `detectCities` using `cities.ts` <!-- id: 55 -->
+    - [ ] Implement `detectLegalForms` using `parserAnchors.ts` <!-- id: 56 -->
 
-- [ ] **Pass 2: Context Inference** - Validate fields with anchors
-  - [ ] For each regex match, calculate anchor proximity score
-  - [ ] Proximity bonus: Within 50 chars = full bonus, 51-100 chars = 50% bonus
-  - [ ] Cross-validate:
-    - [ ] PLZ found → Check if adjacent text matches city in database
-    - [ ] Area code found → Validate against landline prefix list (5000+)
-    - [ ] Street found → Check if same line contains house number pattern
-    - [ ] First name found → Boost person name confidence
+- [ ] **Pass 2: Context Inference** - Validate fields with anchors <!-- id: 57 -->
+    - [ ] Create `calculateProximity(anchor, candidate)` logic <!-- id: 58 -->
+    - [ ] Integrate into `regexParser.ts` for Address detection <!-- id: 59 -->
+    - [ ] Integrate into `regexParser.ts` for Phone classifications <!-- id: 60 -->
 
-- [ ] **Pass 3: Confidence Scoring** - Aggregate scores per field
-  - [ ] Base score: Regex match quality (0-40 points)
-  - [ ] Anchor bonuses: Up to +60 points based on proximity and weight
-  - [ ] Penalties: Blacklist hit = -50 points, all-caps = -40 points
-  - [ ] Final score: Normalize to 0.0-1.0 range
-  - [ ] Thresholds: Address ≥0.6, Phone ≥0.5, Name ≥0.55, Company ≥0.6
+- [ ] **Pass 3: Confidence Scoring** <!-- id: 61 -->
+    - [ ] (Future) Aggregate scores per field <!-- id: 62 -->
 
 #### 2.2 Fuzzy Matching for Typos
 - [ ] **Implement Levenshtein Distance** for city names

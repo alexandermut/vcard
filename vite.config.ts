@@ -41,7 +41,7 @@ export default defineConfig({
         ]
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 6 * 1024 * 1024, // 6MB to accommodate tesseract-core.wasm.js
+        maximumFileSizeToCacheInBytes: 15 * 1024 * 1024, // 15MB to accommodate opencv.js (8.6MB)
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
