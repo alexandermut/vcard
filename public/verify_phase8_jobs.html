@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Phase 8 Verification: Job Title Anchors 👨‍💼</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+            let log = "***** PHASE 8: JOB TITLE TEST *****\n\n";
+
+            // Scenario:
+            // "Xorp Zylop" is NOT in our 19k Name List.
+            // "Senior Sales Manager" contains "Sales" and "Manager" (in JOB_TITLES).
+            // Context Logic should trigger.
+
+            const job_test = JSON.stringify([
+                { text: "Wir stellen vor:", bbox: { x0: 0, y0: 0, x1: 100, y1: 10 }, clean: "Wir stellen vor:" },
+                { text: "Senior Sales Manager", bbox: { x0: 0, y0: 20, x1: 100, y1: 30 }, clean: "Senior Sales Manager" },
+                { text: "Xorp Zylop", bbox: { x0: 0, y0: 40, x1: 100, y1: 50 }, clean: "Xorp Zylop" },
+                { text: "Space Corp", bbox: { x0: 0, y0: 60, x1: 100, y1: 70 }, clean: "Space Corp" }
+            ]);
+
+            const vcard = rust_parse_vcard(job_test);
+
+            const has_name = vcard.includes("FN:Xorp Zylop");
+            const has_org = vcard.includes("Space Corp") || vcard.includes("ORG"); // Org might fail as no legal form?
+
+            log += "1. Unknown Name via Job Title Context: " + (has_name ? "✅ PASS" : "❌ FAIL") + "\n";
+            if (!has_name) log += "OUTPUT: " + vcard + "\n";
+
+            document.getElementById('output').innerText = log;
+        }
+        run();
+    </script>
+</body>
+
+</html>

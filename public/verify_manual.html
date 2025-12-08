@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Verification: Geschäftsführung Check</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+
+            // Case: "Geschäftsführung: Max Mustermann"
+            const input = JSON.stringify([
+                { text: "Geschäftsführung: Max Mustermann", bbox: { x0: 0, y0: 0, x1: 100, y1: 20 } },
+                { text: "Musterfirma GmbH", bbox: { x0: 0, y0: 30, x1: 100, y1: 50 } }
+            ]);
+
+            const result = rust_parse_vcard(input);
+            console.log(result);
+
+            const hasName = result.includes("FN:Max Mustermann");
+            const hasN = result.includes("N:Mustermann;Max");
+
+            if (hasName && hasN) {
+                document.getElementById('output').innerText = "SUCCESS: " + result;
+            } else {
+                document.getElementById('output').innerText = "FAILURE: " + result;
+            }
+        }
+        run();
+    </script>
+</body>
+
+</html>

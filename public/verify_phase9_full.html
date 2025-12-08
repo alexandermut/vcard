@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Phase 9 Verification: Full Feature Card 💎</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+            let log = "***** PHASE 9: FULL TEST *****\n\n";
+
+            // Scenario:
+            // "Lina Unknown" (Unknown name)
+            // "Head of Marketing" (Job Title) -> Should anchor Name AND be extracted as Title.
+            // "www.marketing-gurus.de" -> Should be URL.
+
+            const full_test = JSON.stringify([
+                { text: "Wir machen Werbung!", bbox: { x0: 0, y0: 0, x1: 100, y1: 10 }, clean: "Wir machen Werbung!" },
+                { text: "Creative Agency GmbH", bbox: { x0: 0, y0: 20, x1: 100, y1: 30 }, clean: "Creative Agency GmbH" },
+                { text: "Head of Marketing", bbox: { x0: 0, y0: 40, x1: 100, y1: 50 }, clean: "Head of Marketing" },
+                { text: "Lina Unknown", bbox: { x0: 0, y0: 60, x1: 100, y1: 70 }, clean: "Lina Unknown" },
+                { text: "www.marketing-gurus.de", bbox: { x0: 0, y0: 80, x1: 100, y1: 90 }, clean: "www.marketing-gurus.de" },
+            ]);
+
+            const vcard = rust_parse_vcard(full_test);
+
+            const has_name = vcard.includes("FN:Lina Unknown");
+            const has_title = vcard.includes("TITLE:Head of Marketing");
+            const has_url = vcard.includes("URL:www.marketing-gurus.de");
+            const has_org = vcard.includes("Creative Agency GmbH");
+
+            log += "1. Name (via Title Context): " + (has_name ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "2. Title Extraction:         " + (has_title ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "3. URL Extraction:           " + (has_url ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "4. Org Extraction:           " + (has_org ? "✅ PASS" : "❌ FAIL") + "\n";
+
+            if (!has_name || !has_title || !has_url) log += "\nOUTPUT:\n" + vcard + "\n";
+
+            document.getElementById('output').innerText = log;
+        }
+        run();
+    </script>
+</body>
+
+</html>

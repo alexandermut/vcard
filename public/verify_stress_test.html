@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Stress Test: "The Nightmare Card" 😈</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+            let log = "***** STRESS TEST RESULTS *****\n\n";
+
+            // Scenario:
+            // 1. Noise line
+            // 2. Company hidden in sentence
+            // 3. Name "Zoe" (Short, only in 19k list) without Label
+            // 4. Address "Hamburg" without ZIP
+            // 5. Mobile "0176..." messy
+            // 6. Landline "040..." (Hamburg Prefix) without Label
+
+            const nightmare_ocr = JSON.stringify([
+                { text: "Herzlich Willkommen bei", bbox: { x0: 0, y0: 0, x1: 100, y1: 10 }, clean: "Herzlich Willkommen bei" },
+                { text: "uns, der SuperCreative GmbH & Co. KG.", bbox: { x0: 0, y0: 15, x1: 100, y1: 25 }, clean: "uns, der SuperCreative GmbH & Co. KG." },
+                { text: "Projektleitung:", bbox: { x0: 0, y0: 30, x1: 50, y1: 40 }, clean: "Projektleitung:" },
+                { text: "Zoe", bbox: { x0: 60, y0: 30, x1: 80, y1: 40 }, clean: "Zoe" },
+                { text: "Müller", bbox: { x0: 85, y0: 30, x1: 100, y1: 40 }, clean: "Müller" },
+                { text: "Büro Nord", bbox: { x0: 0, y0: 50, x1: 100, y1: 60 }, clean: "Büro Nord" },
+                { text: "Am Hafen 1, Hamburg", bbox: { x0: 0, y0: 65, x1: 100, y1: 75 }, clean: "Am Hafen 1, Hamburg" },
+                { text: "Kontakt:", bbox: { x0: 0, y0: 80, x1: 100, y1: 90 }, clean: "Kontakt:" },
+                { text: "0 17 6 / 55 66 77 88", bbox: { x0: 0, y0: 95, x1: 100, y1: 105 }, clean: "0 17 6 / 55 66 77 88" },
+                { text: "040 999999", bbox: { x0: 0, y0: 110, x1: 100, y1: 120 }, clean: "040 999999" },
+                { text: "info@super-creative.de", bbox: { x0: 0, y0: 130, x1: 100, y1: 140 }, clean: "info@super-creative.de" }
+            ]);
+
+            const vcard = rust_parse_vcard(nightmare_ocr);
+
+            // Validation
+            const has_name = vcard.includes("FN:Zoe Müller"); // Requires 19k list + List Logic
+            const has_org = vcard.includes("ORG:SuperCreative GmbH & Co. KG."); // Requires Regex w/o spaces or robust match
+            // ORG might extract "SuperCreative GmbH" depending on regex boundary. 
+            // My default `consume_company` uses `RE_LEGAL_FORM`.
+
+            const has_city = vcard.includes("Hamburg") && !vcard.includes(";;;;Germany"); // Checks ADress
+            const has_mobile = vcard.includes("TYPE=CELL:017655667788"); // Requires Normalize + Classify
+            const has_landline = vcard.includes("TYPE=WORK:040999999"); // Requires Landline Prefix 040
+
+            log += "1. Name (Zoe Müller - User List): " + (has_name ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "2. Org (Legal Form Detection):    " + (vcard.includes("GmbH") ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "   (Extracted: " + (vcard.match(/ORG:(.*)/)?.[1] || "None") + ")\n";
+            log += "3. Address (No ZIP, City List):   " + (has_city ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "4. Mobile (0176 messy):           " + (has_mobile ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "5. Landline (040 Prefix):         " + (has_landline ? "✅ PASS" : "❌ FAIL") + "\n";
+
+            log += "\nFULL VCARD OUTPUT:\n" + vcard;
+
+            document.getElementById('output').innerText = log;
+        }
+        run();
+    </script>
+</body>
+
+</html>

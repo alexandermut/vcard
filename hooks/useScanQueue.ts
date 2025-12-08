@@ -31,7 +31,8 @@ export const useScanQueue = (
   llmConfig: LLMConfig,
   ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training',
   onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string, ocrRawText?: string) => Promise<void> | void,
-  onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent (for UI preview)
+  onOCRRawText?: (rawText: string) => void, // Callback to pass raw OCR text to parent (for UI preview)
+  wasmModule?: any // 🦀 Rust WASM Module
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
 
@@ -152,7 +153,9 @@ export const useScanQueue = (
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
           const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
-            ? parseSpatialToVCard(tesseractResult.lines)
+            ? (wasmModule && wasmModule.rust_parse_vcard
+              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
+              : parseSpatialToVCard(tesseractResult.lines))
             : parseImpressumToVCard(tesseractResult.text);
 
           // 2. Run Gemini (Online) for Ground Truth
@@ -182,7 +185,9 @@ export const useScanQueue = (
 
           // Use Spatial Parser if lines are available, otherwise fallback
           if (tesseractResult.lines && tesseractResult.lines.length > 0) {
-            vcard = parseSpatialToVCard(tesseractResult.lines);
+            vcard = (wasmModule && wasmModule.rust_parse_vcard)
+              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
+              : parseSpatialToVCard(tesseractResult.lines);
           } else {
             vcard = parseImpressumToVCard(tesseractResult.text);
           }
@@ -215,7 +220,9 @@ export const useScanQueue = (
               jobOcrText = result.text; // Set jobOcrText here for hybrid mode
               // Use Spatial Parser
               const vcard = (result.lines && result.lines.length > 0)
-                ? parseSpatialToVCard(result.lines)
+                ? (wasmModule && wasmModule.rust_parse_vcard
+                  ? wasmModule.rust_parse_vcard(JSON.stringify(result.lines))
+                  : parseSpatialToVCard(result.lines))
                 : parseImpressumToVCard(result.text);
               return { vcard, confidence: result.confidence, method: 'tesseract' as const, rawText: result.text };
             })(),
@@ -261,7 +268,9 @@ export const useScanQueue = (
 
           // Use Spatial Parser
           const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
-            ? parseSpatialToVCard(tesseractResult.lines)
+            ? (wasmModule && wasmModule.rust_parse_vcard
+              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
+              : parseSpatialToVCard(tesseractResult.lines))
             : parseImpressumToVCard(tesseractResult.text);
 
           console.log(`[OCR] Auto: Tesseract completed (${tesseractResult.confidence}%)`);
@@ -349,7 +358,7 @@ export const useScanQueue = (
         }
       }
     })();
-  }, [queue, apiKey, lang, llmConfig, ocrMethod, onJobComplete, onOCRRawText, concurrency]);
+  }, [queue, apiKey, lang, llmConfig, ocrMethod, onJobComplete, onOCRRawText, concurrency, wasmModule]);
 
   // Watch queue and trigger processing
   useEffect(() => {

@@ -106,6 +106,8 @@ const App: React.FC = () => {
         await wasm.default();
         wasmModule.current = wasm; // Store for global use
         wasmLoaded.current = true;
+        // @ts-ignore
+        window.wasmModule = wasm;
 
         console.log("crab 🦀 Rust WASM Loaded!");
         // Silent startup test
@@ -185,7 +187,8 @@ const App: React.FC = () => {
         toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
       }
     },
-    setOcrRawText // Pass raw OCR text callback to populate parser field
+    setOcrRawText, // Pass raw OCR text callback to populate parser field
+    wasmModule.current // 🦀 Pass Rust WASM Module
   );
 
   const handleLoadHistoryItem = async (item: HistoryItem) => {
