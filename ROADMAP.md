@@ -751,6 +751,110 @@ graph TD
 - **Bridge:** `serde-wasm-bindgen` (low-overhead JSON passing).
 - **Bundler:** `vite-plugin-rsw` or manual `wasm` import.
 
+### �️ Rust Stability & Performance Port Strategy
+**Goal:** Systematically migrate critical JavaScript logic to Rust/Wasm to eliminate entire classes of bugs (runtime errors, memory leaks) while boosting performance.
+
+#### Strategy: "The Core, The Vault, The Brain"
+We categorize the migration into three pillars:
+
+#### 1. The Core (Foundation & Parsing) - Priority: Stability 🛡️
+- **vCard Logic (`vcardUtils.ts` -> `vcard-core-rs`)**
+  - **Problem:** Regex parsing is brittle; simple string split errors crash the app.
+  - **Rust Solution:** Use `nom` for a fault-tolerant, zero-copy vCard 3.0/4.0 parser.
+  - **Stability Gain:** impossible to have `undefined` fields; type-checked parsing.
+  - **Performance Gain:** 10x faster import of large `.vcf` backups.
+
+- **Data Validation (`types.ts` validators -> `serde`)**
+  - **Problem:** Runtime data often mismatches TS types (e.g., from generic JSON output).
+  - **Rust Solution:** Strict deserialization with `serde`. Invalid data is rejected at the gate.
+  - **Stability Gain:** Application state is guaranteed valid; no "cannot read property of undefined".
+
+#### 2. The Vault (IO & Data Safety) - Priority: Integrity 🔒
+- **Image Pipeline (`useScanQueue` -> `image-pipeline-rs`)**
+  - **Problem:** Canvas API causes memory spikes/leaks; `createObjectURL` requires manual GC.
+  - **Rust Solution:** Managed memory in Wasm. Process images (crop/resize) and return only the final Blob.
+  - **Stability Gain:** Eliminates browser crashes during batch scanning; predictable memory usage.
+  - **Performance Gain:** Parallel processing on multiple threads (Rayon).
+
+- **Encrypted Storage (`IndexedDB` wrapper -> `vault-rs`)**
+  - **Problem:** `IndexedDB` is exposed; sensitive contact data is readable.
+  - **Rust Solution:** Transparent AES-GCM encryption of fields before JS ever sees them.
+  - **Stability Gain:** Integrity checks (checksums) detect data corruption.
+
+#### 3. The Brain (Logic & Intelligence) - Priority: Speed 🚀
+- **Deduplication Engine (`deduplicationWorker.ts` -> `matcher-rs`)**
+  - **Problem:** O(n²) comparisons in JS block the main thread or worker for too long.
+  - **Rust Solution:** Blocking-invariant clustering and fuzzy string matching (Levenshtein) in native code.
+  - **Performance Gain:** Instant duplicate detection for 50k+ contacts.
+
+- **Search Index (`fuse.js` -> `tantivy-wasm`)**
+  - **Problem:** JS-based fuzzy search scales poorly.
+  - **Rust Solution:** `tantivy` provides a full-text search engine with BM25 scoring.
+  - **Stability Gain:** Consistent query performance regardless of dataset size.
+
+---
+
+### �📦 Potential Rust Ecosystem Integrations
+**Goal:** Leverage the rich Rust ecosystem for specific heavy-lifting tasks via WebAssembly.
+
+#### [image](https://github.com/image-rs/image) & [imageproc](https://github.com/image-rs/imageproc)
+- **Use Case:** Advanced image manipulation (resize, crop, contrast, rotation).
+- **Why:** Performant, type-safe image ops without canvas 2D context overhead.
+- **Feature Potential:** "Magic Enhance" button that auto-adjusts brightness/contrast/deskews entirely client-side.
+
+#### [rxing](https://github.com/rxing-core/rxing)
+- **Use Case:** Barcode and QR code processing.
+- **Why:** Pure Rust port of ZXing.
+- **Feature Potential:** Instant, offline multi-format barcode scanning (vCard QR, ISBN, etc.) compatible with WASM.
+
+#### [tantivy](https://github.com/quickwit-oss/tantivy)
+- **Use Case:** Full-text search engine library.
+- **Why:** Inspired by Lucene but faster and in Rust.
+- **Feature Potential:** Local, offline full-text search across thousands of contacts with faceting and typo tolerance, running in a Web Worker.
+
+#### [lopdf](https://github.com/J-F-Liu/lopdf)
+- **Use Case:** PDF Parsing and Modification.
+- **Why:** Robust PDF handling.
+- **Feature Potential:** Drag-and-drop a generic company PDF/Presentation, identifying and extracting vCard data or contact details embedded within.
+
+#### [tract](https://github.com/sonos/tract) or [burn](https://github.com/tracel-ai/burn)
+- **Use Case:** Neural Network Inference.
+- **Why:** Run ONNX models directly in the browser via WASM.
+- **Feature Potential:** Run a small, quantized NER (Named Entity Recognition) model locally to extract names/phones from text without sending data to an API (Privacy++).
+
+#### [phonenumber](https://github.com/whisperfish/rust-phonenumber)
+- **Use Case:** Phone number parsing.
+- **Why:** Rust port of Google's libphonenumber.
+- **Feature Potential:** Extremely fast batch normalization of phone numbers during large imports.
+
+#### [chrono](https://github.com/chronotope/chrono)
+- **Use Case:** Date and Time parsing.
+- **Why:** Standard for Rust date/time.
+- **Feature Potential:** Robust parsing of varied date formats found in OCR text (birthdays, founding dates).
+
+#### [rkyv](https://github.com/rkyv/rkyv)
+- **Use Case:** Zero-copy deserialization.
+- **Why:** Faster than Serde for complex data structures.
+- **Feature Potential:** Instant loading of massive contact lists from IndexDB by mapping memory directly, bypassing JSON parsing overhead.
+
+### 🔭 Visionary Features (Rust/WASM Enabled)
+**Goal:** Next-level features enabled specifically by the move to a high-performance Rust core.
+
+#### 1. 🔄 Indestructible Sync (CRDTs)
+- **Concept:** Conflict-free Replicated Data Types allows merging data from multiple devices without conflicts, even after months offline.
+- **Tech Stack:** `automerge-rs` or `yrs` (Yjs port).
+- **Benefit:** True Peer-to-Peer sync (local-first) without needing a central source of truth.
+
+#### 2. 🧠 Semantic Search (On-Device Vector DB)
+- **Concept:** Search by meaning, not just keywords (e.g., search "Marketing" -> find "CMO", "Brand Manager").
+- **Tech Stack:** `candle` (BERT embeddings in WASM) + `usearch` (HNSW index).
+- **Benefit:** "Magical" search experience that runs 100% offline private.
+
+#### 3. 🕸️ Relationship Graph (Knowledge Graph)
+- **Concept:** Visualize who knows who, discover clusters (e.g., "Munich Tech Scene"), and find shortest paths.
+- **Tech Stack:** `petgraph` (Graph algorithms) + `force-graph` (GPU interaction).
+- **Benefit:** Transforms the app from a simple list into a professional networking tool.
+
 ---
 
 ## � Potential Open Source Libraries

@@ -126,6 +126,7 @@ This project wouldn't exist without these amazing open source libraries:
 *   **[jsQR](https://github.com/cozmo/jsQR)** (Apache 2.0) - QR Code Scanning
 *   **[qrcode](https://github.com/soldair/node-qrcode)** (MIT) - QR Code Generation
 *   **[smartcrop](https://github.com/jwagner/smartcrop.js)** (MIT) - Intelligent Image Cropping
+*   **[jscanify](https://github.com/ColonelParrot/jscanify)** (MIT) - Document Detection & Auto-Capture
 *   **[PDF.js](https://mozilla.github.io/pdf.js/)** (Apache 2.0) - PDF Rendering & Conversion
 *   **[Tesseract.js](https://github.com/naptha/tesseract.js)** (Apache 2.0) - Offline OCR Engine with German support
 *   **[browser-image-compression](https://github.com/Donaldcwl/browser-image-compression)** (MIT) - Professional image compression
@@ -134,6 +135,8 @@ This project wouldn't exist without these amazing open source libraries:
 *   **[idb](https://github.com/jakearchibald/idb)** (ISC) - IndexedDB Wrapper
 *   **[JSZip](https://stuk.github.io/jszip/)** (MIT) - ZIP File Creation
 *   **[libphonenumber-js](https://github.com/catamphetamine/libphonenumber-js)** (MIT) - Phone Number Validation
+*   **[ilib-address](https://github.com/iLib-js/ilib-address)** (Apache 2.0) - International Address Parsing
+*   **[namefully](https://github.com/ralhuebn/namefully)** (MIT) - Advanced Name Parsing
 
 ### UI Components & Workers
 *   **[Lucide React](https://lucide.dev/)** (ISC) - Beautiful Icons
