@@ -424,64 +424,26 @@ export const migrateBase64ToBlob = async () => {
 
 export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
     const db = await initDB();
-    const terms = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+    const terms = query.toLowerCase().split(/\s+/).filter(w => w.length > 0);  // ✅ Changed from > 1 to > 0 to allow single-char searches
 
     if (terms.length === 0) return getHistoryPaged(20);
 
-    // Strategy: Use the first term to get candidates from the index,
-    // then filter in memory for the rest.
-    // IndexedDB only supports exact match on multiEntry.
-    // So we can't easily do prefix search (e.g. "Ale" -> "Alexander") efficiently with just this index
-    // UNLESS we index all prefixes (too heavy).
-    //
-    // ALTERNATIVE: Since we want "Database Search", we usually mean "Full Text Search".
-    // But IDB is limited.
-    //
-    // HYBRID APPROACH:
-    // If we want "contains" search, we might have to scan.
-    // But let's try to use the index for at least exact word matches if possible.
-    //
-    // ACTUALLY: For a contact list (< 10k items), scanning ALL items (just the keywords/names) is often fast enough.
-    // But we want to use the DB.
-    //
-    // Let's use the `keywords` index for what it's good at: Exact matches.
-    // But users type prefixes.
-    //
-    // REVISED STRATEGY for "Database Search":
-    // We will use a cursor to iterate over the entire store (sorted by date) and filter.
-    // This IS a database search (it happens on the DB thread if we use a cursor properly?).
-    // No, it happens in JS.
-    //
-    // If we really want to use the index, we need to query `IDBKeyRange.bound(term, term + '\uffff')`.
-    // This works for prefix search on a normal index.
-    // Does it work on multiEntry? Yes!
-    //
-    // So: For query "Ale", we search the `keywords` index for range "Ale" to "Ale\uffff".
-    // This gives us all IDs that have a keyword starting with "Ale".
-    // Then we fetch those items.
-
+    // ✅ For TRUE substring search (e.g. "rea" finding "Andreas"),
+    // we need to scan ALL items since IndexedDB range queries only work for prefixes.
+    // This is acceptable performance for < 10k contacts.
     const tx = db.transaction(STORE_NAME, 'readonly');
-    const index = tx.store.index('keywords');
-
-    // We only use the first term for the index query to narrow down
-    const firstTerm = terms[0];
-    const range = IDBKeyRange.bound(firstTerm, firstTerm + '\uffff');
-
-    let cursor = await index.openKeyCursor(range); // Get keys (IDs) only first? No, we need values.
-    // Actually, getting unique values is tricky with multiEntry because one item appears multiple times.
+    const index = tx.store.index('by-date');
 
     const uniqueItems = new Map<string, HistoryItem>();
+    let cursor = await index.openCursor(null, 'prev'); // All items, newest first
 
-    // We'll use openCursor to get values directly
-    let valueCursor = await index.openCursor(range);
-
-    while (valueCursor && uniqueItems.size < 50) { // Limit results
-        const item = valueCursor.value;
-
-        // Verify ALL terms match (in memory filter for the rest)
+    while (cursor && uniqueItems.size < 50) { // Limit results to 50
+        const item = cursor.value;
         const itemKeywords = item.keywords || [];
+
+        // Check if ALL search terms are found as substrings in ANY keyword
         const allTermsMatch = terms.every(term =>
-            itemKeywords.some(k => k.startsWith(term))
+            itemKeywords.some(k => k.includes(term))
         );
 
         if (allTermsMatch) {
@@ -490,7 +452,7 @@ export const searchHistory = async (query: string): Promise<HistoryItem[]> => {
             uniqueItems.set(item.id, item);
         }
 
-        valueCursor = await valueCursor.continue();
+        cursor = await cursor.continue();
     }
 
     return Array.from(uniqueItems.values());
