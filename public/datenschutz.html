@@ -65,7 +65,8 @@
             border-radius: 3px;
         }
 
-        ul {
+        ul,
+        ol {
             padding-left: 20px;
         }
 
@@ -90,6 +91,14 @@
             margin-bottom: 20px;
             font-weight: bold;
         }
+
+        blockquote {
+            background-color: #f9f9f9;
+            border-left: 4px solid #007bff;
+            padding: 10px 15px;
+            margin: 15px 0;
+            font-style: italic;
+        }
     </style>
 </head>
 
@@ -98,231 +107,360 @@
     <div class="container">
         <a href="index.html" class="back-link">&larr; Zurück zur App</a>
 
-        <h1>Datenschutzerklärung</h1>
+        <h1>DATENSCHUTZERKLÄRUNG</h1>
 
         <div class="info-box">
-            <strong>Stand:</strong> November 2025
+            <strong>Stand:</strong> Dezember 2025
         </div>
 
-        <h2>1. Verantwortlicher und Kontakt</h2>
-        <p>
-            Verantwortlicher für die Datenverarbeitung im Sinne der Datenschutz-Grundverordnung (DSGVO) ist:
-        </p>
+        <h2>1. Verantwortlicher</h2>
         <p>
             Alexander Mut<br>
             Falkenbergsweg 66<br>
             21149 Hamburg<br>
             Deutschland<br>
-            Tel: +49 151 51 00 27 67<br>
+            Telefon: +49 151 51 00 27 67<br>
             E-Mail: <span class="code">mutalex (at) gmail (punkt) com</span>
         </p>
-
-        <h2>2. Grundsätzliche Funktionsweise ("Local-First"-Architektur)</h2>
         <p>
-            Diese Anwendung ("Kontakte.me") verfolgt einen "Local-First"-Ansatz. Das bedeutet:
+            Der Verantwortliche betreibt die Webanwendung <em>kontakte.me</em> („App") und ist für die Verarbeitung
+            personenbezogener Daten im Sinne der Datenschutz-Grundverordnung (DSGVO) verantwortlich.
+        </p>
+
+        <h2>2. Grundsätzliche Funktionsweise der App („Local-First-Architektur")</h2>
+        <p>
+            Die App ist als reine Frontend-Anwendung konzipiert. Ihre personenbezogenen Daten werden grundsätzlich
+            <strong>lokal auf dem Endgerät</strong> verarbeitet und gespeichert. Der Betreiber hat <strong>keinen
+                Zugriff</strong> auf Ihre lokal gespeicherten Daten.
+        </p>
+
+        <h3>2.1 Lokale Speicherung und Verarbeitung</h3>
+        <p>
+            Die folgenden Daten werden ausschließlich lokal in Ihrem Browser gespeichert:
         </p>
         <ul>
-            <li><strong>Lokale Speicherung:</strong> Ihre Inhaltsdaten (Texte, Visitenkarten-Scans, Historie, API-Keys)
-                werden primär und dauerhaft lokal im Browser Ihres Endgeräts (Local Storage / IndexedDB) gespeichert.
-            </li>
-            <li><strong>Lokale Verarbeitung:</strong> Funktionen wie der QR-Code-Scanner laufen vollständig in Ihrem
-                Browser (via `jsqr`). Es werden keine Videostreams an Server gesendet.</li>
-            <li><strong>Kein Backend-Zugriff auf Inhalte:</strong> Wir als Webseitenbetreiber haben technisch keinen
-                Zugriff auf Ihre lokal gespeicherten Inhalte.</li>
-            <li>
-                <strong>⚠️ Ausnahmen (Datenübertragung):</strong> Daten verlassen Ihr Gerät bzw. Ihren Browser nur in
-                zwei konkreten Fällen, die durch Ihre aktive Handlung ausgelöst werden:
-                <ol>
-                    <li><strong>Zahlung:</strong> Sie klicken auf einen Zahlungslink und werden zu Stripe
-                        weitergeleitet.</li>
-                    <li><strong>KI-Analyse:</strong> Sie nutzen eine Cloud-KI-Funktion und senden Text/Bild zur Analyse
-                        an die API des gewählten Anbieters (Google oder OpenAI).</li>
-                </ol>
-            </li>
+            <li>Kontakte (Namen, Telefonnummern, E-Mail-Adressen, Adressen, Firmenzugehörigkeit etc.)</li>
+            <li>Visitenkartenbilder</li>
+            <li>Notizen und Verlaufsdaten</li>
+            <li>App-Einstellungen (Sprache, Theme, UI-Konfiguration)</li>
+            <li>API-Schlüssel (OpenAI, Google Gemini, lokale LLMs)</li>
+            <li>OAuth-Token für Google People API (falls genutzt)</li>
+            <li>Backups (JSON, vCard, CSV, ZIP)</li>
         </ul>
+        <p>
+            Zur Speicherung werden <strong>IndexedDB</strong>, <strong>localStorage</strong> und
+            <strong>sessionStorage</strong> verwendet.
+        </p>
+        <p>
+            Die App führt verschiedene Verarbeitungsschritte ausschließlich lokal aus, darunter:
+        </p>
+        <ul>
+            <li>OCR-Analyse über Tesseract.js (offline)</li>
+            <li>Bildvorverarbeitung (Canvas-Rendering, Resizing, Komprimierung, Entfernung von EXIF-Daten)</li>
+            <li>Regex-basierte Extraktion</li>
+            <li>PWA-Caching über Service Worker</li>
+        </ul>
+
+        <h3>2.2 Keine Serververarbeitung</h3>
+        <p>
+            Der Betreiber speichert oder verarbeitet <strong>keine Inhalte</strong> der Nutzer auf eigenen Servern.<br>
+            Es existiert <strong>kein Backend</strong>, das Kontakt- oder Bilddaten empfängt oder speichert.
+        </p>
+
+        <h3>2.3 Mögliche Browser-Synchronisation</h3>
+        <p>
+            Eine Synchronisation erfolgt <strong>nicht durch die App selbst</strong>.<br>
+            Einige Browser (z. B. Safari/iCloud, Chrome Sync) können theoretisch lokale Browserdaten synchronisieren.
+            Dies liegt außerhalb der Kontrolle des Betreibers und richtet sich ausschließlich nach den
+            Datenschutzrichtlinien des jeweiligen Browserherstellers.
+        </p>
 
         <h2>3. Bereitstellung der Webseite (Hosting)</h2>
         <p>
-            Um die Applikation in Ihrem Browser auszuführen, müssen die Programmdateien von einem Server geladen werden.
+            Die App wird über <strong>GitHub Pages</strong> bereitgestellt.
         </p>
-
-        <h3>3.1. Hosting-Provider</h3>
         <p>
-            Wir nutzen für das Hosting <strong>GitHub Pages</strong>. Dienstanbieter ist GitHub Inc., 88 Colin P Kelly
-            Jr St, San Francisco, CA 94107, USA.
+            <strong>Dienstanbieter:</strong><br>
+            GitHub Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA.
         </p>
-
-        <h3>3.2. Server-Logfiles</h3>
         <p>
-            Bei jedem Aufruf der Webseite erfasst der Provider automatisch Informationen (Art. 6 Abs. 1 lit. f DSGVO –
-            Berechtigtes Interesse zur Sicherheit und Auslieferung):
+            Beim Aufruf der Webseite verarbeitet GitHub automatisiert Server-Logdaten, darunter:
         </p>
         <ul>
-            <li>IP-Adresse (wird vom Provider i.d.R. anonymisiert oder nach kurzer Zeit gelöscht)</li>
-            <li>Datum und Uhrzeit des Zugriffs</li>
-            <li>Verwendeter Browser und Betriebssystem</li>
-            <li>Referrer URL</li>
+            <li>IP-Adresse (ggf. anonymisiert)</li>
+            <li>Datum und Uhrzeit</li>
+            <li>Browsertyp und Version</li>
+            <li>Betriebssystem</li>
+            <li>Referrer-URL</li>
         </ul>
         <p>
-            Weitere Informationen finden Sie in der <a
-                href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" target="_blank"
-                rel="noopener noreferrer">Datenschutzerklärung von GitHub</a>.
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an Stabilität und
+            Sicherheit).
+        </p>
+        <p>
+            Es gelten ergänzend die <a href="https://docs.github.com/de/site-policy/privacy-policies" target="_blank"
+                rel="noopener">Datenschutzrichtlinien von GitHub</a>.
         </p>
 
-        <h2>4. Zahlungsabwicklung (Stripe)</h2>
+        <h2>4. Zahlungsabwicklung über Stripe</h2>
         <p>
-            Sofern Sie kostenpflichtige Funktionen oder Lizenzen erwerben, nutzen wir dafür "Stripe Payment Links".
+            Für kostenpflichtige Funktionen oder freiwillige Unterstützungszahlungen wird Stripe eingesetzt.
         </p>
 
-        <h3>4.1. Funktionsweise & Weiterleitung</h3>
+        <h3>4.1 Funktionsweise</h3>
         <p>
-            Für den Bezahlvorgang werden Sie von unserer Webseite direkt auf eine sichere, von Stripe gehostete
-            Zahlungsseite weitergeleitet. Die Eingabe Ihrer Zahlungs- und Vertragsdaten erfolgt <strong>ausschließlich
-                auf den Systemen von Stripe</strong>. Wir als Webseitenbetreiber haben zu keinem Zeitpunkt Zugriff auf
-            Ihre Kreditkartendaten oder Bankverbindungen.
+            Beim Klick auf einen Zahlungslink werden Sie auf eine von Stripe gehostete Zahlungsseite weitergeleitet.<br>
+            Die Eingabe Ihrer Zahlungsdaten erfolgt ausschließlich bei Stripe.<br>
+            Der Betreiber erhält <strong>keine Bank- oder Kreditkartendaten</strong>.
         </p>
 
-        <h3>4.2. Dienstleister</h3>
+        <h3>4.2 Dienstanbieter</h3>
         <p>
-            Stripe Payments Europe, Ltd., 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, Irland.
+            Stripe Payments Europe, Ltd.<br>
+            1 Grand Canal Street Lower, Grand Canal Dock, Dublin, Irland<br>
+            Datenschutzrichtlinie: <a href="https://stripe.com/privacy" target="_blank"
+                rel="noopener">https://stripe.com/privacy</a>
         </p>
 
-        <h3>4.3. Datenfluss</h3>
+        <h3>4.3 Verarbeitete Daten</h3>
         <p>
-            Durch das Aufrufen des Zahlungslinks erhält Stripe Kenntnis über Ihre IP-Adresse und Browserdaten (technisch
-            notwendig zum Aufbau der Seite). Wir erhalten von Stripe nach Abschluss der Zahlung lediglich eine
-            Bestätigung über die erfolgreiche Transaktion.
-        </p>
-
-        <h3>4.4. Rechtsgrundlage</h3>
-        <p>
-            Die Weiterleitung und Abwicklung erfolgt zur Erfüllung des Vertrages (Art. 6 Abs. 1 lit. b DSGVO). Weitere
-            Informationen finden Sie in der <a href="https://stripe.com/de/privacy" target="_blank"
-                rel="noopener noreferrer">Datenschutzerklärung von Stripe</a>.
-        </p>
-
-        <h2>5. Optionale KI-Funktionen (Google, OpenAI & Lokale LLMs)</h2>
-        <p>
-            Die App bietet Funktionen zur Textoptimierung und Bildanalyse an. Sie können wählen zwischen Cloud-Anbietern
-            oder lokalen Modellen.
-        </p>
-
-        <h3>5.1. Cloud-KI (Google Gemini & OpenAI)</h3>
-        <p>
-            Die App dient als technisches Interface ("Bring Your Own Key"), das eine direkte Verbindung von Ihrem
-            Browser zur API des gewählten Anbieters herstellt.
+            Stripe verarbeitet u. a.:
         </p>
         <ul>
-            <li><strong>Voraussetzung:</strong> Sie hinterlegen Ihren eigenen API-Schlüssel (API Key).</li>
-            <li><strong>Datenfluss:</strong> Wenn Sie die Analyse starten, werden Text oder Bild direkt an den gewählten
-                Anbieter gesendet. Wir als App-Betreiber sehen diese Daten nicht.</li>
-            <li><strong>Rechtsgrundlage:</strong> Ihre freiwillige, aktive Handlung (Art. 6 Abs. 1 lit. a DSGVO).</li>
+            <li>Vor- und Nachname</li>
+            <li>Firmenname (falls angegeben)</li>
+            <li>Anschrift</li>
+            <li>E-Mail-Adresse</li>
+            <li>Umsatzsteuernummer (freiwillig)</li>
+            <li>Zahlungsbetrag, Zahlungsmethode, Transaktionsnummer</li>
         </ul>
-
-        <p><strong>Die Anbieter:</strong></p>
-        <ul>
-            <li><strong>Google Gemini:</strong> Google LLC, 1600 Amphitheatre Parkway, Mountain View, CA 94043, USA.
-            </li>
-            <li><strong>OpenAI:</strong> OpenAI, L.L.C., 3180 18th Street, San Francisco, CA 94110, USA.</li>
-        </ul>
-
-        <p><strong>Drittlandtransfers & Sicherheit:</strong></p>
         <p>
-            Beide Anbieter sitzen in den USA. Beide sind unter dem <strong>EU-US Data Privacy Framework (DPF)</strong>
-            zertifiziert, was ein angemessenes Datenschutzniveau gewährleistet.
+            Der Betreiber erhält zur Erstellung gesetzlich vorgeschriebener Rechnungen:
+        </p>
+        <ul>
+            <li>Name</li>
+            <li>Anschrift</li>
+            <li>E-Mail-Adresse</li>
+            <li>(falls angegeben) Umsatzsteuernummer</li>
+            <li>Zahlungsbetrag, Zahlungsdatum</li>
+            <li>Produkt oder Zweck der Zahlung</li>
+        </ul>
+
+        <h3>4.4 Wiederkehrende Zahlungen</h3>
+        <p>
+            Derzeit bietet die App <strong>keine wiederkehrenden Zahlungen</strong> an.<br>
+            Eine zukünftige Implementierung führt zur Anpassung dieser Datenschutzerklärung.
+        </p>
+
+        <h3>4.5 Rechtsgrundlagen</h3>
+        <ul>
+            <li>Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung)</li>
+            <li>Art. 6 Abs. 1 lit. c DSGVO (gesetzliche Aufbewahrungspflichten)</li>
+        </ul>
+
+        <h2>5. Optionale KI-Funktionen (Google, OpenAI, lokale Modelle)</h2>
+        <p>
+            Die KI-Funktionen sind vollständig <strong>optional</strong> und werden nur auf ausdrückliche Aktion des
+            Nutzers aktiviert.
+        </p>
+
+        <h3>5.1 Cloud-KI (Google Gemini, OpenAI)</h3>
+        <p>
+            Bei Nutzung werden folgende Daten direkt von Ihrem Browser an die API des gewählten Anbieters übermittelt:
+        </p>
+        <ul>
+            <li>Base64-kodierte Visitenkartenbilder</li>
+            <li>Textinhalte</li>
+            <li>Parameter (Modellname, Instruktionen)</li>
+        </ul>
+        <p>
+            Die App nutzt das <strong>„Bring Your Own Key"-Prinzip</strong>.<br>
+            Der Betreiber hat <strong>keinen Zugriff</strong> auf Ihre Inhalte oder API-Schlüssel.
+        </p>
+
+        <h4>Anbieter:</h4>
+        <ul>
+            <li>Google LLC, Mountain View, CA, USA</li>
+            <li>OpenAI, L.L.C., San Francisco, CA, USA</li>
+        </ul>
+        <p>
+            Datenverarbeitung erfolgt ggf. in den USA auf Grundlage des EU-US Data Privacy Framework oder
+            Standardvertragsklauseln.
         </p>
 
         <div class="warning-box">
-            <strong>⚠️ ACHTUNG BEI KOSTENLOSEN KEYS & TRAINING</strong>
+            <strong>⚠️ Hinweis zu Modelltraining</strong>
             <p>
-                Bitte beachten Sie die Nutzungsbedingungen der Anbieter. Insbesondere bei kostenlosen Kontingenten
-                ("Free Tier") können Eingaben unter Umständen zum <strong>Training der KI-Modelle</strong> genutzt
-                werden.
+                Bei kostenlosen API-Schlüsseln kann es sein, dass Eingaben zum Training verwendet werden.<br>
+                Senden Sie keine sensiblen oder vertraulichen Informationen.
             </p>
-            <ul>
-                <li>Senden Sie keine sensiblen Daten (Gesundheitsdaten, Passwörter, Geschäftsgeheimnisse) an die
-                    Cloud-API.</li>
-                <li>Für maximale Vertraulichkeit nutzen Sie bitte ein lokales LLM (siehe 5.2).</li>
-            </ul>
         </div>
 
-        <h3>5.2. Lokale LLMs (Bring Your Own Model)</h3>
+        <h4>Rechtsgrundlage</h4>
         <p>
-            Wenn Sie ein lokales LLM (z.B. via Ollama) konfigurieren, werden Ihre Daten nicht an externe Server
-            gesendet. Die Verarbeitung erfolgt ausschließlich innerhalb Ihres Netzwerks (localhost). Sie sind selbst für
-            die sichere Konfiguration Ihres lokalen Servers verantwortlich.
+            Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
         </p>
 
-        <h3>5.3. Google Kontakte Integration (Google People API)</h3>
+        <h3>5.2 Lokale KI-Modelle</h3>
         <p>
-            Die Anwendung bietet die Möglichkeit, Ihre Google Kontakte zu synchronisieren, zu durchsuchen und zu
-            bearbeiten.
+            Wenn der Nutzer ein lokales LLM (z. B. über Ollama) verwendet, erfolgt die Verarbeitung ausschließlich lokal
+            oder im lokalen Netzwerk.
         </p>
-        <ul>
-            <li><strong>Datenzugriff:</strong> Die App fordert Zugriff auf Ihre Kontakte (Lesen und Schreiben) über die
-                Google People API an. Dies umfasst Namen, E-Mail-Adressen, Telefonnummern, Adressen, Fotos und
-                Organisationsdaten.</li>
-            <li><strong>Verwendung:</strong> Die Daten werden ausschließlich verwendet, um sie Ihnen in der App
-                anzuzeigen, durchsuchbar zu machen und von Ihnen gewünschte Änderungen (z.B. neue Kontakte) zurück an
-                Google zu senden.</li>
-            <li><strong>Speicherung:</strong> Die Daten werden temporär in Ihrem Browser (IndexedDB)
-                zwischengespeichert, um die Performance zu verbessern und Offline-Zugriff zu ermöglichen. Es erfolgt
-                <strong>keine Übertragung an unsere Server</strong> oder Dritte (außer Google selbst).
-            </li>
-            <li><strong>Cookies & Login:</strong> Wenn Sie sich mit Ihrem Google-Konto verbinden, werden von Google
-                Cookies gesetzt, um den Anmeldevorgang zu ermöglichen und Ihre Sitzung zu verwalten. Dies ist technisch
-                notwendig und erfolgt direkt auf den Servern von Google (Google-Domain), nicht durch unseren
-                Programmcode.</li>
-            <li><strong>Limited Use Policy:</strong> Die Nutzung und Weitergabe von Informationen, die von Google APIs
-                empfangen werden, an andere Apps erfolgt unter Einhaltung der <a
-                    href="https://developers.google.com/terms/api-services-user-data-policy#additional_requirements_for_specific_api_scopes"
-                    target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>, einschließlich
-                der "Limited Use"-Anforderungen.</li>
-        </ul>
-
-        <h2>6. Einbindung von Diensten und Bibliotheken</h2>
         <p>
-            Um die Datensicherheit zu maximieren:
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. f DSGVO (Interesse des Nutzers an lokaler Verarbeitung)
+        </p>
+
+        <h2>6. Google Kontakte Integration (Google People API)</h2>
+        <p>
+            Die Nutzung dieser Funktion ist optional.
+        </p>
+
+        <h3>6.1 Umfang der Verarbeitung</h3>
+        <p>
+            Bei Aktivierung verarbeitet Google u. a.:
         </p>
         <ul>
-            <li><strong>Google Fonts:</strong> Schriftarten sind lokal gespeichert. Keine Verbindung zu Google-Servern.
-            </li>
-            <li><strong>Keine Tracker:</strong> Wir setzen keine Analyse-Tools (wie Google Analytics) oder Werbe-Tracker
-                ein.</li>
+            <li>Namen, Telefonnummern, E-Mail-Adressen</li>
+            <li>Adressen, Fotos</li>
+            <li>Organisationsangaben</li>
+            <li>Kontaktbilder</li>
+            <li>Notizen</li>
         </ul>
 
-        <h2>7. Ihre Rechte</h2>
+        <h3>6.2 Token-Speicherung</h3>
         <p>
-            Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung.
+            Der OAuth-Access-Token wird lokal im Browser gespeichert.<br>
+            Es wird <strong>kein Refresh Token</strong> gespeichert.
+        </p>
+        <p>
+            Google kann eigene Cookies zur Verwaltung der Sitzung setzen; diese werden nicht durch die App erzeugt.
+        </p>
+
+        <h3>6.3 Zwischenspeicherung</h3>
+        <p>
+            Ihre Google-Kontakte werden zur Anzeige und für die Offline-Nutzung temporär lokal gespeichert
+            (IndexedDB).<br>
+            Es findet <strong>keine Übertragung an Server des Betreibers</strong> statt.
+        </p>
+
+        <h3>6.4 Rechtsgrundlage</h3>
+        <p>
+            Art. 6 Abs. 1 lit. a DSGVO (Einwilligung)
+        </p>
+
+        <h2>7. Import- und Exportfunktionen</h2>
+        <p>
+            Die App ermöglicht Exporte in folgenden Formaten:
         </p>
         <ul>
-            <li><strong>Besonderheit bei Auskunft:</strong> Da wir keine Benutzer- oder Inhaltsdaten auf unseren Servern
-                speichern (siehe Punkt 2), können wir keine Auskunft über Ihre lokal im Browser gespeicherten Daten
-                geben.</li>
-            <li><strong>Datenlöschung:</strong> Sie können Ihre lokalen Daten jederzeit löschen, indem Sie in der App
-                "Alle Daten löschen" wählen oder Ihren Browser-Cache leeren.</li>
-            <li><strong>Widerruf:</strong> Entfernen Sie Ihren API-Key aus den Einstellungen, um die Nutzung der
-                KI-Schnittstellen technisch zu unterbinden.</li>
+            <li>vCard (.vcf)</li>
+            <li>CSV</li>
+            <li>ZIP (vCards + Bilder)</li>
+            <li>JSON (vollständige Backups inkl. Base64-Bilder)</li>
+            <li>JSON für Trainingszwecke (Test Cases)</li>
+        </ul>
+        <p>
+            Exporte werden ausschließlich lokal erzeugt und gespeichert:
+        </p>
+        <ul>
+            <li>als Datei-Download</li>
+            <li>oder über die Web Share API an vom Nutzer gewählte Anwendungen</li>
+        </ul>
+        <p>
+            Keine Speicherung durch den Betreiber.
+        </p>
+        <p>
+            <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO
+        </p>
+
+        <h2>8. Fehlerbehandlung und Logging</h2>
+        <p>
+            Die App verwendet keinerlei externes Fehlertracking.<br>
+            Verwendet werden ausschließlich:
+        </p>
+        <ul>
+            <li>lokale Browser-Logs (console.log / console.error)</li>
+            <li>UI-Benachrichtigungen (Toast-Notifications)</li>
+        </ul>
+        <p>
+            Es erfolgt <strong>keine Übertragung</strong> von Fehlerdaten an den Betreiber.
+        </p>
+
+        <h2>9. Ihre Rechte</h2>
+        <p>
+            Sie haben folgende Rechte: Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+            Datenübertragbarkeit, Widerruf von Einwilligungen sowie Beschwerde bei einer Aufsichtsbehörde.
+        </p>
+
+        <h3>9.1 Einschränkungen aufgrund der Local-First-Architektur</h3>
+        <p>
+            Da der Betreiber <strong>keine personenbezogenen Daten auf eigenen Servern speichert</strong>, können
+            Auskunfts-, Lösch- oder Berichtigungsanfragen sich ausschließlich auf Daten beziehen, die der Betreiber
+            tatsächlich verarbeitet. Dies betrifft:
+        </p>
+        <ul>
+            <li>Rechnungs- und Zahlungsdaten, die über Stripe verarbeitet werden.</li>
         </ul>
 
-        <h2>8. Haftungsausschluss & Eigenverantwortung</h2>
-        <div class="info-box">
-            <p>Diese Anwendung ist eine reine Frontend-Applikation.</p>
-            <ul>
-                <li><strong>Datenverlust:</strong> Es findet keine automatische Cloud-Synchronisation statt. Sie sind
-                    allein verantwortlich für Backups Ihrer Daten (nutzen Sie hierfür die "Backup & Restore" Funktion in
-                    der Historie). Bei Geräteverlust oder Löschen des Browser-Caches sind die Daten unwiderruflich
-                    verloren.</li>
-                <li><strong>Sicherheit:</strong> Sie tragen die volle Verantwortung für die Sicherheit Ihrer
-                    API-Schlüssel und die Geheimhaltung Ihrer generierten Lizenzschlüssel.</li>
-            </ul>
-        </div>
+        <h3>9.2 Keine Auskunft über Google-Daten</h3>
+        <p>
+            Wenn Sie sich über Google anmelden oder die Google Contacts-Funktion verwenden:
+        </p>
+        <ul>
+            <li>erfolgt die Authentifizierung direkt bei Google</li>
+            <li><em>kontakte.me</em> erhält keinen Zugriff auf Ihr Google-Konto</li>
+            <li>lokal gespeicherte Kontaktdaten können nur von Ihnen selbst gelöscht werden</li>
+        </ul>
+        <p>
+            Daher gilt:
+        </p>
+        <blockquote>
+            Der Betreiber kann keine Auskunft, Löschung oder Berichtigung von Daten in Ihrem Google-Konto vornehmen.<br>
+            Diese Rechte müssen direkt gegenüber Google ausgeübt werden.
+        </blockquote>
 
-        <div class="info-box">
-            Stand:
-            <script>document.write(new Date().getMonth() + 1 + "/" + new Date().getFullYear())</script>.
-            Änderungen vorbehalten.
-        </div>
+        <h3>9.3 Lokal gespeicherte Daten</h3>
+        <p>
+            Alle lokal im Browser gespeicherten Daten können nur vom Nutzer selbst gelöscht werden, z. B. durch:
+        </p>
+        <ul>
+            <li>Nutzung der „Alle Daten löschen"-Funktion</li>
+            <li>Löschen des Browser-Speichers</li>
+        </ul>
+
+        <h2>10. Eigenverantwortung des Nutzers</h2>
+        <p>
+            Der Nutzer ist verantwortlich für:
+        </p>
+        <ul>
+            <li>Backups seiner lokalen Daten</li>
+            <li>sichere Aufbewahrung seiner API-Schlüssel</li>
+            <li>Umgang mit der Web Share API</li>
+            <li>Datenschutz beim Import/Export von Kontakten</li>
+            <li>Risiken durch Geräteverlust oder Browser-Löschung</li>
+        </ul>
+
+        <h2>11. Kommunikation über GitHub</h2>
+        <p>
+            Für Feedback und Fehlermeldungen können Nutzer GitHub Issues nutzen.<br>
+            Dabei verarbeitet GitHub u. a.:
+        </p>
+        <ul>
+            <li>GitHub-Benutzername</li>
+            <li>optional hinterlegte E-Mail-Adresse</li>
+            <li>Inhalte des Issue-Textes</li>
+        </ul>
+        <p>
+            Es gelten die <a href="https://docs.github.com/de/site-policy/privacy-policies" target="_blank"
+                rel="noopener">Datenschutzrichtlinien von GitHub</a>.
+        </p>
+
+        <h2>12. Änderungen dieser Datenschutzerklärung</h2>
+        <p>
+            Der Betreiber kann diese Datenschutzerklärung anpassen.<br>
+            Die jeweils aktuelle Fassung ist unter:<br>
+            <a href="https://kontakte.me/datenschutz.html">https://kontakte.me/datenschutz.html</a> abrufbar.
+        </p>
 
     </div>
 
