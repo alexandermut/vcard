@@ -47,6 +47,7 @@ export interface HistoryItem {
   keywords?: string[]; // For search indexing
   googleResourceName?: string; // Linked Google Contact ID
   debugAnalysis?: string; // JSON string of regex analysis for training
+  ocrRawText?: string; // ✅ NEW: Original OCR text from Tesseract for re-parsing
 }
 
 export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';

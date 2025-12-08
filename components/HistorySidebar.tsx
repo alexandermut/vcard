@@ -250,6 +250,8 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   // ✅ NEW: Selection Mode State
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const toggleSelection = (id: string) => {
     const newSelected = new Set(selectedIds);
@@ -261,11 +263,16 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
     setSelectedIds(newSelected);
   };
 
-  const handleSelectAll = () => {
-    if (selectedIds.size === history.length) {
+  const handleSelectAll = async () => {
+    if (selectedIds.size === historyCount) {
+      // Deselect all
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(history.map(h => h.id)));
+      // Load ALL items from DB to select them
+      const db = await import('../utils/db');
+      const allItems = await db.getHistory();
+      setSelectedIds(new Set(allItems.map(h => h.id)));
+      toast.info(`Alle ${allItems.length} Einträge ausgewählt`);
     }
   };
 
@@ -619,9 +626,9 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
             {isSelectionMode ? (
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-sm text-slate-600 dark:text-slate-400 px-1">
-                  <span>{selectedIds.size} ausgewählt</span>
+                  <span>{selectedIds.size} von {historyCount} ausgewählt</span>
                   <button onClick={handleSelectAll} className="text-blue-600 hover:underline">
-                    {selectedIds.size === history.length ? 'Keine' : 'Alle'}
+                    {selectedIds.size === historyCount ? 'Keine' : 'Alle auswählen'}
                   </button>
                 </div>
                 <button
@@ -693,18 +700,56 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                   <div className="text-lg">✨</div>
                   {selectedIds.size > 0 ? `${selectedIds.size} Verbessern` : 'Verbessern'}
                 </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`${selectedIds.size} Einträge wirklich löschen?`)) {
-                      selectedIds.forEach(id => onDelete(id));
-                      setSelectedIds(new Set());
-                    }
-                  }}
-                  disabled={selectedIds.size === 0}
-                  className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <Trash2 size={14} /> Löschen
-                </button>
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setShowDeleteConfirm(true);
+                    }}
+                    disabled={selectedIds.size === 0}
+                    className="w-full py-2 px-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Trash2 size={14} /> {selectedIds.size > 0 ? `${selectedIds.size} Löschen` : 'Löschen'}
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-center text-red-600 dark:text-red-400 font-medium">
+                      {selectedIds.size} Einträge wirklich löschen?
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDeleteConfirm(false);
+                        }}
+                        className="py-2 px-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          console.log('[History] Deleting', selectedIds.size, 'items');
+                          const idsToDelete = Array.from(selectedIds);
+
+                          for (const id of idsToDelete) {
+                            await onDelete(id);
+                          }
+
+                          setSelectedIds(new Set());
+                          setIsSelectionMode(false);
+                          setShowDeleteConfirm(false);
+                          toast.success(`${idsToDelete.length} Einträge gelöscht`);
+                          console.log('[History] Bulk delete completed');
+                        }}
+                        className="py-2 px-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+                      >
+                        Jetzt Löschen
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -764,14 +809,46 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                     <span className="truncate">{t.restoreBackup || "Restore"}</span>
                   </button>
 
-                  <button
-                    onClick={() => { if (window.confirm(t.confirmClear)) onClear(); }}
-                    className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
-                    title={t.clearHistory}
-                  >
-                    <Trash2 size={14} />
-                    <span className="truncate">{t.clearHistory}</span>
-                  </button>
+                  {!showClearConfirm ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowClearConfirm(true);
+                      }}
+                      className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 py-2 rounded-lg text-xs transition-colors"
+                      title={t.clearHistory}
+                    >
+                      <Trash2 size={14} />
+                      <span className="truncate">{t.clearHistory}</span>
+                    </button>
+                  ) : (
+                    <div className="col-span-2 space-y-2">
+                      <p className="text-sm text-center text-red-600 dark:text-red-400 font-medium">
+                        Alle {historyCount} Einträge wirklich löschen?
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowClearConfirm(false);
+                          }}
+                          className="py-2 px-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                        >
+                          Abbrechen
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onClear();
+                            setShowClearConfirm(false);
+                          }}
+                          className="py-2 px-3 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors"
+                        >
+                          Alle löschen
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}

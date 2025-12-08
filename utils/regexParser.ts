@@ -132,7 +132,9 @@ const consumeUrls = (lines: Line[], data: ParserData) => {
   const re_www = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?:\/[^\s]*)?/gi;
 
   lines.forEach(line => {
-    if (line.isConsumed && line.type !== 'EMAIL') return;
+    // ✅ FIX: Skip EMAIL lines completely to prevent extracting URLs from email usernames
+    // Email usernames like "info.company@example.com" could be misidentified as "info.company" URL
+    if (line.isConsumed) return;
 
     const matches = line.clean.match(re_www);
     if (matches) {

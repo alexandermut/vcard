@@ -100,7 +100,7 @@ const App: React.FC = () => {
     lang,
     llmConfig,
     ocrMethod,
-    async (vcard, images, mode, debugAnalysis) => {
+    async (vcard, images, mode, debugAnalysis, jobOcrText) => {  // ✅ Added jobOcrText parameter
       console.log('[ScanQueue] Job completed, preparing to save', {
         vcardLength: vcard?.length,
         imageCount: images?.length,
@@ -142,9 +142,12 @@ const App: React.FC = () => {
       setCurrentImages(images);
 
       // Auto-save to history on successful scan
-      console.log('[ScanQueue] Saving to history...');
+      console.log('[ScanQueue] Saving to history...', {
+        hasOcrRawText: !!jobOcrText,
+        ocrLength: jobOcrText?.length
+      });
       try {
-        const result = await addToHistory(finalVCard, undefined, images, mode, debugAnalysis);
+        const result = await addToHistory(finalVCard, undefined, images, mode, debugAnalysis, jobOcrText);
         console.log('[ScanQueue] Save result:', result);
 
         if (result.status === 'saved') {
@@ -185,6 +188,10 @@ const App: React.FC = () => {
     } else {
       setCurrentImages(undefined);
     }
+
+    // ✅ NEW: Populate OCR/Tesseract tab with original OCR text for re-parsing
+    // This allows users to edit and re-parse existing contacts
+    setOcrRawText(item.ocrRawText || item.vcard);  // Fallback to vCard if no OCR text saved
 
     setCurrentHistoryId(item.id);
     setIsHistoryOpen(false);
@@ -448,7 +455,14 @@ const App: React.FC = () => {
 
   // ...
 
-  const addToHistory = useCallback(async (str: string, parsed?: any, scanImages?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string): Promise<{ status: 'saved' | 'duplicate' | 'error', savedVCard?: string }> => {
+  const addToHistory = useCallback(async (
+    str: string,
+    parsed?: any,
+    scanImages?: string[],
+    mode?: 'vision' | 'hybrid',
+    debugAnalysis?: string,
+    ocrRawText?: string  // ✅ NEW: OCR raw text parameter
+  ): Promise<{ status: 'saved' | 'duplicate' | 'error', savedVCard?: string }> => {
     console.log("addToHistory called", { strLength: str?.length, hasParsed: !!parsed, images: scanImages?.length, mode });
 
     const p = parsed || parseVCardString(str);
@@ -541,7 +555,8 @@ const App: React.FC = () => {
           org: mergedData.org || oldItem.org,
           vcard: mergedString,
           images: mergedImages,
-          debugAnalysis: debugAnalysis // Update analysis if new scan
+          debugAnalysis: debugAnalysis, // Update analysis if new scan
+          ocrRawText: ocrRawText || oldItem.ocrRawText  // ✅ NEW: Preserve or update OCR text
         };
       } else {
         // Fallback
@@ -552,7 +567,8 @@ const App: React.FC = () => {
           org: newData.org || oldItem.org,
           vcard: vcardToSave,
           images: mergedImages,
-          debugAnalysis: debugAnalysis
+          debugAnalysis: debugAnalysis,
+          ocrRawText: ocrRawText || oldItem.ocrRawText  // ✅ NEW: Preserve or update OCR text
         };
       }
     } else {
@@ -564,7 +580,8 @@ const App: React.FC = () => {
         org: newData.org,
         vcard: vcardToSave,
         images: scanImages,
-        debugAnalysis: debugAnalysis
+        debugAnalysis: debugAnalysis,
+        ocrRawText: ocrRawText  // ✅ NEW: Save OCR text
       };
     }
 
@@ -1296,10 +1313,18 @@ const App: React.FC = () => {
           setHistoryCount(count);
         }}
         onClear={async () => {
-          await clearHistory();
-          setHistory([]);
-          setHistoryCount(0);
-          setHasMoreHistory(false);
+          console.log('[History] Clearing history...');
+          try {
+            await clearHistory();
+            setHistory([]);
+            setHistoryCount(0);
+            setHasMoreHistory(false);
+            toast.success('Verlauf gelöscht');
+            console.log('[History] History cleared successfully');
+          } catch (err) {
+            console.error('[History] Failed to clear:', err);
+            toast.error('Fehler beim Löschen: ' + (err as Error).message);
+          }
         }}
         onSearch={handleSearchHistory}
         onRestore={handleRestoreBackup}

@@ -30,8 +30,8 @@ export const useScanQueue = (
   lang: Language,
   llmConfig: LLMConfig,
   ocrMethod: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training',
-  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string) => Promise<void> | void,
-  onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent
+  onJobComplete: (vcard: string, images?: string[], mode?: 'vision' | 'hybrid', debugAnalysis?: string, ocrRawText?: string) => Promise<void> | void,
+  onOCRRawText?: (rawText: string) => void // Callback to pass raw OCR text to parent (for UI preview)
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
 
@@ -142,6 +142,7 @@ export const useScanQueue = (
 
         let vcard: string;
         let analysisResult: string | undefined = undefined;
+        let jobOcrText: string | undefined = undefined;  // ✅ NEW: Track OCR text for this specific job
 
         // OCR Method Selection Logic
         if (ocrMethod === 'regex-training') {
@@ -149,6 +150,7 @@ export const useScanQueue = (
 
           // 1. Run Tesseract (Offline) for Baseline
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          jobOcrText = tesseractResult.text;  // ✅ Store OCR text
           const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
             ? parseSpatialToVCard(tesseractResult.lines)
             : parseImpressumToVCard(tesseractResult.text);
@@ -176,6 +178,7 @@ export const useScanQueue = (
           // Tesseract Only (Offline)
           console.log('[OCR] Mode: Tesseract Only');
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser if lines are available, otherwise fallback
           if (tesseractResult.lines && tesseractResult.lines.length > 0) {
@@ -209,6 +212,7 @@ export const useScanQueue = (
           const [tesseractRes, geminiRes] = await Promise.allSettled([
             (async () => {
               const result = await scanWithTesseract(rawImages[0], lang, true);
+              jobOcrText = result.text; // Set jobOcrText here for hybrid mode
               // Use Spatial Parser
               const vcard = (result.lines && result.lines.length > 0)
                 ? parseSpatialToVCard(result.lines)
@@ -253,6 +257,7 @@ export const useScanQueue = (
 
           // 1. Always run Tesseract first (offline)
           const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser
           const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
@@ -295,7 +300,7 @@ export const useScanQueue = (
         // Safety timeout for onJobComplete (saving)
         const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));
         await Promise.race([
-          onJobComplete(vcard, rawImages, job.mode, analysisResult),
+          onJobComplete(vcard, rawImages, job.mode, analysisResult, jobOcrText),  // ✅ Pass OCR text
           saveTimeout
         ]);
 
