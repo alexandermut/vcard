@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:wasm && vite build",
     "build:wasm": "cd vcard-wasm && wasm-pack build --target web --out-dir ../src/wasm",
     "preview": "vite preview",
     "test": "vitest"
