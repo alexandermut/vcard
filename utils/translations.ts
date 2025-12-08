@@ -156,6 +156,7 @@ export const translations = {
     resetConfirm: "Möchten Sie wirklich auf die Musterkarte zurücksetzen?",
     installApp: "App installieren",
     exportSuccess: "Export erfolgreich!",
+    historyCleared: "Verlauf gelöscht",
 
 
 
@@ -480,5 +481,6 @@ export const translations = {
     resetConfirm: "Do you really want to reset to the sample card?",
     installApp: "Install App",
     exportSuccess: "Export successful!",
+    historyCleared: "History cleared",
   }
 };

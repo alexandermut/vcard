@@ -80,8 +80,6 @@ const App: React.FC = () => {
   const [ocrRawText, setOcrRawText] = useState<string | undefined>(undefined); // Raw OCR text from Tesseract for parser field
   const [currentDebugAnalysis, setCurrentDebugAnalysis] = useState<string | undefined>(undefined); // Regex analysis JSON
 
-
-
   // Hooks
   const {
     apiKey,
@@ -92,6 +90,33 @@ const App: React.FC = () => {
     getKeyToUse,
     hasSystemKey
   } = useLLMConfig();
+
+  // --- RUST WASM POC ---
+  const wasmLoaded = React.useRef(false);
+  const wasmModule = React.useRef<any>(null); // 🦀 Store WASM module
+
+  useEffect(() => {
+    if (wasmLoaded.current) return; // Prevent double-fire in StrictMode
+
+    const loadWasm = async () => {
+      try {
+        console.log("crab 🦀 Loading Rust WASM...");
+        // @ts-ignore
+        const wasm = await import('./src/wasm/vcard_wasm.js');
+        await wasm.default();
+        wasmModule.current = wasm; // Store for global use
+        wasmLoaded.current = true;
+
+        console.log("crab 🦀 Rust WASM Loaded!");
+        // Silent startup test
+        // const input = "Hello World";
+        // wasm.rust_clean_string(input); 
+      } catch (e) {
+        console.error("crab 🦀 Failed to load WASM:", e);
+      }
+    };
+    loadWasm();
+  }, []);
 
 
   // Scan Queue (Batch Processing with auto-retry)
@@ -121,24 +146,22 @@ const App: React.FC = () => {
           const enrichPromise = new Promise<VCardData | null>((resolve) => {
             enrichAddress(parsed.data).then(resolve).catch(() => resolve(null));
           });
-          const timeoutPromise = new Promise<null>((resolve) =>
-            setTimeout(() => resolve(null), 5000)
-          );
 
-          const enriched = await Promise.race([enrichPromise, timeoutPromise]);
+          const enrichedData = await Promise.race([
+            enrichPromise,
+            new Promise<null>((res) => setTimeout(() => res(null), 2000)) // 2s Timeout
+          ]) as VCardData | null;
 
-          if (enriched) {
-            finalVCard = generateVCardFromData(enriched);
-            console.log('[ScanQueue] Address enriched successfully');
-          } else {
-            console.warn('[ScanQueue] Address enrichment timed out or failed, using original vCard');
+          if (enrichedData) {
+            console.log("Adding enriched address data to vCard...");
+            finalVCard = generateVCardFromData(enrichedData);
+            setVcardString(finalVCard); // Update Editor with enriched data
+            toast.success("Adresse automatisch korrigiert ✨");
           }
-        } catch (enrichError) {
-          console.warn('[ScanQueue] Address enrichment failed:', enrichError);
+        } catch (e) {
+          console.warn("Address enrichment failed", e);
         }
       }
-
-      setVcardString(finalVCard);
       setCurrentImages(images);
 
       // Auto-save to history on successful scan
@@ -337,6 +360,33 @@ const App: React.FC = () => {
   };
 
   const handleSearchHistory = async (query: string) => {
+    // 🦀 RUST FAST SEARCH (Default)
+    if (wasmModule.current && query.length > 2) {
+      try {
+        const allItems = await getHistory();
+
+        // Create lookup map to preserve Blobs/Functions that are lost in JSON
+        const itemMap = new Map(allItems.map(i => [i.id, i]));
+
+        // Send to Rust (Blobs will become {} in JSON, but that's fine for searching text)
+        const json = JSON.stringify(allItems);
+        const resultJson = wasmModule.current.rust_fuzzy_search(json, query);
+        const resultItems: HistoryItem[] = JSON.parse(resultJson); // These have lost their Blobs!
+
+        // Re-hydrate with original items
+        const results = resultItems
+          .map(r => itemMap.get(r.id)) // Get original with Blob
+          .filter((i): i is HistoryItem => !!i); // Filter out undefined
+
+        console.log(`crab 🦀 Fuzzy Search: '${query}' -> ${results.length} results`);
+        setHistory(results);
+        setHasMoreHistory(false);
+        return;
+      } catch (e) {
+        console.error("Rust search failed, falling back to JS", e);
+      }
+    }
+
     if (!query.trim()) {
       // Reset to normal paged view
       const items = await getHistoryPaged(HISTORY_LIMIT, undefined, true);
@@ -345,9 +395,10 @@ const App: React.FC = () => {
       return;
     }
 
+    // Fallback JS Search
     const results = await searchHistory(query);
     setHistory(results);
-    setHasMoreHistory(false); // Search results are not paginated for now
+    setHasMoreHistory(false);
   };
 
   const handleDrop = useCallback(async (e: React.DragEvent) => {
@@ -1197,15 +1248,6 @@ const App: React.FC = () => {
         setConcurrentScans={(value) => setCustomConfig({ concurrentScans: value })}
       />
 
-      <BatchUploadSidebar
-        isOpen={isBatchUploadOpen}
-        onClose={() => setIsBatchUploadOpen(false)}
-        onAddJobs={handleBatchUploadFiles}
-        queue={queue}
-        onRemoveJob={removeJob}
-        lang={lang}
-      />
-
       <ScanSidebar
         isOpen={isScanOpen}
         onClose={() => {
@@ -1299,7 +1341,7 @@ const App: React.FC = () => {
         onLoadMore={handleLoadMoreHistory}
         onLoad={handleLoadHistoryItem}
         onUpdateHistory={async () => {
-          const items = await getHistoryPaged(history.length); // Reload current count
+          const items = await getHistoryPaged(history.length >= HISTORY_LIMIT ? history.length : HISTORY_LIMIT, undefined, true);
           const count = await countHistory();
           setHistory(items);
           setHistoryCount(count);
@@ -1307,29 +1349,21 @@ const App: React.FC = () => {
         onBulkEnhance={handleBulkEnhance}
         onDelete={async (id) => {
           await deleteHistoryItem(id);
-          const items = await getHistoryPaged(history.length); // Reload current count
+          const items = await getHistoryPaged(history.length >= HISTORY_LIMIT ? history.length : HISTORY_LIMIT, undefined, true);
           const count = await countHistory();
           setHistory(items);
           setHistoryCount(count);
         }}
         onClear={async () => {
-          console.log('[History] Clearing history...');
-          try {
-            await clearHistory();
-            setHistory([]);
-            setHistoryCount(0);
-            setHasMoreHistory(false);
-            toast.success('Verlauf gelöscht');
-            console.log('[History] History cleared successfully');
-          } catch (err) {
-            console.error('[History] Failed to clear:', err);
-            toast.error('Fehler beim Löschen: ' + (err as Error).message);
-          }
+          await clearHistory();
+          setHistory([]);
+          setHistoryCount(0);
+          setHasMoreHistory(false);
+          toast.success(t.historyCleared || 'Verlauf gelöscht');
         }}
         onSearch={handleSearchHistory}
         onRestore={handleRestoreBackup}
         lang={lang}
-
       />
 
 

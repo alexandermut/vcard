@@ -53,7 +53,8 @@ export const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
     llmProvider, setLLMProvider, customBaseUrl, customApiKey, customModel, openaiApiKey, openaiModel, setCustomConfig, onOllamaDefaults,
     streetDbStatus, streetDbProgress, streetDbError, onLoadStreetDb, onImportGoogleContacts,
     onExportCSV, onExportJSON, onExportVCard, onImportCSV, onImportJSON, onImportVCard,
-    onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod, concurrentScans, setConcurrentScans
+    onBackupAll, onRestoreZip, isExporting, ocrMethod, setOcrMethod, concurrentScans, setConcurrentScans,
+    rustMode, setRustMode
 }) => {
     useEscapeKey(onClose, isOpen);
     const [hasSystemKey, setHasSystemKey] = useState(false);

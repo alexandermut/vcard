@@ -413,6 +413,12 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   const getImageURL = React.useCallback((img: string | Blob): string => {
     if (typeof img === 'string') return img;
 
+    // Safety check: The img might be a plain object if JSON.parse destroyed the Blob proto
+    if (!(img instanceof Blob)) {
+      console.warn("Invalid image object passed to getImageURL", img);
+      return '';
+    }
+
     // Create Object URL and track it for cleanup
     const url = URL.createObjectURL(img);
     objectURLsRef.current.add(url);

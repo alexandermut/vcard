@@ -9,8 +9,8 @@ export interface LLMConfig {
     openaiModel: string;
     customBaseUrl: string;
     customApiKey: string;
-    customModel: string;
-    concurrentScans: number; // ✅ NEW: Parallel processing (1-5, default 1)
+    customModel?: string;      // Custom Model Name (for OpenAI/Custom)
+    concurrentScans: number;   // Number of concurrent scans (1-5)
 }
 
 const DEFAULT_CONFIG: LLMConfig = {

@@ -310,6 +310,239 @@ This file tracks the current development status and planned features.
 
 ---
 
+## 📊 Parser Analysis & Improvement Backlog (2024-12-08)
+**Goal:** Address current limitations and enhance parsing accuracy based on comprehensive code review.
+
+### Current Architecture (Baseline)
+**Files Analyzed:**
+- `utils/regexParser.ts` (1,248 lines, 27 functions)
+- `utils/contextInference.ts` (94 lines, proximity scoring)
+- `utils/parserAnchors.ts` (80 lines, legal forms catalog)
+- `utils/anchorDetection.ts` (183 lines, 5 anchor detectors)
+
+**Parser Pipeline:**
+```
+1. Sanitize Text → 2. Detect Anchors → 3. Sequential Extraction:
+   consumeMeta → consumeEmails → consumeUrls → consumePhones →
+   consumeAddress → consumeJobAndTax → consumeCompany →
+   consumeName → consumeNameHeuristic → consumeLeftovers
+```
+
+**Current Strengths:**
+- ✅ Anchor-based validation (PLZ, Area Code, City, Legal Forms)
+- ✅ Proximity scoring for field candidates
+- ✅ Sequential consumption prevents field conflicts
+- ✅ Extensive false positive filtering (40+ blacklist prefixes)
+- ✅ German address parsing with city database
+- ✅ Advanced phone classification (Mobile vs Landline with 5000+ prefixes)
+
+### Critical Issues Identified
+
+#### 1. Race Conditions & State Management 🔴 **HIGH PRIORITY**
+- **Issue:** Email extraction runs on EMAIL-type lines in `consumeUrls()` → Creates website from email username
+- **Root Cause:** Line 135: `if (line.isConsumed && line.type !== 'EMAIL') return;`
+- **Impact:** Email "info.company@example.com" → Generates website "info.company" ❌
+- **Status:** ✅ FIXED (2024-12-08) - Changed to `if (line.isConsumed) return;`
+- **Lesson:** Need strict phase separation - consumed lines must be completely skipped
+
+#### 2. Regex Performance & Complexity 🟡 **MEDIUM PRIORITY**
+- **Issue:** Large regex construction in `consumeUrls()` and `consumePhones()`
+- **Current Implementation:**
+  ```typescript
+  // Line 132: URL regex
+  const re_www = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})(?:\/[^\s]*)?/gi;
+  
+  // Line 332: Mobile regex (generated from 15+ prefixes)
+  const mobilePattern = new RegExp(`^${getMobileRegexPattern()}`);
+  ```
+- **Problem:** 
+  - Nested regex compilation in loops (performance)
+  - Complex backtracking patterns (ReDoS risk already mitigated but could be optimized)
+  - Hard to maintain/debug complex patterns
+- **Recommendation:**
+  - [ ] Pre-compile all regex patterns at module level (const declarations)
+  - [ ] Use Set-based lookups instead of regex where possible (e.g., `Set.has()` for landline prefixes)
+  - [ ] Benchmark: regex vs Set for 5000+ prefix matching
+
+#### 3. Incomplete Address Parsing Logic 🟡 **MEDIUM PRIORITY**
+- **Issue:** Multiple fallback paths create inconsistent results
+- **Current Flow:**
+  1. Try German anchor (PLZ + City)
+  2. Try Anchor Detection (PLZ + City anchors)
+  3. Try US format
+  4. Try generic fallback
+  5. Try street-only with lookahead
+- **Problems:**
+  - No unified scoring - first match wins
+  - Street extraction fragile (line 440: `preZip.length > 3 && !/tel|fax|mail/i.test(preZip)`)
+  - Missing: Apartment/Suite numbers, building names, c/o handling
+  - No validation: Can extract "Tel: 12345 Berlin" as street
+- **Recommendations:**
+  - [ ] Implement address confidence scoring (like phone classification)
+  - [ ] Add address component validation (street must have house number or Postfach)
+  - [ ] Handle multi-line addresses more robustly (currently breaks after 3 lines)
+  - [ ] Add apartment/suite detection (`App.`, `Whg.`, `Zimmer`, `Floor`)
+
+#### 4. Name Extraction Heuristics 🟠 **MEDIUM-HIGH PRIORITY**
+- **Issue:** Multiple competing name extraction strategies without clear priority
+- **Current Strategies:**
+  1. `consumeName()` - Context-based (lines 774-867)
+  2. `consumeNameHeuristic()` - Pattern-based (lines 869-942)
+  3. `consumeLeftovers()` - Fallback (lines 944-978)
+- **Problems:**
+  - **Line 782:** `if (line.isConsumed && line.type !== 'JOB') continue;` - Similar race condition as emails!
+  - **Line 792:** Name parts splitting too simplistic: `${parts[parts.length - 1]};${parts[0]}`
+    - Fails for: "von der Leyen", "Dr. Prof. Max Müller"
+  - **Line 887:** `isName()` function has 200+ lines of heuristics but still misses edge cases
+  - **Line 915:** Complex anchor-based scoring but no threshold validation
+- **Recommendations:**
+  - [ ] **Unified Name Parser:** Consolidate 3 strategies into weighted scoring system
+  - [ ] **Integrate `namefully` library:** Handle complex names (Recommendations on Line 305)
+  - [ ] **Title Extraction:** Separate academic titles from job titles (`Dr.` vs `CEO`)
+  - [ ] **Noble Particles:** Properly handle "von", "van", "de", "du" in N field
+  - [ ] **Confidence Threshold:** Only extract names with >70% confidence
+
+#### 5. Context Inference Underutilized 🟢 **LOW PRIORITY**
+- **Current Implementation:**
+  ```typescript
+  // contextInference.ts Line 58-93
+  export const scoreCandidate = (
+      candidate: TextRange & { type: string },
+      anchors: AnchorMatch[]
+  ): number
+  ```
+- **Issue:** `scoreCandidate()` exists but only used in limited cases
+- **Integration Points:**
+  - ✅ Used: Address validation (implicit in anchor-based detection)
+  - ❌ Missing: Name validation (should use KEYWORD anchors like "Geschäftsführer")
+  - ❌ Missing: Phone validation (should use AREA_CODE anchors more)
+  - ❌ Missing: Company validation (should use LEGAL_FORM anchors)
+- **Recommendations:**
+  - [ ] Apply `scoreCandidate()` to **all** field extractions
+  - [ ] Add penalty scoring (e.g., -0.3 if name contains legal form)
+  - [ ] Implement cross-field reinforcement (e.g., if company found → reduce name confidence on same line)
+
+#### 6. Phone Classification Edge Cases 🟡 **MEDIUM PRIORITY**
+- **Issue:** Complex logic with multiple fallback paths
+- **Current Implementation (Lines 318-408):**
+  ```typescript
+  // 1. Check Mobile (15+ prefixes)
+  if (mobilePattern.test(normalizedForCheck)) { type = 'CELL'; }
+  // 2. Check Landline (5000+ prefixes)
+  else if (germanLandlinePrefixes.some(...)) { type = 'TEL'; }
+  // 3. Fallback: Starts with 0
+  else if (normalizedForCheck.startsWith('0')) { 
+      console.warn(`Unknown phone prefix`); type = 'WORK,VOICE'; 
+  }
+  ```
+- **Problems:**
+  - **Line 338:** `germanLandlinePrefixes.some()` is O(n) lookup on 5000+ items (slow)
+  - **Line 346:** Sherlock Holmes Logic incomplete - only validates if PLZ+City exist
+  - **Line 376:** Fallback `WORK,VOICE` lacks confidence flag for user review
+  - **Missing:** International numbers (+43, +41) classification
+  - **Missing:** Special numbers (0800, 0180x) handling
+- **Recommendations:**
+  - [ ] **Convert prefix arrays to Set for O(1) lookup**
+  - [ ] **Add confidence scores to phone types** (`{ type: 'CELL', confidence: 0.95 }`)
+  - [ ] **Flag unknown prefixes for AI enrichment** (hybrid mode)
+  - [ ] **International Support:** Detect country code and classify accordingly
+  - [ ] **Special Numbers:** Add catalog for toll-free (0800), premium (0900), service (01805)
+
+#### 7. Sequential Consumption Order 🟢 **LOW PRIORITY (Design Decision)**
+- **Current Order:**
+  ```
+  Meta → Emails → URLs → Phones → Address → Job/Tax → Company → Name → Leftovers
+  ```
+- **Observation:** Hard-coded order may not be optimal for all business cards
+- **Example Conflict:**
+  - Business card with company name on first line
+  - `consumeCompany()` runs AFTER `consumeName()`
+  - Name extractor might consume company line if it looks like a name
+- **Recommendation:**
+  - [ ] Implement **two-pass system:**
+    1. **Pass 1:** Extract high-confidence fields (emails, phones, explicit anchors)
+    2. **Pass 2:** Score remaining candidates and assign to highest-confidence field
+  - [ ] **Confidence-based ordering:** Extract highest-confidence field first, then re-evaluate
+
+###8. Missing Features & Enhancements
+
+####  8.1 URL Extraction Limitations
+- **Current:** Basic domain matching, social media detection
+- **Missing:**
+  - [ ] LinkedIn profile username extraction (`linkedin.com/in/USERNAME` → vCard X-SOCIALPROFILE)
+  - [ ] GitHub/GitLab username extraction
+  - [ ] QR code URL parsing (many cards have website as QR)
+  - [ ] Validate domain is reachable (optional, for data quality)
+
+#### 8.2 Email Domain Intelligence
+- **Current:** Generic provider detection (gmail, web.de)
+- **Enhancement Ideas:**
+  - [ ] **Domain = Company Hint:** If email is `max@techcorp.de`, suggest "TechCorp" as company
+  - [ ] **Cross-validate:** If company "ACME GmbH" but email `@differentcorp.de` → Flag for review
+  - [ ] **Role-based detection:** `info@`, `kontakt@` likely not personal → Add to company note field
+
+#### 8.3 Job Title Extraction
+- **Current:** Regex-based keyword matching
+- **Missing:**
+  - [ ] **Academic Titles:** Separate `Dr.`, `Prof.`, `Dipl.-Ing.` from job titles
+  - [ ] **Multiple Roles:** Handle "CEO & Founder" → Extract both
+  - [ ] **Language Detection:** English titles ("Chief Technology Officer") vs German ("Geschäftsführer")
+  - [ ] **Seniority Levels:** Detect "Senior", "Junior", "Head of" patterns
+
+#### 8.4 Spatial Analysis Integration
+- **Current:** Bbox available but underutilized
+- **Opportunities:**
+  - [ ] **Top vs Bottom:** Names usually top, contact info bottom
+  - [ ] **Left vs Right:** European cards: left=company, right=contact
+  - [ ] **Clustering:** Group fields by proximity (address block, contact block)
+  - [ ] **Font Size:** Larger text = Name/Company (requires OCR confidence data)
+
+### Implementation Priority Matrix
+
+| Issue | Impact | Effort | Priority | Target |
+|-------|--------|--------|----------|--------|
+| Race Conditions | 🔴 High | Low | **P0** | ✅ DONE |
+| Phone Classification | 🟠 Med-High | Medium | **P1** | Week 1 |
+| Name Extraction | 🟠 Med-High | High | **P1** | Week 2-3 |
+| Address Parsing | 🟡 Medium | Medium | **P2** | Week 4 |
+| Regex Performance | 🟡 Medium | Low | **P2** | Week 1 |
+| Context Inference | 🟢 Low | Medium | **P3** | Week 5 |
+| Spatial Analysis | 🟢 Low | High | **P4** | Future |
+| URL/Email Intelligence | 🟢 Low | Low | **P3** | Week 6 |
+
+### Next Steps
+
+1. **Week 1: Quick Wins**
+   - [x] Fix email→website race condition
+   - [ ] Pre-compile regex patterns
+   - [ ] Convert phone prefix arrays to Sets
+   - [ ] Add confidence scoring to phone types
+
+2. **Week 2-3: Name Parser Overhaul**
+   - [ ] Consolidate 3 name strategies
+   - [ ] Integrate `namefully` library
+   - [ ] Add title separation logic
+   - [ ] Implement confidence thresholds
+
+3. **Week 4: Address Enhancement**
+   - [ ] Unified address scoring
+   - [ ] Multi-line address handling
+   - [ ] Apartment/suite detection
+   - [ ] Address component validation
+
+4. **Week 5: Context Integration**
+   - [ ] Apply `scoreCandidate()` to all fields
+   - [ ] Implement cross-field reinforcement
+   - [ ] Add penalty scoring
+
+5. **Week 6: Polish & Testing**
+   - [ ] URL/Email intelligence
+   - [ ] Comprehensive test suite
+   - [ ] Benchmark performance improvements
+   - [ ] User feedback integration
+
+---
+
 ## Phase 4: Scaling & Performance (20k+ Contacts)
 **Goal:** Ensure smooth operation with large datasets (>20,000 contacts).
 
@@ -434,12 +667,13 @@ This file tracks the current development status and planned features.
 ---
 
 ## 🦀 Future Architecture: Rust & WebAssembly
-**Goal:** Migrate performance-critical and complex logic to Rust (compiled to WebAssembly) for maximum speed, type safety, and stability.
+**Goal:** Migrate performance-critical, memory-intensive, and complex logic to Rust (compiled to WebAssembly) for maximum speed, type safety, and stability.
 
 ### Why Rust?
-- **Performance:** Near-native speed for image processing and parsing.
-- **Safety:** Memory safety and strict type system prevent runtime crashes.
-- **Portability:** Core logic can be shared between Web, Desktop (Tauri), and Server.
+- **Performance:** Near-native speed for image processing, parsing, and O(n²) algorithms.
+- **Safety:** Memory safety and strict type system prevent runtime crashes (e.g., "undefined is not a function").
+- **Efficiency:** Better CPU utilization and lower battery consumption for mobile PWA users.
+- **Portability:** Core logic can be shared between Web (WASM), Desktop (Tauri), and Server (Linux).
 
 ### Hybrid Architecture Concept
 The UI remains in **React/TypeScript** for flexibility and ecosystem access. The "Brain" of the application moves to **Rust/Wasm**.
@@ -450,36 +684,72 @@ graph TD
     Bridge <-->|Structs| Core[Rust Core Logic]
     
     subgraph Rust Core
-        Parser[vCard Parser & Generator]
-        ImgProc[Image Processing (Resize/Crop)]
-        Search[Tantivy Search Engine]
-        NLP[Regex & NLP Logic]
+        Parser[vCard Parser (nom)]
+        ImgProc[Image Ops (image-rs)]
+        Search[Tantivy Search]
+        Graph[Entity Resolution (petgraph)]
+        Crypto[Encryption (ring)]
     end
 ```
 
-### Migration Candidates
+### Migration Candidates & Plan
 
-#### 1. Core Logic (High Priority)
-- **vCard Parser:** Replace `vcardUtils.ts` with a robust Rust parser (using `nom` or custom logic).
-  - *Benefit:* Handles edge cases (RFC 6350) correctly, faster parsing of large files.
-- **Image Processing:** Replace `browser-image-compression` with `image` crate.
-  - *Benefit:* Faster resizing, better quality control, off-main-thread by default.
-- **Regex/NLP:** Move "Intelligent Regex Parser" logic to Rust.
-  - *Benefit:* `regex` crate is extremely fast; complex logic is easier to test and maintain.
+#### 1. Core Logic (High Priority - "The Brain")
+- **vCard Parser & Generator (`nom`):**
+  - **Why:** Regex is brittle. `nom` provides parser combinators for robustness.
+  - **Feature:** Zero-copy parsing, proper handling of RFC 6350 edge cases (folding, escaping, params).
+  - **Target:** Parse 10,000 vCards in < 50ms.
+- **Intelligent Parser Logic:**
+  - **Why:** The current "Email-to-Website" bug was due to mutable state complexity. Rust enforces immutable state by default.
+  - **Feature:** Move `regexParser.ts` logic to a Rust state machine.
 
-#### 2. Search & Storage (Medium Priority)
-- **Search Engine:** Implement `tantivy` (Rust) for full-text search.
-  - *Benefit:* Millisecond search over 100k+ contacts, typo tolerance, complex queries.
-- **Database Layer:** Potential to use SQLite (wasm) or keep IndexedDB but managed via Rust.
+#### 2. Image Processing Pipeline (High Priority - "The Muscle")
+- **Smart Cropping & Deskewing (`imageproc`, `opencv-rust`):**
+  - **Why:** JS Canvas is slow for pixel-manipulation.
+  - **Feature:** Detect document edges, perspective wrap, and binarize (Scanbot-like quality).
+- **Compression & Resize (`image` crate):**
+  - **Why:** `browser-image-compression` is good, but Rust `image` crate offers finer control and SIMD optimizations.
 
-#### 3. UI (Low Priority / Out of Scope)
-- **Keep React:** Porting UI to Yew/Leptos is high effort with diminishing returns for this app type.
+#### 3. Data Intelligence (Medium Priority - "The Logic")
+- **Deduplication & Entity Resolution:**
+  - **Why:** Comparing 20,000 contacts (O(n²)) freezes the UI.
+  - **Feature:** Use blocking-invariant clustering (canopy clustering) or graph-based resolution (`petgraph`) to find duplicates instantly.
+- **Fuzzy Search (`tantivy`):**
+  - **Why:** `Fuse.js` slows down at >10k items. `tantivy` is a Lucene-alternative in Rust.
+  - **Feature:** Millisecond search times, typo-tolerance, and facetting.
 
-### Implementation Steps (Draft)
-1.  **Setup:** Initialize Rust project with `wasm-pack`.
-2.  **Bridge:** Define shared types (TS <-> Rust).
-3.  **Prototype:** Port `clean_number` or simple parser function.
-4.  **Migrate:** Move vCard parser logic incrementally.
+#### 4. Security & IO (Future - "The Vault")
+- **End-to-End Encryption (`ring`, `aes-gcm`):**
+  - **Why:** Secure local backups or "Private Vault" contacts that even we can't read.
+  - **Feature:** Encrypt blobs before storing in IndexedDB.
+- **Massive Export/Import (`csv`, `serde`):**
+  - **Why:** Streaming million-row CSVs without crashing browser memory.
+
+### Implementation Strategy
+
+#### Phase 1: Prototype & Toolchain (Week 1)
+- [ ] Initialize `rust-wasm` crate using `wasm-pack`.
+- [ ] Set up generic `Bridge` for passing JS objects to Rust structs.
+- [ ] **Proof of Concept:** Port `clean_number()` function to Rust and benchmark (JS vs WASM).
+
+#### Phase 2: The "vCard Core" (Months 1-2)
+- [ ] Implement vCard 4.0 Parser using `nom`.
+- [ ] Replace `vcardUtils.ts` with WASM call.
+- [ ] **Goal:** Faster import of .vcf backup files.
+
+#### Phase 3: The "Scan Engine" (Months 3-4)
+- [ ] Create `ImageProcessor` struct in Rust.
+- [ ] Implement "Find Edges" algorithm.
+- [ ] Move critical `detectAnchors` logic to Rust regex engine (`regex` crate is O(n)).
+
+#### Phase 4: The "Super Computer" (Future)
+- [ ] Move Deduplication logic to Rust Thread (Web Worker + WASM).
+- [ ] Implement Vector Search (using `hnsw` crate for embedding capability).
+
+### Technical Stack
+- **Build Tool:** `wasm-pack` (compiles Rust to `.wasm` + JS bindings).
+- **Bridge:** `serde-wasm-bindgen` (low-overhead JSON passing).
+- **Bundler:** `vite-plugin-rsw` or manual `wasm` import.
 
 ---
 
