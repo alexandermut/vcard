@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Phase 10 Verification: Confidence Scoring 🧠</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+            let log = "***** PHASE 10: CONFIDENCE SCORING TEST *****\n\n";
+
+            // Scenario 1: Standard Card (Baseline)
+            const standard_test = JSON.stringify([
+                { text: "Max Mustermann", index: 0, bbox: { x0: 0, y0: 0, x1: 100, y1: 10 }, clean: "Max Mustermann" },
+                { text: "Musterfirma GmbH", index: 1, bbox: { x0: 0, y0: 20, x1: 100, y1: 30 }, clean: "Musterfirma GmbH" },
+                { text: "0170 1234567", index: 2, bbox: { x0: 0, y0: 40, x1: 100, y1: 50 }, clean: "0170 1234567" },
+                { text: "max@muster.de", index: 3, bbox: { x0: 0, y0: 60, x1: 100, y1: 70 }, clean: "max@muster.de" }
+            ]);
+
+            const vcard = rust_parse_vcard(standard_test);
+
+            const has_name = vcard.includes("FN:Max Mustermann") || vcard.includes("FN:Max Mustermann");
+            // Note: My detect_name logic adds candidates. Resolve picks best.
+            // If "Max Mustermann" gives FN Score 0.9, it should win.
+
+            const has_org = vcard.includes("ORG:Musterfirma GmbH");
+            const has_tel = vcard.includes("TEL;TYPE=CELL:01701234567");
+            const has_email = vcard.includes("EMAIL:max@muster.de");
+
+            log += "1. Name Extraction:         " + (has_name ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "2. Org Extraction:          " + (has_org ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "3. Tel Extraction:          " + (has_tel ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "4. Email Extraction:        " + (has_email ? "✅ PASS" : "❌ FAIL") + "\n";
+
+            if (!has_name || !has_org || !has_tel) log += "\nOUTPUT:\n" + vcard + "\n";
+
+            document.getElementById('output').innerText = log;
+        }
+        run();
+    </script>
+</body>
+
+</html>

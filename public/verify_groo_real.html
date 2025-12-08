@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <h1>Verification: Groo Logistics 🚚</h1>
+    <pre id="output">Running...</pre>
+    <script type="module">
+        import init, { rust_parse_vcard } from '/src/wasm/vcard_wasm.js';
+
+        async function run() {
+            await init();
+            let log = "***** TEST GROO LOGISTICS *****\n\n";
+
+            // Data from User
+            const groo = JSON.stringify([
+                { text: "GROO GmbH | CARGO LOGISTICS", index: 0, bbox: { x0: 0, y0: 0, x1: 100, y1: 10 }, clean: "GROO GmbH | CARGO LOGISTICS" },
+                { text: "Randersweide 1", index: 1, bbox: { x0: 0, y0: 10, x1: 100, y1: 20 }, clean: "Randersweide 1" },
+                { text: "21035 Hamburg", index: 2, bbox: { x0: 0, y0: 20, x1: 100, y1: 30 }, clean: "21035 Hamburg" },
+                { text: "", index: 3, bbox: { x0: 0, y0: 30, x1: 100, y1: 30 }, clean: "" },
+                { text: "Namen der Vertretungsberechtigten", index: 4, bbox: { x0: 0, y0: 40, x1: 100, y1: 50 }, clean: "Namen der Vertretungsberechtigten" },
+                { text: "Geschäftsführung: Andreas Groo", index: 5, bbox: { x0: 0, y0: 50, x1: 100, y1: 60 }, clean: "Geschäftsführung: Andreas Groo" },
+                { text: "", index: 6, bbox: { x0: 0, y0: 60, x1: 100, y1: 60 }, clean: "" },
+                { text: "Kontakt:", index: 7, bbox: { x0: 0, y0: 70, x1: 100, y1: 80 }, clean: "Kontakt:" },
+                { text: "Telefon: +49 40 46 89 769 10", index: 8, bbox: { x0: 0, y0: 80, x1: 100, y1: 90 }, clean: "Telefon: +49 40 46 89 769 10" },
+                { text: "E-Mail:   office@groo.de", index: 9, bbox: { x0: 0, y0: 90, x1: 100, y1: 100 }, clean: "E-Mail:   office@groo.de" }
+            ]);
+
+            const vcard = rust_parse_vcard(groo);
+
+            const has_name = vcard.includes("FN:Andreas Groo");
+            const has_org = vcard.includes("ORG:GROO GmbH | CARGO LOGISTICS");
+            const has_city = vcard.includes("Hamburg") && vcard.includes("21035");
+            const has_street = vcard.includes("Randersweide 1");
+            const has_tel = vcard.includes("040468976910"); // Expect clean number
+            const has_email = vcard.includes("email:office@groo.de") || vcard.includes("EMAIL:office@groo.de");
+            const has_title = vcard.includes("TITLE:Geschäftsführung: Andreas Groo") || vcard.includes("TITLE:Geschäftsführung");
+            // Note: My current logic for TITLE detector grabs the whole line if match...
+            // But name detector finding "Context Inline" might claim it?
+            // "Geschäftsführung: Andreas Groo" matches RE_NAME_CONTEXT.
+            // Detect Title puts full line as Title Candidate. Score 0.9.
+            // Detect Name puts "Andreas Groo" as Name Candidate. Score 0.85.
+            // THIS LINE IS AMBIGUOUS!
+            // It has BOTH Title Candidate AND Name Candidate (via split).
+            // Title Candidate Value: "Geschäftsführung: Andreas Groo"
+            // Name Candidate Value: "Andreas Groo"
+            // Scores: Title 0.9 vs Name 0.85?
+            // If Title wins, we lose Name! 🚨
+            // WAIT. Candidates are per field. A line can provide BOTH Title AND Name if we accept multiple winners?
+            // My Resolver logic: "best_candidate = line.candidates.max_by_score".
+            // It only picks ONE winner per line.
+            // So if Title has 0.9 and Name has 0.85, this line becomes a TITLE, and Name is lost.
+
+            log += "1. Name Extraction:         " + (has_name ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "2. Org Extraction:          " + (has_org ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "3. Address (City/Zip):      " + (has_city ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "4. Address (Street):        " + (has_street ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "5. Tel Extraction:          " + (has_tel ? "✅ PASS" : "❌ FAIL") + "\n";
+            log += "6. Email Extraction:        " + (has_email ? "✅ PASS" : "❌ FAIL") + "\n";
+
+            log += "\nOUTPUT:\n" + vcard + "\n";
+
+            document.getElementById('output').innerText = log;
+        }
+        run();
+    </script>
+</body>
+
+</html>
