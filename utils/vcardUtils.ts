@@ -22,7 +22,6 @@ URL;TYPE=MUSIC:https://music.apple.com/de/artist/alexander-mut/1780746079
 URL;TYPE=FACEBOOK:https://www.facebook.com/alexmutalex
 URL;TYPE=XING:https://www.xing.com/profile/Alexander_Mut
 URL;TYPE=TIKTOK:https://tiktok.com/@mutalex
-ADR;POSTAL:;;Butzweilerstrasse 35-39;Koeln;;50829;Deutschland
 ADR;WORK:;;Kamekestrasse 2-8;Koeln;;50672;Deutschland
 ADR;OTHER:;;Bramfelder Strasse 110a;Hamburg;;22305;Deutschland
 END:VCARD`;

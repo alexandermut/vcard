@@ -13,7 +13,7 @@ import { BatchUploadSidebar } from './components/BatchUploadSidebar';
 import { EventModeModal } from './components/EventModeModal';
 import { NotesSidebar } from './components/NotesSidebar';
 import { ChatSidebar } from './components/ChatSidebar';
-import { TrainerSidebar } from './components/TrainerSidebar';
+
 import { ScanSidebar } from './components/ScanSidebar';
 import { QueueIndicator } from './components/QueueIndicator';
 import { QRCodeSidebar } from './components/QRCodeSidebar';
@@ -35,7 +35,7 @@ import { enrichAddress } from './utils/addressEnricher';
 import {
   Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
   MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
-  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2, Microscope
+  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
@@ -67,8 +67,7 @@ const App: React.FC = () => {
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
-  const [isTrainerOpen, setIsTrainerOpen] = useState(false);
-  const [trainingData, setTrainingData] = useState<TestCase[]>([]);
+
 
   const [isDragging, setIsDragging] = useState(false);
   const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
@@ -1410,14 +1409,7 @@ const App: React.FC = () => {
         lang={lang}
       />
 
-      <TrainerSidebar
-        isOpen={isTrainerOpen}
-        onClose={() => setIsTrainerOpen(false)}
-        wasmModule={wasmModule.current}
-        lang={lang}
-        testCases={trainingData}
-        onAddTestCases={(cases) => setTrainingData(prev => [...prev, ...cases])}
-      />
+
 
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
@@ -1450,19 +1442,7 @@ const App: React.FC = () => {
             </button>
 
             {/* 3. Trainer (Benchmark) */}
-            <button
-              onClick={() => setIsTrainerOpen(true)}
-              className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors relative"
-              title="AI Trainer"
-            >
-              <Microscope size={18} />
-              <span className="hidden lg:inline text-sm">Trainer</span>
-              {trainingData.length > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-                  {trainingData.length}
-                </span>
-              )}
-            </button>
+
 
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
 
@@ -1598,7 +1578,7 @@ const App: React.FC = () => {
               debugAnalysis={currentDebugAnalysis}
               ocrMethod={ocrMethod}
               vcardString={vcardString}
-              onAddToTraining={(testCase) => setTrainingData(prev => [...prev, testCase])}
+
             />
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ParsedVCard, VCardData, Language, VCardAddress, HistoryItem, TestCase } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive, FileJson, Microscope } from 'lucide-react';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive, FileJson } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
@@ -23,11 +23,11 @@ interface PreviewCardProps {
   debugAnalysis?: string; // JSON Test Case
   ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'; // OCR Method for training mode check
   vcardString?: string; // Original vCard string to extract raw text
-  onAddToTraining?: (testCase: TestCase) => void;
+
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis, ocrMethod, vcardString, onAddToTraining
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis, ocrMethod, vcardString
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -77,15 +77,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     return null;
   };
 
-  const handleSendToTrainer = () => {
-    const testCase = getRealTestCase();
-    if (testCase && onAddToTraining) {
-      onAddToTraining(testCase);
-      toast.success("Zum Trainer gesendet! 🔬");
-    } else {
-      toast.error("Keine Trainingsdaten verfügbar");
-    }
-  };
+
 
   const handleDownloadAnalysis = () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -314,15 +306,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
           )}
           {(debugAnalysis || ocrMethod === 'regex-training') && (
             <>
-              {onAddToTraining && (
-                <button
-                  onClick={handleSendToTrainer}
-                  className="p-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-100 border border-orange-500/30 transition-colors"
-                  title="An Trainer senden (Lernen)"
-                >
-                  <Microscope size={18} />
-                </button>
-              )}
+
               <button
                 onClick={handleDownloadAnalysis}
                 className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-500/30 transition-colors"
