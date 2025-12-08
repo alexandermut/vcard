@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ParsedVCard, VCardData, Language, VCardAddress, HistoryItem } from '../types';
-import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive, FileJson } from 'lucide-react';
+import { ParsedVCard, VCardData, Language, VCardAddress, HistoryItem, TestCase } from '../types';
+import { User, Building2, Phone, Mail, Globe, MapPin, Award, Send, ExternalLink, Search, Linkedin, Facebook, Instagram, Twitter, Github, Youtube, Music, Mic, Video, Cake, Image as ImageIcon, Save, Download, QrCode, Share2, StickyNote, Tag, Plus, X, Archive, FileJson, Microscope } from 'lucide-react';
 import { generateVCardFromData, generateContactFilename } from '../utils/vcardUtils';
 import { createGoogleContact } from '../services/googleContactsService';
 import { mapVCardToGooglePerson } from '../utils/googleMapper';
@@ -23,10 +23,11 @@ interface PreviewCardProps {
   debugAnalysis?: string; // JSON Test Case
   ocrMethod?: 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'; // OCR Method for training mode check
   vcardString?: string; // Original vCard string to extract raw text
+  onAddToTraining?: (testCase: TestCase) => void;
 }
 
 export const PreviewCard: React.FC<PreviewCardProps> = ({
-  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis, ocrMethod, vcardString
+  parsed, onShowQR, onSocialSearch, onUpdate, onSave, onDownload, onViewNotes, onAIEnhance, lang, images, token, debugAnalysis, ocrMethod, vcardString, onAddToTraining
 }) => {
   const t = translations[lang];
   const [localData, setLocalData] = useState<VCardData>(parsed.data);
@@ -37,6 +38,54 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
   }, [parsed]);
 
   // ... (existing helper functions) ...
+
+  const getRealTestCase = (): TestCase | null => {
+    if (ocrMethod === 'regex-training' && vcardString) {
+      // Generate test case from manually entered text
+      // Extract raw text from vCard
+      const textLines = vcardString
+        .split('\n')
+        .filter(line => !line.startsWith('BEGIN:') && !line.startsWith('END:') && !line.startsWith('VERSION:') && !line.startsWith('REV:'))
+        .map(line => line.replace(/^[A-Z]+[;:].*?:/g, '').trim())
+        .filter(line => line.length > 0)
+        .join('\n');
+
+      return {
+        id: `manual_real_${Date.now()}`,
+        text: textLines || vcardString,
+        expected: {
+          fn: localData.fn || '',
+          n: localData.n || '',
+          org: localData.org || '',
+          title: localData.title || '',
+          tel: localData.tel?.map(t => ({ value: t.value, type: t.type })) || [],
+          email: localData.email?.map(e => ({ value: e.value, type: e.type })) || [],
+          url: localData.url?.map(u => ({ value: u.value, type: u.type })) || [],
+          adr: localData.adr?.map(a => ({
+            value: {
+              street: a.value.street || '',
+              city: a.value.city || '',
+              zip: a.value.zip || '',
+              region: a.value.region || '',
+              country: a.value.country || ''
+            },
+            type: a.type
+          })) || []
+        }
+      };
+    }
+    return null;
+  };
+
+  const handleSendToTrainer = () => {
+    const testCase = getRealTestCase();
+    if (testCase && onAddToTraining) {
+      onAddToTraining(testCase);
+      toast.success("Zum Trainer gesendet! 🔬");
+    } else {
+      toast.error("Keine Trainingsdaten verfügbar");
+    }
+  };
 
   const handleDownloadAnalysis = () => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
@@ -84,6 +133,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 street: a.value.street || '',
                 city: a.value.city || '',
                 zip: a.value.zip || '',
+                region: a.value.region || '',
                 country: a.value.country || ''
               },
               type: a.type
@@ -117,6 +167,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                 street: a.value.street ? 'Hauptstraße 1' : '',
                 city: a.value.city || '', // Keep city for structure
                 zip: a.value.zip || '', // Keep ZIP for validation tests
+                region: a.value.region || '',
                 country: a.value.country || 'Deutschland'
               },
               type: a.type
@@ -262,13 +313,24 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             </button>
           )}
           {(debugAnalysis || ocrMethod === 'regex-training') && (
-            <button
-              onClick={handleDownloadAnalysis}
-              className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-500/30 transition-colors"
-              title="Download Regex Test Case (Debug)"
-            >
-              <FileJson size={18} />
-            </button>
+            <>
+              {onAddToTraining && (
+                <button
+                  onClick={handleSendToTrainer}
+                  className="p-1.5 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 text-orange-100 border border-orange-500/30 transition-colors"
+                  title="An Trainer senden (Lernen)"
+                >
+                  <Microscope size={18} />
+                </button>
+              )}
+              <button
+                onClick={handleDownloadAnalysis}
+                className="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-100 border border-red-500/30 transition-colors"
+                title="Download Regex Test Case (Debug)"
+              >
+                <FileJson size={18} />
+              </button>
+            </>
           )}
           <button
             onClick={onShowQR}
@@ -469,7 +531,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
               const Icon = style.icon;
               return (
                 <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
-                  <a href={u.value} target="_blank" rel="noopener noreferrer" className={`w - 8 h - 8 rounded - full flex items - center justify - center transition - colors shrink - 0 ${style.colorBg} ${style.colorText} hover: opacity - 80 cursor - pointer`}>
+                  <a href={u.value} target="_blank" rel="noopener noreferrer" className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${style.colorBg} ${style.colorText} hover:opacity-80 cursor-pointer`}>
                     <Icon size={16} />
                   </a>
                   <div className="flex-1 overflow-hidden">
@@ -503,7 +565,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
 
               return (
                 <div key={platform} className="flex items-center gap-3 p-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg transition-colors group">
-                  <div className={`w - 8 h - 8 rounded - full flex items - center justify - center transition - colors shrink - 0 opacity - 50 grayscale group - hover: grayscale - 0 group - hover: opacity - 100 ${style.colorBg} ${style.colorText} `}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 opacity-50 grayscale group-hover:grayscale-0 group-hover:opacity-100 ${style.colorBg} ${style.colorText} `}>
                     <Icon size={16} />
                   </div>
                   <div className="flex-1 flex items-center justify-between">

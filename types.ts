@@ -50,6 +50,12 @@ export interface HistoryItem {
   ocrRawText?: string; // ✅ NEW: Original OCR text from Tesseract for re-parsing
 }
 
+export interface TestCase {
+  id: string;
+  text: string;
+  expected: VCardData;
+}
+
 export type ScanStatus = 'pending' | 'processing' | 'completed' | 'error';
 
 export interface ScanJob {

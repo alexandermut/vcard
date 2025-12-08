@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 
 import { parseVCardString, generateVCardFromData, clean_number, generateContactFilename, downloadVCard, DEFAULT_VCARD, getTimestamp } from './utils/vcardUtils';
 import { correctVCard, scanBusinessCard } from './services/aiService';
-import { useLLMConfig } from './hooks/useLLMConfig';
 import { useScanQueue } from './hooks/useScanQueue';
 import { translations } from './utils/translations';
 import { generateCSV, downloadCSV, parseCSV, csvToVCard } from './utils/csvUtils';
@@ -14,6 +13,7 @@ import { BatchUploadSidebar } from './components/BatchUploadSidebar';
 import { EventModeModal } from './components/EventModeModal';
 import { NotesSidebar } from './components/NotesSidebar';
 import { ChatSidebar } from './components/ChatSidebar';
+import { TrainerSidebar } from './components/TrainerSidebar';
 import { ScanSidebar } from './components/ScanSidebar';
 import { QueueIndicator } from './components/QueueIndicator';
 import { QRCodeSidebar } from './components/QRCodeSidebar';
@@ -24,7 +24,8 @@ import { Editor } from './components/Editor';
 import { Logo } from './components/Logo';
 import { PreviewCard } from './components/PreviewCard';
 import { ReloadPrompt } from './components/ReloadPrompt';
-import { HistoryItem, VCardData, Language } from './types';
+import { ParsedVCard, VCardData, Language, HistoryItem, ScanJob, TestCase } from './types';
+import { useLLMConfig, LLMConfig } from './hooks/useLLMConfig';
 import { addHistoryItem, addHistoryItems, getHistory, getHistoryPaged, searchHistory, deleteHistoryItem, clearHistory, migrateFromLocalStorage, migrateBase64ToBlob, migrateKeywords, addNote, getNotes, getHistoryItem, getFailedScans, countHistory, countStreets, getHistoryItemImages } from './utils/db';
 
 import { FailedScansSidebar } from './components/FailedScansSidebar';
@@ -34,7 +35,7 @@ import { enrichAddress } from './utils/addressEnricher';
 import {
   Upload, Camera, Download, RotateCcw, Save, FileText, Settings,
   MessageSquare, X, History, StickyNote, QrCode, AlertTriangle,
-  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2
+  Heart, UserCircle, AppWindow, Contact, Database, HelpCircle, Loader2, Microscope
 } from 'lucide-react';
 import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
@@ -66,6 +67,8 @@ const App: React.FC = () => {
   const [droppedFile, setDroppedFile] = useState<File | null>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isTrainerOpen, setIsTrainerOpen] = useState(false);
+  const [trainingData, setTrainingData] = useState<TestCase[]>([]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [isFailedScansOpen, setIsFailedScansOpen] = useState(false);
@@ -1165,9 +1168,8 @@ const App: React.FC = () => {
     // We need to access setImportProgress. It is defined in App.tsx?
     // Looking at previous context, yes.
 
-    // Wait, the error said "Cannot find name 'setIsImporting'". 
-    // Let's check if setIsImporting exists in App.tsx. 
-    // Let's check the file content or just remove the loading state for now to be safe and use simple alerts/toasts.
+    // Wait, the error said "Cannot find name 'setIsImporting'".
+    // Let's check if setIsImporting exists in App.tsx.
     // OR better: use the existing `setImportProgress` which IS in App.tsx (based on previous edits).
 
     setImportProgress({ current: 0, total: 100, status: 'Backup wird analysiert...' });
@@ -1408,6 +1410,15 @@ const App: React.FC = () => {
         lang={lang}
       />
 
+      <TrainerSidebar
+        isOpen={isTrainerOpen}
+        onClose={() => setIsTrainerOpen(false)}
+        wasmModule={wasmModule.current}
+        lang={lang}
+        testCases={trainingData}
+        onAddTestCases={(cases) => setTrainingData(prev => [...prev, ...cases])}
+      />
+
       <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 fixed top-0 left-0 right-0 z-30 transition-colors duration-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1436,6 +1447,21 @@ const App: React.FC = () => {
             >
               <Upload size={18} />
               <span className="hidden lg:inline text-sm">{t.batchUpload}</span>
+            </button>
+
+            {/* 3. Trainer (Benchmark) */}
+            <button
+              onClick={() => setIsTrainerOpen(true)}
+              className="flex items-center gap-2 bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-orange-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors relative"
+              title="AI Trainer"
+            >
+              <Microscope size={18} />
+              <span className="hidden lg:inline text-sm">Trainer</span>
+              {trainingData.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                  {trainingData.length}
+                </span>
+              )}
             </button>
 
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
@@ -1572,6 +1598,7 @@ const App: React.FC = () => {
               debugAnalysis={currentDebugAnalysis}
               ocrMethod={ocrMethod}
               vcardString={vcardString}
+              onAddToTraining={(testCase) => setTrainingData(prev => [...prev, testCase])}
             />
           </div>
         </div>
