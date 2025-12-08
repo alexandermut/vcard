@@ -51,6 +51,12 @@ export const useScanQueue = (
       status: 'pending',
       mode
     };
+    console.log(`[ScanQueue] Adding job to queue`, {
+      id: newJob.id,
+      imageCount: images.length,
+      mode,
+      imageTypes: images.map(img => typeof img === 'string' ? 'base64' : img.name)
+    });
     setQueue(prev => [...prev, newJob]);
   }, []);
 
@@ -63,9 +69,18 @@ export const useScanQueue = (
     }
 
     const nextJobIndex = queue.findIndex(job => job.status === 'pending');
-    if (nextJobIndex === -1) return;
+    if (nextJobIndex === -1) {
+      console.log('[ScanQueue] No pending jobs in queue');
+      return;
+    }
 
     const job = queue[nextJobIndex];
+    console.log(`[ScanQueue] Starting job ${job.id}`, {
+      position: nextJobIndex + 1,
+      totalInQueue: queue.length,
+      mode: job.mode,
+      imageCount: job.images.length
+    });
 
     // Update status to processing
     setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'processing' } : j));
@@ -275,6 +290,7 @@ export const useScanQueue = (
           timeoutPromise
         ]);
         console.timeEnd(`ocr-scan-${job.id}`);
+        console.log(`[ScanQueue] OCR completed for job ${job.id}, calling onJobComplete...`);
 
         // Safety timeout for onJobComplete (saving)
         const saveTimeout = new Promise<void>((_, reject) => setTimeout(() => reject(new Error("Save operation timed out")), 10000));
@@ -283,10 +299,11 @@ export const useScanQueue = (
           saveTimeout
         ]);
 
+        console.log(`[ScanQueue] ✅ Job ${job.id} completed successfully and removed from queue`);
         setQueue(prev => prev.filter(j => j.id !== job.id));
 
       } catch (error: any) {
-        console.error("Job failed", error);
+        console.error(`[ScanQueue] ❌ Job ${job.id} failed:`, error);
         if (error.message && error.message.includes("Timeout")) {
           const currentRetries = job.retryCount || 0;
           if (currentRetries < 2) {

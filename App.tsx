@@ -101,6 +101,13 @@ const App: React.FC = () => {
     llmConfig,
     ocrMethod,
     async (vcard, images, mode, debugAnalysis) => {
+      console.log('[ScanQueue] Job completed, preparing to save', {
+        vcardLength: vcard?.length,
+        imageCount: images?.length,
+        mode,
+        hasDebugAnalysis: !!debugAnalysis
+      });
+
       setVcardString(vcard);
       setCurrentImages(images);
       setCurrentDebugAnalysis(debugAnalysis);
@@ -122,11 +129,12 @@ const App: React.FC = () => {
 
           if (enriched) {
             finalVCard = generateVCardFromData(enriched);
+            console.log('[ScanQueue] Address enriched successfully');
           } else {
-            console.warn('Address enrichment timed out or failed, using original vCard');
+            console.warn('[ScanQueue] Address enrichment timed out or failed, using original vCard');
           }
         } catch (enrichError) {
-          console.warn('Address enrichment failed:', enrichError);
+          console.warn('[ScanQueue] Address enrichment failed:', enrichError);
         }
       }
 
@@ -134,10 +142,20 @@ const App: React.FC = () => {
       setCurrentImages(images);
 
       // Auto-save to history on successful scan
+      console.log('[ScanQueue] Saving to history...');
       try {
-        await addToHistory(finalVCard, undefined, images, mode, debugAnalysis);
+        const result = await addToHistory(finalVCard, undefined, images, mode, debugAnalysis);
+        console.log('[ScanQueue] Save result:', result);
+
+        if (result.status === 'saved') {
+          console.log('[ScanQueue] ✅ Contact saved successfully');
+        } else if (result.status === 'duplicate') {
+          console.log('[ScanQueue] ℹ️ Duplicate contact merged');
+        } else {
+          console.error('[ScanQueue] ❌ Save failed with error status');
+        }
       } catch (err) {
-        console.error("Failed to save to history:", err);
+        console.error("[ScanQueue] ❌ Failed to save to history:", err);
         toast.error("Fehler beim Speichern im Verlauf: " + (err as Error).message);
       }
     },

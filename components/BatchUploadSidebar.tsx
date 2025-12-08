@@ -110,11 +110,15 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
         const newJobs: File[][] = [];
 
         setIsProcessing(true);
+        console.log(`[BatchUpload] Starting to process ${filesArray.length} files`);
 
         for (const file of filesArray) {
             if (file.type === 'application/pdf') {
+                console.log(`[BatchUpload] Converting PDF: ${file.name}`);
                 try {
                     const blobs = await convertPdfToImages(file);
+                    console.log(`[BatchUpload] PDF converted: ${file.name} → ${blobs.length} pages`);
+
                     const pdfPages: File[] = [];
                     for (let i = 0; i < blobs.length; i++) {
                         const imageFile = new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' });
@@ -122,16 +126,25 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
                     }
                     if (pdfPages.length > 0) {
                         newJobs.push(pdfPages); // All pages = 1 Job
+                        toast.success(`PDF "${file.name}" → ${pdfPages.length} Seiten extrahiert`);
+                    } else {
+                        console.warn(`[BatchUpload] PDF has no pages: ${file.name}`);
+                        toast.error(`PDF "${file.name}" enthält keine Seiten`);
                     }
                 } catch (err: any) {
-                    console.error("PDF conversion failed", err);
+                    console.error(`[BatchUpload] PDF conversion failed for ${file.name}`, err);
                     toast.error(`Fehler beim Verarbeiten von ${file.name}: ${err.message}`);
                 }
             } else if (file.type.startsWith('image/')) {
+                console.log(`[BatchUpload] Adding image: ${file.name}`);
                 newJobs.push([file]); // 1 Image = 1 Job
+            } else {
+                console.warn(`[BatchUpload] Unsupported file type: ${file.type} (${file.name})`);
+                toast.error(`Nicht unterstützter Dateityp: ${file.name}`);
             }
         }
 
+        console.log(`[BatchUpload] Processed ${newJobs.length} jobs from ${filesArray.length} files`);
         setSelectedJobs(prev => [...prev, ...newJobs]);
         setIsProcessing(false);
     };
@@ -157,8 +170,13 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
 
     const handleStartProcessing = () => {
         if (selectedJobs.length > 0) {
+            console.log(`[BatchUpload] Starting processing of ${selectedJobs.length} jobs in ${scanMode} mode`);
+            toast.info(`${selectedJobs.length} Karten werden verarbeitet...`);
             onAddJobs(selectedJobs, scanMode);
             setSelectedJobs([]);
+        } else {
+            console.warn('[BatchUpload] No jobs selected for processing');
+            toast.error('Keine Dateien ausgewählt');
         }
     };
 
