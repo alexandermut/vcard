@@ -23,6 +23,20 @@ pub fn extract_phones(input: &str) -> Vec<Scored<String>> {
     let is_fax_line = input.to_lowercase().contains("fax");
 
     for mat in re.find_iter(input) {
+        let start = mat.start();
+        
+        // Anti-Pattern Check:
+        // Ensure the match isn't part of an alphanumeric ID (e.g. VAT-ID "DE12345")
+        // If the character immediately preceding the match is a letter, ignore it.
+        if start > 0 {
+            let prev_char_byte_idx = input[..start].char_indices().last().map(|(i, _)| i).unwrap_or(0);
+            let prev_char = input[prev_char_byte_idx..start].chars().next().unwrap_or(' ');
+            
+            if prev_char.is_alphabetic() {
+                continue;
+            }
+        }
+        
         let raw = mat.as_str();
         // Post-Validation
         if is_valid_phone(raw) {

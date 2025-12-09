@@ -68,4 +68,33 @@ www. ektavision.de
         // Expected: +4956189079994
         assert!(result.tel.iter().any(|p| p.value == "+4956189079994"), "Phone (FAX) normalization failed: {:?}", result.tel);
     }
+
+    #[test]
+    fn test_hamburg_phone() {
+        let input = "Tel.: (040) 41 47 78 - 11";
+        let result = parse(input);
+        
+        println!("\n=== HAMBURG PHONE TEST ===");
+        for (i, tel) in result.tel.iter().enumerate() {
+            println!("  TEL {}: {} (label: {:?})", i+1, tel.value, tel.label);
+        }
+        
+        assert!(result.tel.len() > 0, "Hamburg phone not detected");
+        // Check normalization: (040) ... -> 04041477811
+        assert_eq!(result.tel[0].value, "04041477811");
+    }
+
+    #[test]
+    fn test_vat_id_filtering() {
+        let input = "VAT-ID: DE118309076";
+        let result = parse(input);
+        
+        println!("\n=== VAT-ID TEST ===");
+        for (i, tel) in result.tel.iter().enumerate() {
+            println!("  TEL {}: {}", i+1, tel.value);
+        }
+        
+        // Should NOT be extracted as a phone number
+        assert!(result.tel.is_empty(), "VAT-ID was incorrectly detected as phone number!");
+    }
 }
