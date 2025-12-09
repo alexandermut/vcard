@@ -1,3 +1,4 @@
+import init, { get_pdf_page_count, extract_images } from '../src/wasm/core.js';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configure worker. Use the version associated with the installed package.
@@ -32,6 +33,31 @@ self.onmessage = async (e: MessageEvent) => {
     try {
         console.log(`[PDFWorker] Processing ${fileName}`);
 
+        // Try WASM Extraction first (The Speed Path)
+        // If this works, we skip pdf.js entirely!
+        try {
+            await init();
+            // Pass Uint8Array view of the ArrayBuffer
+            const rawImages = extract_images(new Uint8Array(fileData));
+
+            if (rawImages && rawImages.length > 0) {
+                console.log(`[WASM] Successfully extracted ${rawImages.length} images directly from stream!`);
+
+                // Convert JS Array of Uint8Arrays to Blobs
+                const images: Blob[] = rawImages.map((bytes: Uint8Array) => {
+                    return new Blob([bytes], { type: 'image/jpeg' });
+                });
+
+                self.postMessage({ type: 'success', id, images, fileName });
+                return; // DONE! No pdf.js needed.
+            } else {
+                console.log("[WASM] No images found in stream (maybe vector PDF?), falling back to rendering.");
+            }
+        } catch (wasmErr) {
+            console.error('[WASM] Extraction failed, falling back to rendering:', wasmErr);
+        }
+
+        // --- Fallback: Slow Render Path (pdf.js) ---
         // Load the PDF document
         const loadingTask = pdfjsLib.getDocument({
             data: fileData,

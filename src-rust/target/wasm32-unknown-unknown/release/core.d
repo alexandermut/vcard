@@ -1,0 +1,1 @@
+/Users/alexandermut/Desktop/kontakte.me/src-rust/target/wasm32-unknown-unknown/release/core.wasm: /Users/alexandermut/Desktop/kontakte.me/src-rust/src/dedup.rs /Users/alexandermut/Desktop/kontakte.me/src-rust/src/lib.rs /Users/alexandermut/Desktop/kontakte.me/src-rust/src/pdf.rs

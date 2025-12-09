@@ -3,6 +3,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { execSync } from 'child_process';
 import { VitePWA } from 'vite-plugin-pwa';
+import wasm from 'vite-plugin-wasm';
+import topLevelAwait from 'vite-plugin-top-level-await';
 
 const getVersion = () => {
   try {
@@ -18,6 +20,8 @@ const getVersion = () => {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
+    wasm(),
+    topLevelAwait(),
     react(),
     VitePWA({
       registerType: 'autoUpdate',

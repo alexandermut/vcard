@@ -611,6 +611,10 @@ We categorize the migration into three pillars:
 ### 🦀 Rust Core Module: The Shortlist
 **Goal:** A focused, high-impact selection of Rust libraries for the 4 critical areas: Parsing, OCR, Deduplication, and Sync.
 
+> [!IMPORTANT]
+> **Performance Target:** The Rust migration is the dedicated path to handling **25,000+ contacts** with import times under 1 hour (vs 6+ hours in JS).
+> **Status:** Architecture validated. Migration prioritized for Phase 5.
+
 #### 🟦 1. Parsing (vCard, Fields, Normalization)
 
 **✅ vCard Parsing**

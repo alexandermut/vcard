@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:wasm && vite build",
-    "build:wasm": "cd vcard-wasm && wasm-pack build --target web --out-dir ../src/wasm",
+    "build:wasm": "cd src-rust && wasm-pack build --target web --out-dir ../src/wasm",
     "preview": "vite preview",
     "test": "vitest",
     "test:e2e": "playwright test"
@@ -37,7 +37,9 @@
     "react-window": "^2.2.3",
     "smartcrop": "^2.0.5",
     "sonner": "^2.0.7",
-    "tesseract.js": "^6.0.1"
+    "tesseract.js": "^6.0.1",
+    "vite-plugin-top-level-await": "^1.4.1",
+    "vite-plugin-wasm": "^3.3.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",

@@ -547,17 +547,46 @@ const App: React.FC = () => {
       return { status: 'duplicate' };
     }
 
-    // 2. Search for semantic duplicate
-    const existingIndex = currentHistory.findIndex(item => {
-      if (newFn && item.name?.trim().toLowerCase() === newFn.toLowerCase()) return true;
-      if (newPhones.length > 0) {
-        const oldParsed = parseVCardString(item.vcard);
-        const oldPhones = oldParsed.data.tel?.map(t => clean_number(t.value)) || [];
-        const hasCommonPhone = newPhones.some(np => np.length > 6 && oldPhones.includes(np));
-        if (hasCommonPhone) return true;
+    // 2. Search for semantic duplicate (Rust or JS Fallback)
+    let existingIndex = -1;
+
+    try {
+      if (wasmModule.current) {
+        // 🦀 Rust Implementation (Optimized for Scale)
+        const historyStrings = currentHistory.map(h => h.name || '');
+        // We use Name for now. Ideal would be a composite string or passing full objects to Rust?
+        // Rust `find_duplicate` expects (candidate: str, list: str[])
+        // Let's rely on Name + Phone matching in Rust, but current implementation only does String Similarity.
+        // For V1 of Dedup, strict Name similarity > 95% is a good start.
+
+        // Wait, our Rust implementation `find_duplicate` does Levenshtein on the strings passed.
+        // Passing just names is fast.
+        const candidateName = newFn || '';
+        if (candidateName.length > 3) {
+          const matchIndex = wasmModule.current.find_duplicate(candidateName, historyStrings);
+          if (matchIndex !== undefined) {
+            existingIndex = matchIndex;
+            console.log(`[WASM] Dedup found match at index ${matchIndex} for ${candidateName}`);
+          }
+        }
       }
-      return false;
-    });
+    } catch (e) {
+      console.warn("[WASM] Dedup failed, falling back to JS", e);
+    }
+
+    if (existingIndex === -1) {
+      // Fallback or detailed JS check (Phone numbers etc)
+      existingIndex = currentHistory.findIndex(item => {
+        if (newFn && item.name?.trim().toLowerCase() === newFn.toLowerCase()) return true;
+        if (newPhones.length > 0) {
+          const oldParsed = parseVCardString(item.vcard); // Parsing is slow!
+          const oldPhones = oldParsed.data.tel?.map(t => clean_number(t.value)) || [];
+          const hasCommonPhone = newPhones.some(np => np.length > 6 && oldPhones.includes(np));
+          if (hasCommonPhone) return true;
+        }
+        return false;
+      });
+    }
 
     let itemToSave: HistoryItem;
 

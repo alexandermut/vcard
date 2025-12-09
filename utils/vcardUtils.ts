@@ -6,24 +6,11 @@ REV:2025-11-20T00:00:00Z
 N:Mut;Alexander;;;
 FN:Alexander Mut
 ORG:abcfinance GmbH
-TITLE:Finanzierung, Leasing, Factoring
+TITLE:Finanzierung & Leasing
 TEL;WORK:00491715528187
-TEL;HOME:004915151002767
-EMAIL;INTERNET;WORK:Alexander.Mut@abcfinance.de
-EMAIL;INTERNET;HOME:mutalex@gmail.com
+EMAIL;INTERNET;WORK:alexander.mut@abcfinance.de
 URL;HOME:https://alexandermut.de
-URL;HOME:https://vcardabc.alexandermut.de
-URL;TYPE=YOUTUBE:https://www.youtube.com/@AlexanderMut/videos
-URL;TYPE=LINKEDIN:https://www.linkedin.com/in/alexandermut
-URL;TYPE=INSTAGRAM:https://instagram.com/alexandermut
-URL;TYPE=PODCAST:https://podcast-apple.alexmut.de
-URL;TYPE=PODCAST:https://podcast-spotify.alexmut.de
-URL;TYPE=MUSIC:https://music.apple.com/de/artist/alexander-mut/1780746079
-URL;TYPE=FACEBOOK:https://www.facebook.com/alexmutalex
-URL;TYPE=XING:https://www.xing.com/profile/Alexander_Mut
-URL;TYPE=TIKTOK:https://tiktok.com/@mutalex
 ADR;WORK:;;Kamekestrasse 2-8;Koeln;;50672;Deutschland
-ADR;OTHER:;;Bramfelder Strasse 110a;Hamburg;;22305;Deutschland
 END:VCARD`;
 
 import { VCardParser } from './vcardParser';
