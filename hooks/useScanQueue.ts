@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScanJob } from '../types';
 import { scanBusinessCard, ImageInput, analyzeRegexPerformance } from '../services/aiService';
 import { Language } from '../types';
@@ -37,6 +37,7 @@ export const useScanQueue = (
   wasmModule?: any // 🦀 Rust WASM Module
 ) => {
   const [queue, setQueue] = useState<ScanJob[]>([]);
+  const activeJobIds = useRef<Set<string>>(new Set()); // ✅ Deduplication Lock
 
   // Derived state for WakeLock and UI
   const isProcessing = queue.some(j => j.status === 'processing');
@@ -76,13 +77,24 @@ export const useScanQueue = (
       return;
     }
 
-    const nextJobIndex = queue.findIndex(job => job.status === 'pending');
+    if (activeJobIds.current.size >= concurrency) {
+      console.log(`[ScanQueue] Already processing ${activeJobIds.current.size} jobs, waiting...`);
+      return;
+    }
+
+    // Find next pending job that isn't already being started
+    const nextJobIndex = queue.findIndex(j => j.status === 'pending' && !activeJobIds.current.has(j.id));
+
     if (nextJobIndex === -1) {
       console.log('[ScanQueue] No pending jobs in queue');
       return;
     }
 
     const job = queue[nextJobIndex];
+
+    // Lock job immediately
+    activeJobIds.current.add(job.id);
+
     console.log(`[ScanQueue] Starting job ${job.id}`, {
       position: nextJobIndex + 1,
       totalInQueue: queue.length,
@@ -90,8 +102,8 @@ export const useScanQueue = (
       imageCount: job.images.length
     });
 
-    // Update status to processing
-    setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'processing' } : j));
+    // Update status to processing with timestamp
+    setQueue(prev => prev.map(j => j.id === job.id ? { ...j, status: 'processing', startedAt: Date.now() } : j));
 
     // Process the job
     (async () => {
@@ -101,18 +113,31 @@ export const useScanQueue = (
         // ✅ NEW: Use worker for compression (runs off main thread!)
         const imageWorker = getImageWorker();
 
+        // Helper for timeouts
+        const withTimeout = <T>(promise: Promise<T>, ms: number, msg: string): Promise<T> => {
+          return Promise.race([
+            promise,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(msg)), ms))
+          ]);
+        };
+
         // Helper to convert File/String to Base64 via Worker (Standard Color Compression)
         const getBase64 = async (input: string | File): Promise<string> => {
           if (typeof input === 'string') return input;
 
           console.time(`worker-compress-${input.name}`);
           try {
-            // Always use standard compression for storage/display (Color)
-            const res = await imageWorker.compressImage(input, 0.3, 800);
+            // Updated: 5s timeout for compression to prevent hang
+            const res = await withTimeout(
+              imageWorker.compressImage(input, 0.3, 800),
+              5000,
+              "Compression Timeout"
+            );
             console.timeEnd(`worker-compress-${input.name}`);
             return res;
           } catch (error) {
-            console.warn('Worker compression failed, falling back to main thread:', error);
+            console.warn('Worker compression failed or timed out, falling back to main thread:', error);
+            // Fallback also has internal 10s timeout
             const res = await resizeImage(input, 800, 0.7);
             return res;
           }
@@ -123,23 +148,24 @@ export const useScanQueue = (
           console.time(`worker-preprocess-${typeof input === 'string' ? 'base64' : input.name}`);
           try {
             if (typeof input === 'string') {
-              // For now, if string, just return it (or we could convert to Blob and preprocess)
-              // TODO: Implement string->blob->preprocess
               return input;
             }
-            const res = await imageWorker.preprocessImage(input);
+            // Updated: 5s timeout for preprocessing
+            const res = await withTimeout(
+              imageWorker.preprocessImage(input),
+              5000,
+              "Preprocessing Timeout"
+            );
             console.timeEnd(`worker-preprocess-${input.name}`);
             return res;
           } catch (e) {
-            console.warn("Preprocessing failed", e);
+            console.warn("Preprocessing failed or timed out", e);
             return await getBase64(input); // Fallback to color
           }
         };
 
         // Load images into memory ONLY NOW
         const images: ImageInput[] = [];
-        // rawImages lifted to outer scope for error handling
-
 
         // Helper to strip data url prefix
         const toInput = (dataUrl: string): ImageInput => {
@@ -160,24 +186,22 @@ export const useScanQueue = (
         console.log("Images prepared, starting OCR...", { count: images.length, mode: job.mode, ocrMethod });
         console.time(`ocr-scan-${job.id}`);
 
-        // 180s Timeout for OCR processing (allows for retries)
+        // 25s Timeout for OCR processing (allows for retries) - Aggressive!
         const timeoutPromise = new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout: OCR processing took too long")), 180000)
+          setTimeout(() => reject(new Error("Timeout: OCR processing took too long")), 25000)
         );
 
         let vcard: string;
         let analysisResult: string | undefined = undefined;
-        let jobOcrText: string | undefined = undefined;  // ✅ NEW: Track OCR text for this specific job
+        let jobOcrText: string | undefined = undefined;
 
-        // OCR Method Selection Logic
         if (ocrMethod === 'regex-training') {
           console.log('[OCR] Mode: Regex Training (Dual Scan & Analysis)');
 
           // 1. Run Tesseract (Offline) for Baseline
-          // Use Rust-optimized B&W image for Tesseract
           const tesseractInput = await getOcrImage(job.images[0]);
           const tesseractResult = await scanWithTesseract(tesseractInput, lang, true);
-          jobOcrText = tesseractResult.text;  // ✅ Store OCR text
+          jobOcrText = tesseractResult.text;
           const tesseractVCard = (tesseractResult.text)
             ? rustToVCardString(await parseWithRust(tesseractResult.text))
             : parseImpressumToVCard(tesseractResult.text);
@@ -355,6 +379,10 @@ export const useScanQueue = (
 
       } catch (error: any) {
         console.error(`[ScanQueue] ❌ Job ${job.id} failed:`, error);
+
+        const currentQueue = queue; // Capture snapshot
+        // NOTE: we use atomic update below, so this snapshot is just for logic, not reading
+
         if (error.message && error.message.includes("Timeout")) {
           const currentRetries = job.retryCount || 0;
           if (currentRetries < 2) {
@@ -365,7 +393,7 @@ export const useScanQueue = (
             });
           } else {
             console.error("Job timed out too many times, marking as error", job.id);
-            setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: "Timeout: Processing took too long after multiple retries." } : j));
+            setQueue(prev => prev.map(j => j.id === job.id ? { ...j, status: 'error', error: "Timeout: Processing took too long after multiple retries." } : j));
 
             // Save to Failed Scans DB
             if (rawImages.length > 0) {
@@ -380,7 +408,7 @@ export const useScanQueue = (
           }
         } else {
           // Mark as error, keep in queue so user sees it failed
-          setQueue(prev => prev.map((j, i) => i === nextJobIndex ? { ...j, status: 'error', error: error.message } : j));
+          setQueue(prev => prev.map(j => j.id === job.id ? { ...j, status: 'error', error: error.message } : j));
 
           // Save to Failed Scans DB
           if (rawImages.length > 0) {
@@ -393,6 +421,10 @@ export const useScanQueue = (
             }).catch(e => console.error("Failed to save failed scan", e));
           }
         }
+      } finally {
+        // GUARANTEED CLEANUP: Releases lock even if error occurs
+        console.log(`[ScanQueue] Releasing lock for job ${job.id}`);
+        activeJobIds.current.delete(job.id);
       }
     })();
   }, [queue, apiKey, lang, llmConfig, ocrMethod, onJobComplete, onOCRRawText, concurrency, wasmModule]);
@@ -454,6 +486,64 @@ export const useScanQueue = (
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [isProcessing]);
+
+  // WRAPPER WATCHDOG: Safety mechanism for "lost" jobs
+  // Runs every 5s, checks for jobs stuck in 'processing' > 70s (60s timeout + 10s buffer)
+  useEffect(() => {
+    if (!isProcessing) return;
+
+    const interval = setInterval(() => {
+      setQueue(prev => {
+        let hasChanges = false;
+        const now = Date.now();
+
+        const newQueue = prev.map(job => {
+          if (job.status === 'processing' && job.startedAt) {
+            const elapsed = now - job.startedAt;
+            if (elapsed > 70000) { // 70s timeout
+              console.error(`[Watchdog] Safety Kill for Job ${job.id} (Elapsed: ${elapsed}ms)`);
+              hasChanges = true;
+
+              const currentRetries = job.retryCount || 0;
+
+              if (currentRetries < 2) {
+                console.log(`[Watchdog] Re-queueing job ${job.id} (Retry ${currentRetries + 1}/2)`);
+                return {
+                  ...job,
+                  status: 'pending',
+                  error: undefined,
+                  startedAt: undefined, // Reset start time
+                  retryCount: currentRetries + 1
+                } as ScanJob;
+              } else {
+                // Add to failed scans DB
+                addFailedScan({
+                  id: job.id,
+                  timestamp: now,
+                  images: [],
+                  error: "Watchdog Timeout (Process Hung)",
+                  mode: job.mode || 'vision'
+                }).catch(e => console.error("Failed to save failed scan", e));
+
+                return {
+                  ...job,
+                  status: 'error',
+                  error: "System Timeout: Processing halted unexpectedly."
+                } as ScanJob;
+              }
+            }
+          }
+          return job;
+        });
+
+        return hasChanges ? newQueue : prev;
+      });
+
+    }, 2000); // Check every 2s (Aggressive)
+
+    return () => clearInterval(interval);
+  }, [isProcessing]);
+
 
   const removeJob = (id: string) => {
     setQueue(prev => prev.filter(j => j.id !== id));

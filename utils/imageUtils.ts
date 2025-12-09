@@ -176,3 +176,53 @@ export const blobToBase64 = (blob: Blob): Promise<string> => {
     reader.readAsDataURL(blob);
   });
 };
+
+/**
+ * Rotates a Base64 image by the specified degrees (90, 180, 270).
+ * Returns a Promise resolving to a new Base64 string.
+ */
+export const rotateImage = (base64Image: string, degrees: number): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error("Canvas context not available"));
+        return;
+      }
+
+      // Swap dimensions for 90/270 rotation
+      if (degrees === 90 || degrees === 270) {
+        canvas.width = img.height;
+        canvas.height = img.width;
+      } else {
+        canvas.width = img.width;
+        canvas.height = img.height;
+      }
+
+      // Translate context to center of canvas
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+
+      // Rotate
+      ctx.rotate((degrees * Math.PI) / 180);
+
+      // Draw image centered
+      ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+      // Export
+      const result = canvas.toDataURL('image/jpeg', 0.9); // High quality
+
+      // Cleanup
+      canvas.width = 0;
+      canvas.height = 0;
+      img.src = '';
+
+      resolve(result);
+    };
+
+    img.onerror = (err) => reject(new Error("Failed to load image for rotation"));
+    img.src = base64Image;
+  });
+};

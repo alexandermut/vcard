@@ -1554,6 +1554,26 @@ const App: React.FC = () => {
           </div>
         )}
 
+        {(queue.length > 0) && (
+          <div className="mb-4 flex items-center justify-center gap-6 py-2 px-4 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mx-auto max-w-fit shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-slate-400 animate-pulse"></span>
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                {lang === 'de' ? 'Warteschlange' : 'Waiting'}:
+                <span className="ml-1 font-bold text-slate-800 dark:text-white">{queue.filter(j => j.status === 'pending').length}</span>
+              </span>
+            </div>
+            <div className="h-4 w-px bg-slate-300 dark:bg-slate-600"></div>
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-500 animate-spin"></span>
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                {lang === 'de' ? 'Bearbeitung' : 'Processing'}:
+                <span className="ml-1 font-bold text-blue-600 dark:text-blue-400">{queue.filter(j => j.status === 'processing').length}</span>
+              </span>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:h-[calc(100vh-180px)] lg:min-h-[500px] min-h-[600px] flex-1">
           <div className="h-full flex flex-col gap-4">
             <Editor

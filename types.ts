@@ -67,6 +67,7 @@ export interface ScanJob {
   error?: string;
   mode?: 'vision' | 'hybrid';
   retryCount?: number;
+  startedAt?: number; // ✅ Timestamp when processing actually started (for Watchdog)
 }
 
 export interface Note {

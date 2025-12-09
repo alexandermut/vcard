@@ -235,12 +235,6 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
                             <Upload size={18} className="text-slate-600 dark:text-slate-400" />
                             {t.batchUpload}
                         </h2>
-                        {(pendingCount > 0 || processingCount > 0) && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                {processingCount > 0 && `${t.batchProcessing}`}
-                                {pendingCount > 0 && ` (${pendingCount} ${lang === 'de' ? 'wartend' : 'pending'})`}
-                            </p>
-                        )}
                     </div>
                     <button
                         onClick={onClose}

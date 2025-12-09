@@ -7,6 +7,7 @@ import { getOptimalConcurrency } from '../utils/concurrency';
 let tesseractScheduler: Scheduler | null = null;
 let currentLanguage: Language | null = null;
 let initializationPromise: Promise<Scheduler> | null = null;
+let isResetting = false; // Global lock for resetting
 
 export interface OCRLine {
     text: string;
@@ -62,7 +63,7 @@ export const initializeTesseract = async (lang: Language): Promise<Scheduler> =>
     const tesseractLang = lang === 'de' ? 'deu' : 'eng';
 
     // Determine worker count
-    const optimalWorkers = Math.min(getOptimalConcurrency(), 8);
+    const optimalWorkers = Math.min(getOptimalConcurrency(), 4); // Capped at 4 for stability
     const workerCount = Math.max(2, optimalWorkers);
 
     console.log(`[Tesseract] Initializing Scheduler with ${workerCount} workers for: ${tesseractLang}`);
@@ -72,9 +73,11 @@ export const initializeTesseract = async (lang: Language): Promise<Scheduler> =>
         try {
             const scheduler = createScheduler();
 
-            // Create workers in parallel
+            // Create workers in parallel (but staggered to prevent browser freeze)
             const workerPromises = Array.from({ length: workerCount }).map(async (_, index) => {
-                // console.log(`[Tesseract] Creating worker ${index + 1}/${workerCount}...`);
+                // Stagger initialization by 200ms per worker to prevent CPU/Network spike
+                await new Promise(r => setTimeout(r, index * 200));
+
                 const worker = await createWorker(tesseractLang, 1, {
                     workerPath: '/tesseract/worker.min.js',
                     corePath: '/tesseract/tesseract-core.wasm.js',
@@ -96,7 +99,7 @@ export const initializeTesseract = async (lang: Language): Promise<Scheduler> =>
                 });
 
                 scheduler.addWorker(worker);
-                // console.log(`[Tesseract] Worker ${index + 1} ready.`);
+                console.log(`[Tesseract] Worker ${index + 1}/${workerCount} added.`);
             });
 
             await Promise.all(workerPromises);
@@ -134,6 +137,8 @@ export const terminateTesseract = async (): Promise<void> => {
 /**
  * Scan business card using Tesseract.js OCR via Scheduler
  */
+import { rotateImage } from '../utils/imageUtils';
+
 export const scanWithTesseract = async (
     base64Image: string,
     lang: Language,
@@ -141,11 +146,40 @@ export const scanWithTesseract = async (
     onProgress?: (progress: number) => void
 ): Promise<TesseractResult> => {
     const startTime = Date.now();
+    const TIMEOUT_MS = 15000; // 15 seconds safety timeout (Aggressive & Tuned)
+
+    // 0. Wait if Scheduler is Resetting (Shock Absorber)
+    if (isResetting) {
+        console.log('[Tesseract] Scheduler is resetting. Waiting for lock release...');
+        await new Promise<void>(resolve => {
+            const check = setInterval(() => {
+                if (!isResetting) {
+                    clearInterval(check);
+                    resolve();
+                }
+            }, 100);
+            // Safety break after 5s
+            setTimeout(() => { clearInterval(check); resolve(); }, 5000);
+        });
+        console.log('[Tesseract] Lock released. Proceeding.');
+    }
+
+    // Helper for timeout
+    const withTimeout = <T>(promise: Promise<T>, ms: number, msg: string): Promise<T> => {
+        return Promise.race([
+            promise,
+            new Promise<T>((_, reject) => setTimeout(() => reject(new Error(msg)), ms))
+        ]);
+    };
 
     try {
         // Initialize Scheduler (Idempotent)
         if (onProgress) onProgress(5);
-        const scheduler = await initializeTesseract(lang);
+        const scheduler = await withTimeout(
+            initializeTesseract(lang),
+            30000,
+            'Scheduler initialization timed out'
+        );
         if (onProgress) onProgress(10);
 
         // Strip data prefix
@@ -175,87 +209,158 @@ export const scanWithTesseract = async (
         // 'recognize' job is distributed to an available worker
         console.log('[Tesseract] Scheduling OCR job (Attempt 1)...');
 
-        const result1 = await scheduler.addJob('recognize', processedImage, {
-            rotateAuto: true
-        });
+        const result1 = await withTimeout(
+            scheduler.addJob('recognize', processedImage, {
+                rotateAuto: true
+            }),
+            TIMEOUT_MS,
+            'OCR job (Attempt 1) timed out'
+        );
 
         console.log('[Tesseract] OCR job completed (Attempt 1)');
 
         const text1 = result1.data.text.trim();
         const conf1 = result1.data.confidence;
 
-        // Check quality
+        // Variables for Attempt 2
+        let result2: Tesseract.RecognizeResult | undefined;
+        let text2: string | undefined;
+        let conf2: number | undefined;
+
         const isPoorResult = text1.length < 15 || conf1 < 40;
 
-        // --- ATTEMPT 2: Retry without Preprocessing (if needed) ---
+        // --- ATTEMPT 2: If Attempt 1 was poor and preprocessing was enabled, retry with original image ---
         if (enablePreprocessing && isPoorResult) {
             console.warn(`[Tesseract] Attempt 1 poor (Len: ${text1.length}, Conf: ${conf1}). Retrying raw...`);
             if (onProgress) onProgress(50);
 
-            const result2 = await scheduler.addJob('recognize', originalImage, {
-                rotateAuto: true
+            result2 = await withTimeout(
+                scheduler.addJob('recognize', originalImage, { rotateAuto: true }),
+                TIMEOUT_MS,
+                'OCR job (Attempt 2) timed out'
+            );
+
+            text2 = result2.data.text.trim();
+            conf2 = result2.data.confidence;
+        }
+
+        // Check quality of best result so far
+        let bestResult = {
+            text: text1,
+            confidence: conf1,
+            data: result1.data
+        };
+
+        // If attempt 2 happened, compare
+        if (text2 && conf2 && result2) {
+            // Logic to pick best of 1 vs 2 (already implemented essentially, but refining)
+            // simplified:
+            if (text2.length > text1.length * 1.5 || (text2.length > 5 && conf2 > conf1)) {
+                bestResult = { text: text2, confidence: conf2, data: result2.data };
+            }
+        }
+
+        // --- SMART ROTATION (Optimization) ---
+        // If result is still poor (garbage/kauderwelsch), try rotating
+        const isStillPoor = bestResult.text.length < 15 || bestResult.confidence < 60;
+
+        if (isStillPoor) {
+            console.log(`[Tesseract] Result still poor (Conf: ${bestResult.confidence.toFixed(1)}%). Initiating Smart Rotation (90/180/270)...`);
+            if (onProgress) onProgress(60);
+
+            // Generate rotated variants
+            const angles = [90, 180, 270];
+            const rotationPromises = angles.map(async (angle) => {
+                try {
+                    const rotatedImg = await rotateImage(originalImage, angle); // We use original image for rotation
+                    const result = await withTimeout(
+                        scheduler.addJob('recognize', rotatedImg, { rotateAuto: true }),
+                        TIMEOUT_MS,
+                        `OCR Rotation ${angle} timed out`
+                    );
+                    return { angle, result, text: result.data.text.trim(), confidence: result.data.confidence };
+                } catch (e) {
+                    console.warn(`[Tesseract] Rotation ${angle} failed:`, e);
+                    return null;
+                }
             });
 
-            const text2 = result2.data.text.trim();
-            const conf2 = result2.data.confidence;
+            // Run parallel
+            const rotationResults = await Promise.all(rotationPromises);
+            if (onProgress) onProgress(90);
 
-            // Pick best result
-            const attempts = [
-                { r: result1, t: text1, c: conf1 },
-                { r: result2, t: text2, c: conf2 }
-            ];
+            // Find winner among rotations
+            let bestRotation = null;
+            for (const res of rotationResults) {
+                if (!res) continue;
+                // Heuristic: Must be better than current best
+                // Bonus for significant text length
+                if (res.text.length > 10 && res.confidence > bestResult.confidence) {
+                    if (!bestRotation || res.confidence > bestRotation.confidence) {
+                        bestRotation = res;
+                    }
+                }
+            }
 
-            const bestAttempt = attempts.reduce((prev, curr) => {
-                if (curr.t.length < 5) return prev;
-                if (prev.t.length < 5) return curr;
-                if (curr.t.length > prev.t.length * 1.5) return curr;
-                return curr.c > prev.c ? curr : prev;
-            });
-
-            const finalData = bestAttempt.r.data;
-            if (onProgress) onProgress(100);
-            const processingTime = Date.now() - startTime;
-
-            const lines: OCRLine[] = ((finalData as any).lines || []).map((line: any) => ({
-                text: line.text.trim(),
-                confidence: line.confidence,
-                bbox: line.bbox
-            })).filter((l: OCRLine) => l.text.length > 0);
-
-            return {
-                text: finalData.text,
-                lines,
-                confidence: finalData.confidence,
-                processingTime,
-            };
+            if (bestRotation) {
+                console.log(`[Tesseract] Smart Rotation succesful! Found better result at ${bestRotation.angle}° (Conf: ${bestRotation.confidence.toFixed(1)}%)`);
+                bestResult = {
+                    text: bestRotation.text,
+                    confidence: bestRotation.confidence,
+                    data: bestRotation.result.data
+                };
+            } else {
+                console.log('[Tesseract] Smart Rotation yielded no improvements.');
+            }
         }
 
         if (onProgress) onProgress(100);
         const processingTime = Date.now() - startTime;
+        const finalConf = bestResult.confidence;
 
-        console.log(`[Tesseract] Completed in ${processingTime}ms. Conf: ${result1.data.confidence.toFixed(2)}%`);
+        console.log(`[Tesseract] Completed in ${processingTime}ms. Final Conf: ${finalConf.toFixed(2)}%`);
 
-        const lines: OCRLine[] = ((result1.data as any).lines || []).map((line: any) => ({
+        const lines: OCRLine[] = ((bestResult.data as any).lines || []).map((line: any) => ({
             text: line.text.trim(),
             confidence: line.confidence,
             bbox: line.bbox
         })).filter((l: OCRLine) => l.text.length > 0);
 
         return {
-            text: result1.data.text,
+            text: bestResult.text,
             lines,
-            confidence: result1.data.confidence,
+            confidence: bestResult.confidence,
             processingTime,
         };
-
     } catch (error) {
         console.error('[Tesseract] Scheduler Error:', error);
+
         let errorMessage = 'Unknown error';
         if (error instanceof Error) errorMessage = error.message;
         else if (error) errorMessage = String(error);
+
+        // FATAL ERROR RECOVERY:
+        // If we hit a timeout, it implies a Worker is likely stuck/dead.
+        // We MUST terminate the scheduler to free the stuck worker and force a fresh restart.
+        if (errorMessage.includes('timed out')) {
+            console.error('[Tesseract] Timeout detected! Determining stuck worker state. Terminating Scheduler to force reset...');
+            // We don't await this here to avoid blocking checking logic, 
+            // but we ensure the global reference is cleared immediately.
+            const brokenScheduler = tesseractScheduler;
+            tesseractScheduler = null;
+            currentLanguage = null;
+            initializationPromise = null;
+
+            if (brokenScheduler) {
+                brokenScheduler.terminate().catch(e => console.error('[Tesseract] Failed to terminate broken scheduler:', e));
+            }
+        }
+
         throw new Error(`Tesseract OCR failed: ${errorMessage}`);
     }
 };
+
+
 
 /**
  * Extract contact data from Tesseract OCR result

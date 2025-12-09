@@ -117,15 +117,16 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
       )}
 
-      {/* Header with Tabs */}
-      <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2">
+      {/* Header with Tabs and Actions in 2 Rows */}
+      <div className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800 flex flex-col gap-2 p-3">
 
-        <div className="flex p-1 bg-slate-200 dark:bg-slate-800 rounded-lg self-start sm:self-auto overflow-x-auto max-w-full">
+        {/* Row 1: Tabs */}
+        <div className="flex gap-1 overflow-x-auto w-full no-scrollbar">
           <button
             onClick={() => setActiveTab('text')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'text'
-              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
           >
             <FileText size={14} />
@@ -134,38 +135,38 @@ export const Editor: React.FC<EditorProps> = ({
           <button
             onClick={() => setActiveTab('code')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'code'
-              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
               }`}
           >
             <Code size={14} />
             {t.codeTab}
           </button>
 
-          {/* ✅ NEW: Tesseract Tab */}
+          {/* OCR / Tesseract Tab */}
           {ocrRawText && (
             <button
               onClick={() => setActiveTab('tesseract')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all whitespace-nowrap ${activeTab === 'tesseract'
-                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
             >
               <FileText size={14} />
               OCR / Tesseract
             </button>
           )}
-
         </div>
 
-        <div className="flex gap-2 items-center self-end sm:self-auto">
+        {/* Row 2: Action Buttons */}
+        <div className="flex gap-2 items-center justify-start border-t border-slate-200 dark:border-slate-800 pt-2 w-full">
           {/* Reset */}
           <button
             onClick={() => {
               if (activeTab === 'text') setRawText('');
               onReset();
             }}
-            className="text-xs flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors"
+            className="text-xs flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
             title={t.reset}
           >
             <RotateCcw size={14} />
@@ -198,32 +199,33 @@ export const Editor: React.FC<EditorProps> = ({
             <button
               onClick={async () => {
                 try {
-                  await navigator.clipboard.writeText(rawText);
+                  await navigator.clipboard.writeText(rawText || value);
+                  // Optional: Toast here if needed, but simple copy is fine
                 } catch (err) {
-                  console.error('Failed to copy to clipboard', err);
+                  console.error('Failed to copy', err);
                 }
               }}
               className="text-xs flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors"
-              title={t.copy || 'Kopieren'}
+              title={t.copy || "Kopieren"}
             >
               <Copy size={14} />
-              {t.copy || 'Kopieren'}
+              {t.copy || "Kopieren"}
             </button>
           )}
 
-          {/* AI Optimize Button */}
+          {/* AI Optimize */}
           <button
             onClick={handleOptimizeClick}
             disabled={isOptimizing}
-            className={`text-xs flex items-center gap-1 px-3 py-1.5 rounded-md text-white font-medium transition-all shadow-sm ${isOptimizing
-              ? 'bg-purple-400 cursor-not-allowed opacity-70'
-              : 'bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-500'
+            className={`ml-auto text-xs flex items-center gap-1 px-3 py-1.5 rounded-md transition-all font-medium ${isOptimizing
+              ? 'bg-purple-100 text-purple-400 cursor-not-allowed'
+              : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-900/50'
               }`}
+            title={t.optimize}
           >
-            <Sparkles size={14} className={isOptimizing ? "animate-spin" : ""} />
-            {isOptimizing ? t.working : t.aiCorrect}
+            <Sparkles size={14} className={isOptimizing ? 'animate-spin' : ''} />
+            {isOptimizing ? 'AI...' : 'AI'}
           </button>
-
         </div>
       </div>
 
