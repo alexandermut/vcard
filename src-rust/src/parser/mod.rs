@@ -12,6 +12,7 @@ pub mod street_tokens;
 pub mod org;
 pub mod title;
 pub mod url;
+pub mod name_parts;
 
 pub use types::*;
 
@@ -214,6 +215,13 @@ pub fn parse(text: &str) -> VCardResult {
         true // Keep this phone number
     });
     
+    // Name Splitting (Structure)
+    let n_structure = if let Some(ref name) = best_name {
+         Some(name_parts::parse_name_structure(&name.value))
+    } else {
+         None
+    };
+
     VCardResult {
         fn_name: best_name,
         adr: adr,
@@ -222,7 +230,7 @@ pub fn parse(text: &str) -> VCardResult {
         urls: urls,
         org: org,
         title: title,
-        n_structure: None,
+        n_structure: n_structure,
     }
 }
 
