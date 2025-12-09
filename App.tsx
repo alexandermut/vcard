@@ -41,6 +41,7 @@ import { convertPdfToImages } from './utils/pdfUtils';
 import { Toaster, toast } from 'sonner';
 import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
 import { RegexDebugger } from './components/RegexDebugger';
+import { getOptimalConcurrency, runWithConcurrency } from './utils/concurrency';
 
 
 
@@ -410,78 +411,63 @@ const App: React.FC = () => {
     setHasMoreHistory(false);
   };
 
+  // ...
+
   const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
-      // Check for PDFs
-      const processedFiles: File[] = [];
+      toast.info(`${files.length} Dateien erkannt. Verarbeitung startet...`);
 
-      for (const file of files) {
-        if (file.type === 'application/pdf') {
+      const pdfs = files.filter(f => f.type === 'application/pdf');
+      const others = files.filter(f => f.type !== 'application/pdf');
+
+      const jobs: File[][] = [];
+
+      // 1. Process non-PDFs immediately (fast)
+      others.forEach(f => jobs.push([f]));
+
+      // 2. Process PDFs in Parallel
+      if (pdfs.length > 0) {
+        const concurrency = getOptimalConcurrency();
+        console.log(`Processing ${pdfs.length} PDFs with concurrency: ${concurrency}`);
+
+        const processPdfTask = (file: File) => async () => {
           try {
             const blobs = await convertPdfToImages(file);
+            const pdfPages: File[] = [];
             for (let i = 0; i < blobs.length; i++) {
-              processedFiles.push(new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
+              pdfPages.push(new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
             }
+            if (pdfPages.length > 0) return pdfPages;
           } catch (err) {
-            console.error("PDF conversion failed", err);
+            console.error(`Failed to process ${file.name}`, err);
+            toast.error(`Fehler bei ${file.name}`);
           }
-        } else {
-          processedFiles.push(file);
-        }
+          return null;
+        };
+
+        const tasks = pdfs.map(f => processPdfTask(f));
+        const results = await runWithConcurrency(tasks, concurrency);
+
+        results.forEach((res: File[] | null) => {
+          if (res) jobs.push(res);
+        });
       }
 
-      if (processedFiles.length > 1) {
-        // Batch mode
-        setDroppedFile(null); // Reset single file
-
-        // Open batch modal and add jobs
-        setIsBatchUploadOpen(true);
-
-        // We need to group them properly. 
-        // If they came from a PDF, they are pages of ONE job.
-        // If they were multiple images, they are MULTIPLE jobs (currently).
-        // But handleDrop logic above flattened everything into processedFiles.
-        // We lost the grouping info!
-
-        // REFACTOR: We should pass the grouping info.
-        // But for now, let's assume if it was a PDF, we want to group them.
-        // The loop above flattened it.
-
-        // Let's change the loop to preserve grouping.
-        // Actually, handleBatchUploadFiles expects File[][].
-
-        const jobs: File[][] = [];
-
-        // Re-process to preserve structure
-        for (const file of files) {
-          if (file.type === 'application/pdf') {
-            try {
-              const blobs = await convertPdfToImages(file);
-              const pdfPages: File[] = [];
-              for (let i = 0; i < blobs.length; i++) {
-                pdfPages.push(new File([blobs[i]], `${file.name}_page_${i + 1}.jpg`, { type: 'image/jpeg' }));
-              }
-              if (pdfPages.length > 0) jobs.push(pdfPages);
-            } catch (e) {
-              console.error(e);
-            }
-          } else {
-            jobs.push([file]);
-          }
+      if (jobs.length > 0) {
+        if (jobs.length === 1 && jobs[0].length === 1 && !droppedFile) {
+          // Single file flow
+          setDroppedFile(jobs[0][0]);
+          setIsScanOpen(true);
+        } else {
+          // Batch flow
+          setDroppedFile(null);
+          setIsBatchUploadOpen(true);
+          handleBatchUploadFiles(jobs);
         }
-
-        handleBatchUploadFiles(jobs);
-      } else if (processedFiles.length === 1) {
-        // Single file
-        setDroppedFile(processedFiles[0]);
-        // If it was a single PDF page, processedFiles[0] is it.
-        // But if it was a PDF, we might want to open ScanModal with it?
-        // ScanModal is opened via useEffect on droppedFile.
-        setIsScanOpen(true);
       }
     }
   }, []);
