@@ -8,7 +8,8 @@
     "build": "npm run build:wasm && vite build",
     "build:wasm": "cd vcard-wasm && wasm-pack build --target web --out-dir ../src/wasm",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
@@ -39,6 +40,7 @@
     "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@types/node": "^20.11.0",

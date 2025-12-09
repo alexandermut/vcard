@@ -76,9 +76,20 @@ const App: React.FC = () => {
 
 
   // Config State
-  const [lang, setLang] = useState<Language>('de');
-  const [isDarkMode, setIsDarkMode] = useState(true); // Default: Dark Mode
-  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'>('auto'); // OCR Method: auto (offline-first), tesseract, gemini, hybrid, or regex-training (debug)
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('vcard_lang');
+    return (saved as Language) || 'de';
+  });
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('vcard_dark_mode');
+    return saved ? JSON.parse(saved) : true; // Default: Dark Mode
+  });
+
+  const [ocrMethod, setOcrMethod] = useState<'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training'>(() => {
+    const saved = localStorage.getItem('vcard_ocr_method');
+    return (saved as any) || 'auto';
+  });
   const [ocrRawText, setOcrRawText] = useState<string | undefined>(undefined); // Raw OCR text from Tesseract for parser field
   const [currentDebugAnalysis, setCurrentDebugAnalysis] = useState<string | undefined>(undefined); // Regex analysis JSON
 
@@ -250,17 +261,9 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
-  // Load Settings from LocalStorage
-  useEffect(() => {
-    const savedLang = localStorage.getItem('vcard_lang') as Language;
-    if (savedLang) setLang(savedLang);
+  // Load Settings from LocalStorage - MOVED TO INITIAL STATE
+  // useEffect removed as state is now lazy-initialized
 
-    const savedDark = localStorage.getItem('vcard_dark_mode');
-    if (savedDark) setIsDarkMode(JSON.parse(savedDark));
-
-    const savedOcrMethod = localStorage.getItem('vcard_ocr_method');
-    if (savedOcrMethod) setOcrMethod(savedOcrMethod as 'auto' | 'tesseract' | 'gemini' | 'openai' | 'hybrid' | 'regex-training');
-  }, []);
 
   // Save Settings
   const handleSaveSettings = (newKey: string) => {
@@ -1320,6 +1323,15 @@ const App: React.FC = () => {
         }}
       />
 
+      <BatchUploadSidebar
+        isOpen={isBatchUploadOpen}
+        onClose={() => setIsBatchUploadOpen(false)}
+        onAddJobs={handleBatchUploadFiles}
+        queue={queue}
+        onRemoveJob={removeJob}
+        lang={lang}
+      />
+
       <QRCodeSidebar
         isOpen={isQROpen}
         onClose={() => setIsQROpen(false)}
@@ -1436,6 +1448,7 @@ const App: React.FC = () => {
               onClick={handleOpenBatchUpload}
               className="flex items-center gap-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 p-2 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors"
               title={t.batchUpload}
+              data-testid="batch-upload-trigger"
             >
               <Upload size={18} />
               <span className="hidden lg:inline text-sm">{t.batchUpload}</span>

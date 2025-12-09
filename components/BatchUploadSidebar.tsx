@@ -211,7 +211,9 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
                 />
             )}
 
-            <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div
+                data-testid="batch-upload-sidebar"
+                className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white dark:bg-slate-950 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-200 dark:border-slate-800 flex flex-col ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
 
                 {/* Header */}
                 <div className="bg-slate-50 dark:bg-slate-950 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center shrink-0">
@@ -262,6 +264,7 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
 
                     {/* File Upload Area */}
                     <div
+                        data-testid="batch-dropzone"
                         onDrop={handleDrop}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}

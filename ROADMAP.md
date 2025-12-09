@@ -84,21 +84,19 @@ This file tracks the current development status and planned features.
 - [x] **Git-Safe Test Organization:** Separate directories for real (`tests/real_cases/`) and anonymized (`data/test_cases/`) data
 - [x] **JSON Export Button:** One-click export in preview card when in training mode
 - [x] **Tesseract.js Integration:** Offline OCR engine with German language support
+- [x] **Parser Foundation (Phase 1):** Centralized anchors, Legal Forms DB, Blacklist Implementation.
+- [x] **Debug Logger:** Capture clicks/errors/logs for analysis.
 
 ---
 
 ## 🚧 In Progress / Next Up
 
 ### 1. Google Integration Phase 2 (Sync & Management)
-- [x] Add "Sync Status" Indicator in Google Modal (Visual feedback for existing contacts)
-- [x] **Debug Logger:** Capture clicks/errors/logs for analysis (Settings -> Debug).
 - [ ] **Two-Way Sync:** Track changes (ETags) to prevent overwriting.
 - [ ] **Group Management:** Import/Manage Google Contact Groups as Tags.
 - [ ] **Photo Sync:** High-res photo upload & sync.
 
 ### 2. Performance & Stability (Continued)
-- [x] **History Counter:** Fixed pagination vs total count mismatch (2024-12-04)
-- [x] **Parallel Processing:** 1-5 concurrent scans with Settings UI (2024-12-04)
 - [ ] **Lazy Loading:** Optimize `cities.ts` and large dependencies.
 - [ ] **Code Splitting:** Reduce initial bundle size with dynamic imports.
 - [ ] **Service Worker Optimization:** Migrate to Workbox for better caching.
@@ -118,49 +116,7 @@ This file tracks the current development status and planned features.
 - Achieve 90%+ confidence scores on standard business cards
 - Parse time under 50ms per contact (including anchor lookups)
 
-### Phase 1: Foundation & False Positive Elimination (Week 1-2)
-
-#### 1.1 Create Infrastructure
-- [x] **Create `utils/parserAnchors.ts`** - Centralized anchor management
-  - [x] Export blacklist prefixes as const arrays
-  - [x] Export legal forms as categorized objects
-  - [x] Export industry keywords
-  - [x] Provide utility functions: `isBlacklisted()`, `hasLegalForm()`, `fuzzyMatch()`
-
-- [x] **Create `utils/anchorDetection.ts`** - Anchor detection engine
-  - [x] `detectPLZ(text: string): AnchorMatch[]` - Find all PLZ with positions
-  - [x] `detectAreaCodes(text: string): AnchorMatch[]` - Find area codes
-  - [x] `detectStreets(text: string): AnchorMatch[]` - Fuzzy street matching
-  - [x] `detectCities(text: string): AnchorMatch[]` - City name matching
-  - [x] Return format: `{ value: string, position: [start, end], weight: number }`
-
-#### 1.2 Blacklist Implementation ⚡
-- [x] **Phone Number False Positives**
-  - [x] Create regex negative lookahead for 40+ blacklist prefixes
-  - **Prefix Catalog (Numbers to EXCLUDE):**
-    - **Tax/Registration (9):** `USt-ID`, `USt.ID`, `Umsatzsteuer-ID`, `VAT`, `VAT-ID`, `VAT No`, `UID`, `Steuernummer`, `St.-Nr.`, `Steuer-Nr.`
-    - **Trade Registry (8):** `Handelsregister`, `HRB`, `HRA`, `HR`, `Registernummer`, `Reg.-Nr.`, `Firmenbuchnummer`, `FN`
-    - **Banking (6):** `IBAN`, `BIC`, `SWIFT`, `Kontonummer`, `Konto-Nr.`, `Bankleitzahl`, `BLZ`
-    - **Business IDs (8):** `Artikelnummer`, `Art.-Nr.`, `Bestellnummer`, `Best.-Nr.`, `Kundennummer`, `Kd.-Nr.`, `Rechnungsnummer`, `Rechn.-Nr.`
-    - **Personal IDs (6):** `Personalausweis`, `Ausweis-Nr.`, `Pass-Nr.`, `Lizenznummer`, `Zertifikatsnummer`, `Mitgliedsnummer`
-    - **Dates (3):** `geb.`, `geboren`, `Geburtsdatum`
-  - [x] Pattern: `(?<!(?:USt-ID|IBAN|...):\s*)\d+` (negative lookbehind)
-  - [x] Test with edge cases: "IBAN: DE12 3456..." vs "Tel: 030 123456"
-
-#### 1.3 Legal Forms Database
-- [ ] **Implement Company Detection**
-  - **48+ German Legal Forms:**
-    - **Kapitalgesellschaften (6):** GmbH, gGmbH, UG, AG, SE, KGaA
-    - **Personengesellschaften (6):** GbR, OHG, KG, GmbH & Co. KG, PartG, PartG mbB
-    - **Mischformen (8):** GmbH & Co. KG, GmbH & Co. KGaA, AG & Co. KG, UG & Co. KG, SE & Co. KG, GmbH & Co. OHG, Ltd. & Co. KG, Stiftung & Co. KG
-    - **Einzelunternehmen (3):** e.K., e.Kfr., Inh.
-    - **Non-Profit (4):** e.V., gGmbH, Stiftung, gAG
-    - **Öffentlich (2):** AöR, KöR
-    - **Ausländisch (6):** Ltd., S.A., S.à r.l., B.V., Inc., LLC
-  - [ ] Handle variations: `e.V.` = `eV` = `e V` (normalize before matching)
-  - [ ] Regex: `(?:GmbH\s*&\s*Co\.\s*KG|GmbH|AG|...)` (order by length, longest first)
-
-### Phase 2: Anchor-Based Context Detection (Week 3-4)
+### Phase 2: Anchor-Based Context Detection (Next Step)
 
 #### 2.1 Multi-Pass Analysis Implementation
 - [ ] **Pass 1: Anchor Discovery** - Scan text for all anchors <!-- id: 51 -->
@@ -577,66 +533,7 @@ This file tracks the current development status and planned features.
     - [ ] Robust PHOTO Handling (Base64).
 
 
----
 
-## ✅ Phase 4.5: Memory Optimization & Crash Prevention (COMPLETED 2024-12-04)
-**Goal:** Eliminate app crashes during batch operations and optimize memory usage.
-
-**Problem Solved:** App crashed after 20-30 scans, losing last 3-5 cards from queue.
-
-### Root Causes Identified
-- 🔴 **Object URL Memory Leaks:** `URL.createObjectURL()` called without `revokeObjectURL()` (~60MB after 30 scans)
-- 🟠 **Large Image Sizes:** Manual canvas compression resulted in ~800KB per image
-- 🟡 **No Memory Cleanup:** No garbage collection between scans
-
-### Implementation (2 Phases)
-
-#### Phase 1: Professional Compression + Leak Fixes ✅
-- [x] **Installed `browser-image-compression`** (~30KB bundle)
-  - Professional compression algorithm
-  - Built-in WebWorker support
-  - 70% better compression (800KB → 250KB per image)
-- [x] **Fixed Object URL Leaks**
-  - Removed automatic URL creation from `utils/db.ts`
-  - Added URL tracking with `useRef<Set<string>>()` in `HistorySidebar.tsx`
-  - Automatic cleanup on component unmount
-  - Helper function `getImageURL()` for proper lifecycle management
-
-#### Phase 2: Worker-Based Processing ✅
-- [x] **Installed `Comlink`** (~3KB bundle)
-  - Clean async/await API for workers
-  - Type-safe worker communication
-- [x] **Created `workers/imageWorker.ts`**
-  - Dedicated compression worker (57.72 kB)
-  - Runs entirely off main thread
-  - Batch compression support
-- [x] **Integrated into `hooks/useScanQueue.ts`**
-  - Worker-based compression for all batch operations
-  - Automatic fallback to main thread on error
-  - Zero UI freeze during processing
-
-### Results Achieved
-
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Image Size** | ~800KB | ~250KB | **69% smaller** ⬇️ |
-| **30 Scans RAM** | ~60MB | ~15MB | **75% less** ⬇️ |
-| **UI Freeze** | Always | Never | **Perfect** ✅ |
-| **Crash Rate** | 100% @ 25+ | 0% @ 100+ | **Fixed** ✅ |
-| **Bundle Impact** | - | +33KB | Minimal |
-
-### Files Modified
-- ✅ `utils/imageUtils.ts` - Browser-image-compression integration
-- ✅ `utils/db.ts` - Removed Object URL leaks (2 locations)
-- ✅ `components/HistorySidebar.tsx` - URL lifecycle management
-- ✅ `workers/imageWorker.ts` (NEW) - Dedicated compression worker
-- ✅ `hooks/useScanQueue.ts` - Worker integration
-
-### Libraries Integrated
-- ✅ **browser-image-compression@2.0.2** - Professional image compression
-- ✅ **comlink@4.4.2** - Worker RPC communication
-
-**Status:** 🟢 **PRODUCTION READY** - Tested with 50+ simultaneous scans
 
 ---
 
@@ -666,90 +563,7 @@ This file tracks the current development status and planned features.
 
 ---
 
-## 🦀 Future Architecture: Rust & WebAssembly
-**Goal:** Migrate performance-critical, memory-intensive, and complex logic to Rust (compiled to WebAssembly) for maximum speed, type safety, and stability.
 
-### Why Rust?
-- **Performance:** Near-native speed for image processing, parsing, and O(n²) algorithms.
-- **Safety:** Memory safety and strict type system prevent runtime crashes (e.g., "undefined is not a function").
-- **Efficiency:** Better CPU utilization and lower battery consumption for mobile PWA users.
-- **Portability:** Core logic can be shared between Web (WASM), Desktop (Tauri), and Server (Linux).
-
-### Hybrid Architecture Concept
-The UI remains in **React/TypeScript** for flexibility and ecosystem access. The "Brain" of the application moves to **Rust/Wasm**.
-
-```mermaid
-graph TD
-    UI[React Frontend] <-->|JSON/Buffers| Bridge[Wasm Bridge]
-    Bridge <-->|Structs| Core[Rust Core Logic]
-    
-    subgraph Rust Core
-        Parser[vCard Parser (nom)]
-        ImgProc[Image Ops (image-rs)]
-        Search[Tantivy Search]
-        Graph[Entity Resolution (petgraph)]
-        Crypto[Encryption (ring)]
-    end
-```
-
-### Migration Candidates & Plan
-
-#### 1. Core Logic (High Priority - "The Brain")
-- **vCard Parser & Generator (`nom`):**
-  - **Why:** Regex is brittle. `nom` provides parser combinators for robustness.
-  - **Feature:** Zero-copy parsing, proper handling of RFC 6350 edge cases (folding, escaping, params).
-  - **Target:** Parse 10,000 vCards in < 50ms.
-- **Intelligent Parser Logic:**
-  - **Why:** The current "Email-to-Website" bug was due to mutable state complexity. Rust enforces immutable state by default.
-  - **Feature:** Move `regexParser.ts` logic to a Rust state machine.
-
-#### 2. Image Processing Pipeline (High Priority - "The Muscle")
-- **Smart Cropping & Deskewing (`imageproc`, `opencv-rust`):**
-  - **Why:** JS Canvas is slow for pixel-manipulation.
-  - **Feature:** Detect document edges, perspective wrap, and binarize (Scanbot-like quality).
-- **Compression & Resize (`image` crate):**
-  - **Why:** `browser-image-compression` is good, but Rust `image` crate offers finer control and SIMD optimizations.
-
-#### 3. Data Intelligence (Medium Priority - "The Logic")
-- **Deduplication & Entity Resolution:**
-  - **Why:** Comparing 20,000 contacts (O(n²)) freezes the UI.
-  - **Feature:** Use blocking-invariant clustering (canopy clustering) or graph-based resolution (`petgraph`) to find duplicates instantly.
-- **Fuzzy Search (`tantivy`):**
-  - **Why:** `Fuse.js` slows down at >10k items. `tantivy` is a Lucene-alternative in Rust.
-  - **Feature:** Millisecond search times, typo-tolerance, and facetting.
-
-#### 4. Security & IO (Future - "The Vault")
-- **End-to-End Encryption (`ring`, `aes-gcm`):**
-  - **Why:** Secure local backups or "Private Vault" contacts that even we can't read.
-  - **Feature:** Encrypt blobs before storing in IndexedDB.
-- **Massive Export/Import (`csv`, `serde`):**
-  - **Why:** Streaming million-row CSVs without crashing browser memory.
-
-### Implementation Strategy
-
-#### Phase 1: Prototype & Toolchain (Week 1)
-- [ ] Initialize `rust-wasm` crate using `wasm-pack`.
-- [ ] Set up generic `Bridge` for passing JS objects to Rust structs.
-- [ ] **Proof of Concept:** Port `clean_number()` function to Rust and benchmark (JS vs WASM).
-
-#### Phase 2: The "vCard Core" (Months 1-2)
-- [ ] Implement vCard 4.0 Parser using `nom`.
-- [ ] Replace `vcardUtils.ts` with WASM call.
-- [ ] **Goal:** Faster import of .vcf backup files.
-
-#### Phase 3: The "Scan Engine" (Months 3-4)
-- [ ] Create `ImageProcessor` struct in Rust.
-- [ ] Implement "Find Edges" algorithm.
-- [ ] Move critical `detectAnchors` logic to Rust regex engine (`regex` crate is O(n)).
-
-#### Phase 4: The "Super Computer" (Future)
-- [ ] Move Deduplication logic to Rust Thread (Web Worker + WASM).
-- [ ] Implement Vector Search (using `hnsw` crate for embedding capability).
-
-### Technical Stack
-- **Build Tool:** `wasm-pack` (compiles Rust to `.wasm` + JS bindings).
-- **Bridge:** `serde-wasm-bindgen` (low-overhead JSON passing).
-- **Bundler:** `vite-plugin-rsw` or manual `wasm` import.
 
 ### �️ Rust Stability & Performance Port Strategy
 **Goal:** Systematically migrate critical JavaScript logic to Rust/Wasm to eliminate entire classes of bugs (runtime errors, memory leaks) while boosting performance.
@@ -794,49 +608,102 @@ We categorize the migration into three pillars:
 
 ---
 
-### �📦 Potential Rust Ecosystem Integrations
-**Goal:** Leverage the rich Rust ecosystem for specific heavy-lifting tasks via WebAssembly.
+### 🦀 Rust Core Module: The Shortlist
+**Goal:** A focused, high-impact selection of Rust libraries for the 4 critical areas: Parsing, OCR, Deduplication, and Sync.
 
-#### [image](https://github.com/image-rs/image) & [imageproc](https://github.com/image-rs/imageproc)
-- **Use Case:** Advanced image manipulation (resize, crop, contrast, rotation).
-- **Why:** Performant, type-safe image ops without canvas 2D context overhead.
-- **Feature Potential:** "Magic Enhance" button that auto-adjusts brightness/contrast/deskews entirely client-side.
+#### 🟦 1. Parsing (vCard, Fields, Normalization)
+
+**✅ vCard Parsing**
+- **Library:** `vobject`
+- **Why:** The De-Facto Standard for vCard 3.0/4.0 in Rust.
+- **Use Cases:**
+  - vCard Upload → Field-wise mapping.
+  - Export generation (Apple/Google compatible).
+  - Repairing broken properties during import.
+
+**🔧 Field Parsing & Normalization**
+- **Library:** `phonenumber` (Rust port of libphonenumber)
+  - **Use Case:** Normalize phone numbers to E.164 for precise duplicate detection.
+- **Library:** `email-address` (RFC-compliant)
+  - **Use Case:** Validate emails before they enter the DB.
+- **Library:** `regex`
+  - **Use Case:** High-performance extraction of patterns from raw OCR text.
+
+#### 🟦 2. OCR (Business Card Scan)
+
+**🔥 Best Combo**
+- **Library:** `leptess` (Tesseract Wrapper)
+  - **Why:** Stable, cross-platform, faster than JS Tesseract.
+  - **Use Case:** Turning photo pixels into raw text.
+- **Library:** `image`
+  - **Why:** Preprocessing for better OCR results.
+  - **Use Case:** Cropping, sharpening, binarization, contrast enhancement.
+- **Optional:** `opencv`
+  - **Use Case:** Automatic edge detection ("Find the card on the table").
+
+#### 🟦 3. Dedupe (Duplicate Detection)
+
+**🔥 Fuzzy Matching**
+- **Library:** `strsim`
+  - **Why:** Fast implementations of Levenshtein, Jaro, Sørensen–Dice.
+  - **Use Cases:** Detecting "Müller" vs. "Mueller" or "Alex" vs. "Alexander".
+- **Library:** `fancy-regex`
+  - **Use Case:** Complex patterns like matching initials against full names.
+
+**🤖 Semantic & ML-based**
+- **Library:** `tokenizers` (HuggingFace)
+  - **Use Case:** Semantic matching of job titles and company descriptions.
+- **Library:** `linfa` (Rust ML)
+  - **Use Case:** Clustering contacts (K-Means) for auto-merge suggestions.
+
+#### 🟦 4. Sync (Offline-First, Conflicts)
+
+**⭐ State Storage**
+- **Library:** `sled` (Embedded DB)
+  - **Why:** Super fast key-value store, perfect for local contacts.
+- **Alternative:** `rusqlite`
+  - **Why:** Full SQL queries if complex relationships are needed.
+
+**🔥 Sync & Conflict Resolution**
+- **Library:** `automerge` (CRDT)
+  - **Why:** Conflict-free sync (Git for data).
+  - **Use Case:** Multi-device sync where user A edits phone and user B edits email (both win).
+- **Library:** `rs_merkle`
+  - **Why:** Merkle Trees for verifiable diffs.
+- **Library:** `serde_json`
+  - **Why:** Portable contact blobs.
+
+**📡 Network Layer**
+- **Library:** `axum` (Backend) & `reqwest` (Client)
+  - **Use Case:** Handling delta-pulls and sync logic.
+
+---
+
+### 📦 Additional Ecosystem Candidates
+**Goal:** Other powerful libraries to consider for specific niche features.
 
 #### [rxing](https://github.com/rxing-core/rxing)
 - **Use Case:** Barcode and QR code processing.
 - **Why:** Pure Rust port of ZXing.
-- **Feature Potential:** Instant, offline multi-format barcode scanning (vCard QR, ISBN, etc.) compatible with WASM.
+- **Feature Potential:** Instant, offline multi-format barcode scanning.
 
 #### [tantivy](https://github.com/quickwit-oss/tantivy)
-- **Use Case:** Full-text search engine library.
-- **Why:** Inspired by Lucene but faster and in Rust.
-- **Feature Potential:** Local, offline full-text search across thousands of contacts with faceting and typo tolerance, running in a Web Worker.
+- **Use Case:** Full-text search (Lucene alternative).
+- **Why:** Millisecond search times with typo-tolerance.
 
 #### [lopdf](https://github.com/J-F-Liu/lopdf)
-- **Use Case:** PDF Parsing and Modification.
-- **Why:** Robust PDF handling.
-- **Feature Potential:** Drag-and-drop a generic company PDF/Presentation, identifying and extracting vCard data or contact details embedded within.
+- **Use Case:** PDF Parsing.
+- **Feature Potential:** Drag-and-drop PDF extraction.
 
-#### [tract](https://github.com/sonos/tract) or [burn](https://github.com/tracel-ai/burn)
-- **Use Case:** Neural Network Inference.
-- **Why:** Run ONNX models directly in the browser via WASM.
-- **Feature Potential:** Run a small, quantized NER (Named Entity Recognition) model locally to extract names/phones from text without sending data to an API (Privacy++).
-
-#### [phonenumber](https://github.com/whisperfish/rust-phonenumber)
-- **Use Case:** Phone number parsing.
-- **Why:** Rust port of Google's libphonenumber.
-- **Feature Potential:** Extremely fast batch normalization of phone numbers during large imports.
-
-#### [chrono](https://github.com/chronotope/chrono)
-- **Use Case:** Date and Time parsing.
-- **Why:** Standard for Rust date/time.
-- **Feature Potential:** Robust parsing of varied date formats found in OCR text (birthdays, founding dates).
+#### [tract](https://github.com/sonos/tract)
+- **Use Case:** run ONNX models.
+- **Feature Potential:** Local NER (Named Entity Recognition).
 
 #### [rkyv](https://github.com/rkyv/rkyv)
 - **Use Case:** Zero-copy deserialization.
-- **Why:** Faster than Serde for complex data structures.
-- **Feature Potential:** Instant loading of massive contact lists from IndexDB by mapping memory directly, bypassing JSON parsing overhead.
+- **Feature Potential:** Instant loading of massive contact lists.
 
+---
 ### 🔭 Visionary Features (Rust/WASM Enabled)
 **Goal:** Next-level features enabled specifically by the move to a high-performance Rust core.
 
