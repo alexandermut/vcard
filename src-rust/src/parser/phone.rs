@@ -36,7 +36,7 @@ pub fn extract_phones(input: &str) -> Vec<Scored<String>> {
              }
              
              results.push(Scored {
-                 value: raw.to_string(), // Keep raw for now, normalization is separate step
+                 value: normalize_phone(raw),
                  score,
                  label,
                  debug_info: if is_fax_line { "fax_context".to_string() } else { "regex_loose".to_string() },
@@ -45,6 +45,21 @@ pub fn extract_phones(input: &str) -> Vec<Scored<String>> {
     }
 
     results
+}
+
+fn normalize_phone(raw: &str) -> String {
+    // 1. Remove specific patterns like (0)
+    let cleaned = raw.replace("(0)", "");
+    
+    // 2. Keep only digits and '+'
+    let mut normalized = String::with_capacity(cleaned.len());
+    for c in cleaned.chars() {
+        if c.is_ascii_digit() || c == '+' {
+            normalized.push(c);
+        }
+    }
+    
+    normalized
 }
 
 fn is_valid_phone(raw: &str) -> bool {
