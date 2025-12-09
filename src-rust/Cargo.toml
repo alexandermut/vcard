@@ -6,6 +6,10 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "build_street_index"
+path = "bin/build_street_index.rs"
+
 [dependencies]
 wasm-bindgen = "0.2"
 console_error_panic_hook = "0.1"
@@ -20,4 +24,14 @@ imageproc = "0.23"
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde-wasm-bindgen = "0.4"
+
+# Parsing
+nom = "7"
+regex = "1"
+lazy_static = "1.4"
+
+# Street Index (FST)
+fst = "0.4"
+csv = "1.3"
 

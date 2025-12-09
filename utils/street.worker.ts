@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 7;
+const DB_VERSION = 8; // Bumped to resolve schema conflict
 const STREETS_STORE = 'streets';
 
 // Define minimal DB interface for the worker

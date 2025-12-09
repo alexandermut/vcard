@@ -9,6 +9,7 @@ import { resizeImage } from '../utils/imageUtils';
 import { addFailedScan } from '../utils/db';
 import { wrap } from 'comlink';
 import type { ImageWorkerAPI } from '../workers/imageWorker';
+import { parseWithRust, rustToVCardString } from '../utils/rustParser';
 
 
 // ✅ NEW: Initialize image worker once (reuse across scans)
@@ -171,10 +172,8 @@ export const useScanQueue = (
           const tesseractInput = await getOcrImage(job.images[0]);
           const tesseractResult = await scanWithTesseract(tesseractInput, lang, true);
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
-          const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
-            ? (wasmModule && wasmModule.rust_parse_vcard
-              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
-              : parseSpatialToVCard(tesseractResult.lines))
+          const tesseractVCard = (tesseractResult.text)
+            ? rustToVCardString(await parseWithRust(tesseractResult.text))
             : parseImpressumToVCard(tesseractResult.text);
 
           // 2. Run Gemini (Online) for Ground Truth
@@ -204,10 +203,17 @@ export const useScanQueue = (
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser if lines are available, otherwise fallback
-          if (tesseractResult.lines && tesseractResult.lines.length > 0) {
-            vcard = (wasmModule && wasmModule.rust_parse_vcard)
-              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
-              : parseSpatialToVCard(tesseractResult.lines);
+          // Use Rust Parser if text available
+          if (tesseractResult.text) {
+            try {
+              const rustData = await parseWithRust(tesseractResult.text);
+              vcard = rustToVCardString(rustData);
+            } catch (e) {
+              console.warn("Rust parser failed, using TS Spatial parser fallback");
+              vcard = (tesseractResult.lines && tesseractResult.lines.length > 0)
+                ? parseSpatialToVCard(tesseractResult.lines)
+                : parseImpressumToVCard(tesseractResult.text);
+            }
           } else {
             vcard = parseImpressumToVCard(tesseractResult.text);
           }
@@ -240,11 +246,16 @@ export const useScanQueue = (
               const result = await scanWithTesseract(tesseractInput, lang, true);
               jobOcrText = result.text; // Set jobOcrText here for hybrid mode
               // Use Spatial Parser
-              const vcard = (result.lines && result.lines.length > 0)
-                ? (wasmModule && wasmModule.rust_parse_vcard
-                  ? wasmModule.rust_parse_vcard(JSON.stringify(result.lines))
-                  : parseSpatialToVCard(result.lines))
-                : parseImpressumToVCard(result.text);
+              // Use Rust Parser
+              let vcard: string;
+              try {
+                const rustData = await parseWithRust(result.text);
+                vcard = rustToVCardString(rustData);
+              } catch (e) {
+                vcard = (result.lines && result.lines.length > 0)
+                  ? parseSpatialToVCard(result.lines)
+                  : parseImpressumToVCard(result.text);
+              }
               return { vcard, confidence: result.confidence, method: 'tesseract' as const, rawText: result.text };
             })(),
             (async () => {
@@ -289,10 +300,8 @@ export const useScanQueue = (
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser
-          const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
-            ? (wasmModule && wasmModule.rust_parse_vcard
-              ? wasmModule.rust_parse_vcard(JSON.stringify(tesseractResult.lines))
-              : parseSpatialToVCard(tesseractResult.lines))
+          const tesseractVCard = (tesseractResult.text)
+            ? rustToVCardString(await parseWithRust(tesseractResult.text))
             : parseImpressumToVCard(tesseractResult.text);
 
           console.log(`[OCR] Auto: Tesseract completed (${tesseractResult.confidence}%)`);

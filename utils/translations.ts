@@ -79,6 +79,7 @@ export const translations = {
     viewContact: "Kontakt anzeigen",
     noteSaveFirst: "Bitte speichern Sie den Kontakt zuerst im Verlauf.",
     paste: "Einfügen",
+    copy: "Kopieren",
 
     // Chat
     chatWithData: "Chat mit Daten",
@@ -404,6 +405,7 @@ export const translations = {
     viewContact: "View Contact",
     noteSaveFirst: "Please save the contact to history first.",
     paste: "Paste",
+    copy: "Copy",
 
     // Chat
     chatWithData: "Chat with Data",

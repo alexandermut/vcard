@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Sparkles, RotateCcw, Code, FileText, UploadCloud, Undo2, Clipboard } from 'lucide-react';
+import { Sparkles, RotateCcw, Code, FileText, UploadCloud, Undo2, Clipboard, Copy } from 'lucide-react';
 import { parseImpressumSafe } from '../utils/safeParser';
+import { parseWithRust, rustToVCardString } from '../utils/rustParser';
 import { Language } from '../types';
 import { translations } from '../utils/translations';
 
@@ -42,7 +43,17 @@ export const Editor: React.FC<EditorProps> = ({
     if (text.trim()) {
       onClearImages();
       try {
-        const generatedVCard = await parseImpressumSafe(text);
+        // Try Rust parser first
+        let generatedVCard: string;
+        try {
+          const rustResult = await parseWithRust(text);
+          generatedVCard = rustToVCardString(rustResult);
+        } catch (rustError) {
+          console.warn("Rust parser failed, falling back to TS parser:", rustError);
+          // Fallback to TypeScript parser
+          generatedVCard = await parseImpressumSafe(text);
+        }
+
         // Only update if the text hasn't changed since we started parsing
         if (lastTextRef.current === text) {
           onChange(generatedVCard);
@@ -148,6 +159,7 @@ export const Editor: React.FC<EditorProps> = ({
         </div>
 
         <div className="flex gap-2 items-center self-end sm:self-auto">
+          {/* Reset */}
           <button
             onClick={() => {
               if (activeTab === 'text') setRawText('');
@@ -160,17 +172,7 @@ export const Editor: React.FC<EditorProps> = ({
             {t.reset}
           </button>
 
-          {canUndo && (
-            <button
-              onClick={onUndo}
-              className="text-xs flex items-center gap-1 px-3 py-1.5 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-md transition-colors animate-in fade-in slide-in-from-right-2"
-              title={t.undo}
-            >
-              <Undo2 size={14} />
-              {t.undo}
-            </button>
-          )}
-
+          {/* Einfügen (Paste) - only for text tab */}
           {activeTab === 'text' && (
             <button
               onClick={async () => {
@@ -191,6 +193,25 @@ export const Editor: React.FC<EditorProps> = ({
             </button>
           )}
 
+          {/* Kopieren (Copy) - only for text tab */}
+          {activeTab === 'text' && (
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(rawText);
+                } catch (err) {
+                  console.error('Failed to copy to clipboard', err);
+                }
+              }}
+              className="text-xs flex items-center gap-1 px-3 py-1.5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md transition-colors"
+              title={t.copy || 'Kopieren'}
+            >
+              <Copy size={14} />
+              {t.copy || 'Kopieren'}
+            </button>
+          )}
+
+          {/* AI Optimize Button */}
           <button
             onClick={handleOptimizeClick}
             disabled={isOptimizing}
