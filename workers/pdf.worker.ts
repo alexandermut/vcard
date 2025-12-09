@@ -6,7 +6,25 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Given the issues, CDN is safest for a quick fix, but ideally local.
 // Let's try explicit public path first, but ensure it is treated as a URL.
 // self.location.origin is available in Worker.
+// Configure worker.
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('/pdf.worker.min.mjs', self.location.origin).toString();
+
+// Polyfill/Mock DOM for PDF.js in Worker
+if (typeof document === 'undefined') {
+    (self as any).document = {
+        createElement: (tagName: string) => {
+            if (tagName === 'canvas') return new OffscreenCanvas(1, 1);
+            return {};
+        },
+        createElementNS: (ns: string, tagName: string) => {
+            if (tagName === 'canvas') return new OffscreenCanvas(1, 1);
+            return {};
+        },
+        head: { appendChild: () => { } },
+        body: { appendChild: () => { } }
+    };
+    (self as any).HTMLCanvasElement = OffscreenCanvas;
+}
 
 self.onmessage = async (e: MessageEvent) => {
     const { id, fileData, fileName } = e.data;
