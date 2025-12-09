@@ -121,4 +121,21 @@ www. ektavision.de
         // Match 3: 999999 (from DE999999) -> SHOULD NOT EXIST
         assert!(!result.tel.iter().any(|p| p.value.contains("999999")), "VAT-ID part incorrectly extracted");
     }
+
+    #[test]
+    fn test_social_media() {
+        let input = "Follow: IG: @cool_user and check www.linkedin.com/in/profi";
+        let result = parse(input);
+        
+        println!("\n=== SOCIAL MEDIA TEST ===");
+        for (i, url) in result.urls.iter().enumerate() {
+            println!("  URL {}: {} (label: {:?})", i+1, url.value, url.label);
+        }
+        
+        // 1. Instagram Handle conversion
+        assert!(result.urls.iter().any(|u| u.value == "https://instagram.com/cool_user" && u.label.as_deref() == Some("INSTAGRAM")));
+        
+        // 2. LinkedIn Classification
+        assert!(result.urls.iter().any(|u| u.value.contains("linkedin.com") && u.label.as_deref() == Some("LINKEDIN")));
+    }
 }

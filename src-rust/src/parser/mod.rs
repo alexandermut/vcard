@@ -13,6 +13,7 @@ pub mod org;
 pub mod title;
 pub mod url;
 pub mod name_parts;
+pub mod social;
 
 pub use types::*;
 
@@ -50,6 +51,7 @@ pub fn parse(text: &str) -> VCardResult {
         tel.extend(phone::extract_phones(chunk));
         email.extend(email::extract_emails(chunk));
         urls.extend(url::extract_urls(chunk));
+        urls.extend(social::extract_social_handles(chunk));
         
         // Name Candidates
         if let Some(candidate) = name::parse_name(chunk) {
@@ -57,6 +59,13 @@ pub fn parse(text: &str) -> VCardResult {
             if best_name.as_ref().map_or(true, |curr| candidate.score > curr.score) {
                 best_name = Some(candidate);
             }
+        }
+    }
+    
+    // Social Media Classification: Label all URLs (generic or social)
+    for url in urls.iter_mut() {
+        if let Some(label) = social::classify_social_url(&url.value) {
+            url.label = Some(label);
         }
     }
     
