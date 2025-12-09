@@ -94,21 +94,38 @@ export const useScanQueue = (
         // ✅ NEW: Use worker for compression (runs off main thread!)
         const imageWorker = getImageWorker();
 
-        // Helper to convert File/String to Base64 via Worker
+        // Helper to convert File/String to Base64 via Worker (Standard Color Compression)
         const getBase64 = async (input: string | File): Promise<string> => {
           if (typeof input === 'string') return input;
 
           console.time(`worker-compress-${input.name}`);
           try {
-            // Worker compression - no UI freeze!
+            // Always use standard compression for storage/display (Color)
             const res = await imageWorker.compressImage(input, 0.3, 800);
             console.timeEnd(`worker-compress-${input.name}`);
             return res;
           } catch (error) {
             console.warn('Worker compression failed, falling back to main thread:', error);
-            // Fallback to main thread if worker fails
             const res = await resizeImage(input, 800, 0.7);
             return res;
+          }
+        };
+
+        // Helper to get Optimized OCR Image (B&W / Rust)
+        const getOcrImage = async (input: string | File): Promise<string> => {
+          console.time(`worker-preprocess-${typeof input === 'string' ? 'base64' : input.name}`);
+          try {
+            if (typeof input === 'string') {
+              // For now, if string, just return it (or we could convert to Blob and preprocess)
+              // TODO: Implement string->blob->preprocess
+              return input;
+            }
+            const res = await imageWorker.preprocessImage(input);
+            console.timeEnd(`worker-preprocess-${input.name}`);
+            return res;
+          } catch (e) {
+            console.warn("Preprocessing failed", e);
+            return await getBase64(input); // Fallback to color
           }
         };
 
@@ -150,7 +167,9 @@ export const useScanQueue = (
           console.log('[OCR] Mode: Regex Training (Dual Scan & Analysis)');
 
           // 1. Run Tesseract (Offline) for Baseline
-          const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          // Use Rust-optimized B&W image for Tesseract
+          const tesseractInput = await getOcrImage(job.images[0]);
+          const tesseractResult = await scanWithTesseract(tesseractInput, lang, true);
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
           const tesseractVCard = (tesseractResult.lines && tesseractResult.lines.length > 0)
             ? (wasmModule && wasmModule.rust_parse_vcard
@@ -180,7 +199,8 @@ export const useScanQueue = (
         } else if (ocrMethod === 'tesseract') {
           // Tesseract Only (Offline)
           console.log('[OCR] Mode: Tesseract Only');
-          const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          const tesseractInput = await getOcrImage(job.images[0]);
+          const tesseractResult = await scanWithTesseract(tesseractInput, lang, true);
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser if lines are available, otherwise fallback
@@ -216,7 +236,8 @@ export const useScanQueue = (
           console.log('[OCR] Mode: Hybrid (both parallel)');
           const [tesseractRes, geminiRes] = await Promise.allSettled([
             (async () => {
-              const result = await scanWithTesseract(rawImages[0], lang, true);
+              const tesseractInput = await getOcrImage(job.images[0]);
+              const result = await scanWithTesseract(tesseractInput, lang, true);
               jobOcrText = result.text; // Set jobOcrText here for hybrid mode
               // Use Spatial Parser
               const vcard = (result.lines && result.lines.length > 0)
@@ -263,7 +284,8 @@ export const useScanQueue = (
           console.log('[OCR] Mode: Auto (Offline-First)');
 
           // 1. Always run Tesseract first (offline)
-          const tesseractResult = await scanWithTesseract(rawImages[0], lang, true);
+          const tesseractInput = await getOcrImage(job.images[0]);
+          const tesseractResult = await scanWithTesseract(tesseractInput, lang, true);
           jobOcrText = tesseractResult.text;  // ✅ Store OCR text
 
           // Use Spatial Parser

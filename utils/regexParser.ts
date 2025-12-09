@@ -601,7 +601,13 @@ const consumeAddress = (lines: Line[], data: ParserData) => {
         // Loop backwards to find address lines (Street, Postfach, c/o, Floor, etc.)
         for (let j = i - 1; j >= 0; j--) {
           const prevLine = lines[j];
-          if (prevLine.isConsumed) break;
+          if (prevLine.isConsumed) {
+            // FIX: Allow skipping over contact info (phones, emails) that might be interleaved due to column splitting
+            if (['PHONE', 'EMAIL', 'URL', 'META', 'JOB'].includes(prevLine.type || '')) {
+              continue;
+            }
+            break;
+          }
 
           // Stop if we hit a known non-address type
           if (prevLine.type && prevLine.type !== 'ADDRESS') break;
@@ -1063,6 +1069,12 @@ export const parseImpressumToVCard = (text: string): string => {
   // Also handle " • " as separator
   cleanText = cleanText.replace(/\s+[|•]\s+/g, '\n');
 
+  // PRE-PROCESSING: Fix "Mixed Columns" (Visual columns -> Newlines)
+  // Explode lines with wide gaps (3+ spaces or tabs) into multiple lines.
+  // Example: "Address    |    Tel: 123" -> "Address \n Tel: 123"
+  cleanText = cleanText.replace(/(\S)[ \t]{3,}(\S)/g, '$1\n$2');
+  console.log('DEBUG cleanText after column split:', cleanText);
+
   // PRE-PROCESSING: Fix "Sticky Text"
   // 1. LowercaseUppercase -> Lowercase Uppercase (e.g. MaxMustermann -> Max Mustermann)
   // Smart Split: Only split if the first part is a known name (e.g. Max)
@@ -1215,6 +1227,24 @@ export const parseImpressumToVCard = (text: string): string => {
         break;
       }
     }
+  }
+
+  // 7. Post-Processing: Clean Name Fields (User request: Only letters at start/end)
+  if (data.fn) {
+    // Strip non-letters (including dots, dashes) from start and end
+    data.fn = data.fn.replace(/^[^a-zA-ZÄÖÜäöü]+|[^a-zA-ZÄÖÜäöü]+$/g, '');
+
+    // Also fix internal dots on full words (e.g. "Christel." -> "Christel")
+    // Logic: Remove dot if preceded by 2 or more letters. Keep initials (e.g. "A.")
+    data.fn = data.fn.replace(/([a-zA-ZÄÖÜäöü]{2,})\./g, '$1');
+  }
+  if (data.n) {
+    // Apply same cleaning to each part of N (Family;Given;Middle...)
+    data.n = data.n.split(';').map(part => {
+      let clean = part.replace(/^[^a-zA-ZÄÖÜäöü]+|[^a-zA-ZÄÖÜäöü]+$/g, '');
+      clean = clean.replace(/([a-zA-ZÄÖÜäöü]{2,})\./g, '$1');
+      return clean;
+    }).join(';');
   }
 
   // 6. Construct vCard

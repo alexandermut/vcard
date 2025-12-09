@@ -9,6 +9,7 @@ static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 pub mod pdf;
 pub mod dedup;
 pub mod search;
+pub mod image_ops;
 
 #[wasm_bindgen]
 extern "C" {

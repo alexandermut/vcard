@@ -224,6 +224,42 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
     onUpdate(generateVCardFromData(newData));
   };
 
+  const addArrayItem = (field: 'email' | 'tel' | 'url', type: string = 'WORK') => {
+    const newArray = [...(localData[field] || [])];
+    newArray.push({ value: '', type });
+    const newData = { ...localData, [field]: newArray };
+    setLocalData(newData);
+    // Don't update parent yet, wait for input? Or sync immediately. Sync immediate is safer for state.
+    onUpdate(generateVCardFromData(newData));
+  };
+
+  const deleteArrayItem = (field: 'email' | 'tel' | 'url', index: number) => {
+    const newArray = [...(localData[field] || [])];
+    newArray.splice(index, 1);
+    const newData = { ...localData, [field]: newArray };
+    setLocalData(newData);
+    onUpdate(generateVCardFromData(newData));
+  };
+
+  const addAddress = () => {
+    const newAdr = [...(localData.adr || [])];
+    newAdr.push({
+      type: 'WORK',
+      value: { street: '', city: '', zip: '', country: '', region: '' }
+    });
+    const newData = { ...localData, adr: newAdr };
+    setLocalData(newData);
+    onUpdate(generateVCardFromData(newData));
+  };
+
+  const deleteAddress = (index: number) => {
+    const newAdr = [...(localData.adr || [])];
+    newAdr.splice(index, 1);
+    const newData = { ...localData, adr: newAdr };
+    setLocalData(newData);
+    onUpdate(generateVCardFromData(newData));
+  };
+
   const getUrlStyle = (type: string, value: string) => {
     const t = type.toUpperCase();
     if (t.includes('LINKEDIN')) return { icon: Linkedin, colorBg: 'bg-[#0077b5]/10', colorText: 'text-[#0077b5]', label: 'LinkedIn' };
@@ -477,7 +513,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
         <div className="space-y-4 pb-8">
           <div className="grid gap-3">
             {localData.email?.map((e, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
+              <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
                 <a href={`mailto:${e.value} `} className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors cursor-pointer" title={t.email}>
                   <Mail size={16} />
                 </a>
@@ -487,26 +523,51 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                     value={e.value}
                     onChange={(ev) => updateArrayField('email', i, 'value', ev.target.value)}
                     className="text-sm text-slate-800 dark:text-slate-200 w-full bg-transparent border-none p-0 focus:ring-0"
+                    placeholder="E-Mail"
                   />
                 </div>
+                <button
+                  onClick={() => deleteArrayItem('email', i)}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"
+                  title="Entfernen"
+                >
+                  <X size={14} />
+                </button>
               </div>
             ))}
+            <button onClick={() => addArrayItem('email', 'WORK')} className="text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1 pl-2 mb-2">
+              <Plus size={12} /> {t.email || "E-Mail"} hinzufügen
+            </button>
 
             {localData.tel?.map((telItem, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
+              <div key={i} className="flex items-center gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
                 <a href={`tel:${telItem.value} `} className="w-8 h-8 rounded-full bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400 shrink-0 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors cursor-pointer" title={t.call}>
                   <Phone size={16} />
                 </a>
                 <div className="flex-1 overflow-hidden">
-                  <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{telItem.type}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-500 uppercase tracking-wider font-semibold">{telItem.type}</p>
+                    {/* Allow changing type? For now just viewing */}
+                  </div>
                   <input
                     value={telItem.value}
                     onChange={(ev) => updateArrayField('tel', i, 'value', ev.target.value)}
                     className="text-sm text-slate-800 dark:text-slate-200 font-mono w-full bg-transparent border-none p-0 focus:ring-0"
+                    placeholder="+49..."
                   />
                 </div>
+                <button
+                  onClick={() => deleteArrayItem('tel', i)}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"
+                  title="Entfernen"
+                >
+                  <X size={14} />
+                </button>
               </div>
             ))}
+            <button onClick={() => addArrayItem('tel', 'CELL')} className="text-xs text-green-500 hover:text-green-600 flex items-center gap-1 pl-2 mb-2">
+              <Plus size={12} /> {t.call || "Nummer"} hinzufügen
+            </button>
 
 
 
@@ -532,15 +593,26 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                         value={u.value}
                         onChange={(ev) => updateArrayField('url', i, 'value', ev.target.value)}
                         className="text-sm text-blue-600 dark:text-blue-400 w-full bg-transparent border-none p-0 focus:ring-0 hover:underline"
+                        placeholder="https://..."
                       />
                       <a href={u.value} target="_blank" rel="noopener noreferrer" className="ml-1 text-slate-400 hover:text-blue-500">
                         <ExternalLink size={12} />
                       </a>
                     </div>
                   </div>
+                  <button
+                    onClick={() => deleteArrayItem('url', i)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity"
+                    title="Entfernen"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               );
             })}
+            <button onClick={() => addArrayItem('url', 'WEBSITE')} className="text-xs text-indigo-500 hover:text-indigo-600 flex items-center gap-1 pl-2 mb-2">
+              <Plus size={12} /> Webseite hinzufügen
+            </button>
 
             {IMPORTANT_SOCIALS.map(platform => {
               if (existingUrlTypes.includes(platform)) return null;
@@ -566,7 +638,7 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
             })}
 
             {localData.adr?.map((a, i) => (
-              <div key={i} className="flex items-start gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group">
+              <div key={i} className="flex items-start gap-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg transition-colors group relative">
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.value.street}, ${a.value.zip} ${a.value.city}, ${a.value.country}`)}`}
                   target="_blank"
@@ -606,8 +678,18 @@ export const PreviewCard: React.FC<PreviewCardProps> = ({
                     placeholder={t.country}
                   />
                 </div>
+                <button
+                  onClick={() => deleteAddress(i)}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-opacity absolute top-2 right-2"
+                  title="Entfernen"
+                >
+                  <X size={14} />
+                </button>
               </div >
             ))}
+            <button onClick={addAddress} className="text-xs text-orange-500 hover:text-orange-600 flex items-center gap-1 pl-2 mb-2">
+              <Plus size={12} /> Adresse hinzufügen
+            </button>
           </div >
 
           <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-100 dark:border-yellow-900/30">

@@ -4,8 +4,40 @@
  */
 import { expose } from 'comlink';
 import imageCompression from 'browser-image-compression';
+import init, { preprocess_scan } from '../src/wasm/core.js';
+
+let isWasmInitialized = false;
 
 const api = {
+    /**
+     * Preprocess image using Rust (Resize + Grayscale + Adaptive Threshold)
+     * Optimized for Tesseract OCR.
+     */
+    async preprocessImage(file: File): Promise<string> {
+        try {
+            if (!isWasmInitialized) {
+                await init();
+                isWasmInitialized = true;
+            }
+
+            const buffer = await file.arrayBuffer();
+            const bytes = new Uint8Array(buffer);
+
+            // Rust Magic 🦀
+            // Returns PNG bytes
+            const processedBytes = preprocess_scan(bytes);
+
+            // Convert to Base64
+            const blob = new Blob([processedBytes as unknown as BlobPart], { type: 'image/png' });
+            return await imageCompression.getDataUrlFromFile(blob as File);
+
+        } catch (e) {
+            console.error("Rust Preprocessing Failed, falling back to original:", e);
+            // Fallback: just return original as base64
+            return await imageCompression.getDataUrlFromFile(file);
+        }
+    },
+
     /**
      * Compress an image file with professional quality
      * @param file - Image file to compress
