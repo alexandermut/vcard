@@ -115,7 +115,7 @@ const App: React.FC = () => {
       try {
         console.log("crab 🦀 Loading Rust WASM...");
         // @ts-ignore
-        const wasm = await import('./src/wasm/vcard_wasm.js');
+        const wasm = await import('./src/wasm/core.js');
         await wasm.default();
         wasmModule.current = wasm; // Store for global use
         wasmLoaded.current = true;
@@ -124,8 +124,9 @@ const App: React.FC = () => {
 
         console.log("crab 🦀 Rust WASM Loaded!");
         // Silent startup test
-        // const input = "Hello World";
-        // wasm.rust_clean_string(input); 
+        if (wasm.greet) {
+          console.log(wasm.greet("Kontakte"));
+        }
       } catch (e) {
         console.error("crab 🦀 Failed to load WASM:", e);
       }
