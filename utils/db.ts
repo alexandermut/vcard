@@ -52,7 +52,7 @@ interface VCardDB extends DBSchema {
 }
 
 const DB_NAME = 'vcard-db';
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 const STORE_NAME = 'history';
 const STREETS_STORE = 'streets';
 const GOOGLE_STORE = 'google_contacts';
@@ -71,27 +71,43 @@ export const initDB = () => {
 
                 // ... (existing version checks)
 
-                // Version 8: Catch-all recovery for missing stores
-                // This ensures self-healing if a previous migration failed or state is corrupted
-                if (oldVersion < 8) {
-                    // Ensure 'notes' exists
+                // Version 9: Ultimate Recovery
+                // Check ALL stores to guarantee consistency regardless of past state
+                if (oldVersion < 9) {
+                    // 1. History (Main Store) with indexes
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+                        store.createIndex('by-date', 'timestamp');
+                        store.createIndex('keywords', 'keywords', { multiEntry: true });
+                    } else {
+                        // Ensure indexes exist if store exists
+                        const store = transaction.objectStore(STORE_NAME);
+                        if (!store.indexNames.contains('keywords')) {
+                            store.createIndex('keywords', 'keywords', { multiEntry: true });
+                        }
+                    }
+
+                    // 2. Notes
                     if (!db.objectStoreNames.contains('notes')) {
                         const notesStore = db.createObjectStore('notes', { keyPath: 'id' });
                         notesStore.createIndex('by-date', 'timestamp');
                         notesStore.createIndex('by-contact', 'contactId');
                     }
-                    // Ensure 'failed_scans' exists
+
+                    // 3. Failed Scans
                     if (!db.objectStoreNames.contains('failed_scans')) {
                         const failedStore = db.createObjectStore('failed_scans', { keyPath: 'id' });
                         failedStore.createIndex('by-date', 'timestamp');
                     }
-                    // Ensure 'streets' exists
+
+                    // 4. Streets
                     if (!db.objectStoreNames.contains(STREETS_STORE)) {
                         const streetStore = db.createObjectStore(STREETS_STORE, { keyPath: 'id', autoIncrement: true });
                         streetStore.createIndex('zip', 'zip');
                         streetStore.createIndex('name', 'name');
                     }
-                    // Ensure 'google_contacts' exists
+
+                    // 5. Google Contacts
                     if (!db.objectStoreNames.contains(GOOGLE_STORE)) {
                         db.createObjectStore(GOOGLE_STORE, { keyPath: 'resourceName' });
                     }
