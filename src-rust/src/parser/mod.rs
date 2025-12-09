@@ -216,13 +216,13 @@ pub fn parse(text: &str) -> VCardResult {
     
     VCardResult {
         fn_name: best_name,
-        adr,
+        adr: adr,
         tel,
-        email,
-        url: urls,
-        org,
-        title,
-        ..Default::default()
+        email: email,
+        urls: urls,
+        org: org,
+        title: title,
+        n_structure: None,
     }
 }
 

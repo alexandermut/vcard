@@ -19,14 +19,14 @@ www. ektavision.de
         let result = parse(input);
         
         println!("=== DEBUG URL TEST ===");
-        println!("URLs found: {}", result.url.len());
-        for (i, url) in result.url.iter().enumerate() {
+        println!("URLs found: {}", result.urls.len());
+        for (i, url) in result.urls.iter().enumerate() {
             println!("  URL {}: {} (score: {}, debug: {})", 
                 i+1, url.value, url.score, url.debug_info);
         }
         
-        assert!(result.url.len() > 0, "No URLs found!");
-        assert!(result.url.iter().any(|u| u.value.contains("ektavision")), 
+        assert!(result.urls.len() > 0, "No URLs found!");
+        assert!(result.urls.iter().any(|u| u.value.contains("ektavision")), 
             "ektavision.de not found in URLs");
     }
 }

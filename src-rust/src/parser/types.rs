@@ -22,7 +22,7 @@ pub struct VCardResult {
     pub n_structure: Option<Scored<String>>, // Family;Given;...
     pub tel: Vec<Scored<String>>,
     pub email: Vec<Scored<String>>,
-    pub url: Vec<Scored<String>>,
+    pub urls: Vec<Scored<String>>,
     pub adr: Vec<Scored<ParsedAddress>>,
     pub org: Vec<Scored<String>>,
     pub title: Vec<Scored<String>>,

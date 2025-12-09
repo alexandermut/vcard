@@ -33,8 +33,8 @@ www. ektavision.de
             println!("  TITLE {}: {} (score: {})", i+1, title.value, title.score);
         }
         
-        println!("\nURLs: {} items", result.url.len());
-        for (i, url) in result.url.iter().enumerate() {
+        println!("\nURLs: {} items", result.urls.len());
+        for (i, url) in result.urls.iter().enumerate() {
             println!("  URL {}: {} (score: {}, debug: {})", i+1, url.value, url.score, url.debug_info);
         }
         
@@ -55,9 +55,9 @@ www. ektavision.de
         }
         
         // Assertions
-        assert!(result.url.len() > 0, "No URLs found!");
+        assert!(result.urls.len() > 0, "No URLs found!");
         // We expect at least one version of the URL (either inferred or from text)
-        assert!(result.url.iter().any(|u| u.value.contains("ektavision")), "ektavision.de not in URLs");
+        assert!(result.urls.iter().any(|u| u.value.contains("ektavision")), "ektavision.de not in URLs");
         
         // Assert Phone normalization
         // Input: +49 (0) 561 890799 -6
