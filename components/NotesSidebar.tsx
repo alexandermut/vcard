@@ -14,7 +14,10 @@ interface NotesSidebarProps {
     filterContactId?: string | null;
 }
 
+import { useSearchWorker } from '../hooks/useSearchWorker';
 import { useEscapeKey } from '../hooks/useEscapeKey';
+
+// ...
 
 export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onSelectContact, lang, filterContactId }) => {
     useEscapeKey(onClose, isOpen);
@@ -23,6 +26,9 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
     const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
     const [editContent, setEditContent] = useState('');
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+
+    // Rust Search Worker
+    const { searchNotes: workerSearchNotes, notesResults, isReady: isWorkerReady } = useSearchWorker();
 
     const t = translations[lang];
 
@@ -41,18 +47,32 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
     const loadNotes = async () => {
         try {
             let items = await getNotes();
-            // Sort by date desc
             items = items.reverse();
-
             if (filterContactId) {
                 items = items.filter(n => n.contactId === filterContactId);
             }
-
             setNotes(items);
         } catch (e) {
             console.error("Failed to load notes", e);
         }
     };
+
+    // Result Listener
+    useEffect(() => {
+        // When worker returns results, update UI
+        if (notesResults && notesResults.length > 0) {
+            let results = notesResults;
+            if (filterContactId) {
+                results = results.filter(n => n.contactId === filterContactId);
+            }
+            setNotes(results);
+        } else if (searchQuery && isWorkerReady && notesResults.length === 0) {
+            // Search returned nothing
+            setNotes([]);
+        }
+    }, [notesResults]);
+
+    // ...
 
     const handleSearch = async (query: string) => {
         setSearchQuery(query);
@@ -60,16 +80,24 @@ export const NotesSidebar: React.FC<NotesSidebarProps> = ({ isOpen, onClose, onS
             loadNotes();
             return;
         }
-        try {
-            let results = await searchNotes(query);
-            if (filterContactId) {
-                results = results.filter(n => n.contactId === filterContactId);
+
+        // Use Rust Worker if ready
+        if (isWorkerReady) {
+            workerSearchNotes(query);
+        } else {
+            // Fallback to DB (slow but works if worker initializing)
+            try {
+                let results = await searchNotes(query);
+                if (filterContactId) {
+                    results = results.filter(n => n.contactId === filterContactId);
+                }
+                setNotes(results);
+            } catch (e) {
+                console.error("Search failed", e);
             }
-            setNotes(results);
-        } catch (e) {
-            console.error("Search failed", e);
         }
     };
+
 
     const handleDelete = async (id: string) => {
         if (window.confirm(t.deleteConfirm || "Delete this note?")) {

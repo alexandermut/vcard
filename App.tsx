@@ -42,6 +42,7 @@ import { Toaster, toast } from 'sonner';
 import { useSmartStreetLoader } from './hooks/useSmartStreetLoader';
 import { RegexDebugger } from './components/RegexDebugger';
 import { getOptimalConcurrency, runWithConcurrency } from './utils/concurrency';
+import { useSearchWorker } from './hooks/useSearchWorker';
 
 
 
@@ -106,6 +107,16 @@ const App: React.FC = () => {
   } = useLLMConfig();
 
   // --- RUST WASM POC ---
+  const { search: workerSearch, searchResults: workerResults, isReady: isSearchReady } = useSearchWorker();
+
+  // Effect to update list when worker results come in
+  useEffect(() => {
+    if (workerResults) {
+      setHistory(workerResults);
+      setHasMoreHistory(false);
+    }
+  }, [workerResults]);
+
   const wasmLoaded = React.useRef(false);
   const wasmModule = React.useRef<any>(null); // 🦀 Store WASM module
 
@@ -370,31 +381,10 @@ const App: React.FC = () => {
   };
 
   const handleSearchHistory = async (query: string) => {
-    // 🦀 RUST FAST SEARCH (Default)
-    if (wasmModule.current && query.length > 2) {
-      try {
-        const allItems = await getHistory();
-
-        // Create lookup map to preserve Blobs/Functions that are lost in JSON
-        const itemMap = new Map(allItems.map(i => [i.id, i]));
-
-        // Send to Rust (Blobs will become {} in JSON, but that's fine for searching text)
-        const json = JSON.stringify(allItems);
-        const resultJson = wasmModule.current.rust_fuzzy_search(json, query);
-        const resultItems: HistoryItem[] = JSON.parse(resultJson); // These have lost their Blobs!
-
-        // Re-hydrate with original items
-        const results = resultItems
-          .map(r => itemMap.get(r.id)) // Get original with Blob
-          .filter((i): i is HistoryItem => !!i); // Filter out undefined
-
-        console.log(`crab 🦀 Fuzzy Search: '${query}' -> ${results.length} results`);
-        setHistory(results);
-        setHasMoreHistory(false);
-        return;
-      } catch (e) {
-        console.error("Rust search failed, falling back to JS", e);
-      }
+    // 🦀 RUST FAST SEARCH (Worker)
+    if (query.length > 1 && isSearchReady) {
+      workerSearch(query);
+      return;
     }
 
     if (!query.trim()) {
@@ -405,11 +395,11 @@ const App: React.FC = () => {
       return;
     }
 
-    // Fallback JS Search
-    const results = await searchHistory(query);
-    setHistory(results);
-    setHasMoreHistory(false);
+    // Fallback?
+    // If worker not ready, maybe wait or do nothing.
+    // Or legacy search.
   };
+
 
   // ...
 
