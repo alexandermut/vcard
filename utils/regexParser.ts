@@ -1247,6 +1247,65 @@ export const parseImpressumToVCard = (text: string): string => {
     }).join(';');
   }
 
+  // 8. Smart Deduplication & Correction (Module 32)
+
+  // A. Deduplicate Addresses
+  if (data.adr.length > 1) {
+    const uniqueAdrs = new Map<string, typeof data.adr[0]>();
+    data.adr.forEach(a => {
+      // Create a signature (Just the full String value)
+      const sig = a.value;
+      if (!uniqueAdrs.has(sig)) {
+        uniqueAdrs.set(sig, a);
+      }
+    });
+    data.adr = Array.from(uniqueAdrs.values());
+  }
+
+  // B. Smart Email Correction (Levenshtein)
+  // Fix "vommame.nackname@firma.de" -> "vorname.nachname@firma.de" using confident Name
+  if (data.fn && data.email.length > 0) {
+    // 1. Prepare Candidates from Name
+    const cleanFn = data.fn.toLowerCase().replace(/[^a-zäöüß ]/g, '');
+    const nameParts = cleanFn.split(/\s+/).filter(p => p.length > 2);
+
+    if (nameParts.length >= 2) {
+      const candidates: string[] = [];
+      const first = nameParts[0];
+      const last = nameParts[nameParts.length - 1]; // Use last part as surname
+
+      candidates.push(`${first}.${last}`); // max.mustermann
+      candidates.push(`${last}.${first}`); // mustermann.max
+      candidates.push(`${first}${last}`);  // maxmustermann
+      candidates.push(`${first.charAt(0)}.${last}`); // m.mustermann
+
+      // 2. Check each email
+      data.email = data.email.map(email => {
+        const parts = email.value.split('@');
+        if (parts.length !== 2) return email;
+
+        const prefix = parts[0].toLowerCase();
+        const domain = parts[1];
+
+        // Only attempt if prefix is reasonably long
+        if (prefix.length < 5) return email;
+
+        // Check against candidates
+        for (const candidate of candidates) {
+          // If match is close but not exact (e.g. 1-2 chars diff)
+          const dist = getLevenshteinDistance(prefix, candidate);
+          const maxEdits = Math.max(2, Math.floor(candidate.length / 4)); // Allow 2 edits, or more for very long names
+
+          if (dist > 0 && dist <= maxEdits) {
+            console.log(`[SmartCorrect] Fixing Email: ${prefix}@ -> ${candidate}@ (Dist: ${dist})`);
+            return { ...email, value: `${candidate}@${domain}` }; // Keep case of candidate? Lowercase usually better for email
+          }
+        }
+        return email;
+      });
+    }
+  }
+
   // 6. Construct vCard
   return buildVCard(data);
 };
@@ -1274,5 +1333,43 @@ export const buildVCard = (data: ParserData): string => {
 
   vcard.push("END:VCARD");
 
+  console.log(`[SmartCorrect] Address Count: ${data.adr.length}, Emails: ${data.email.length}`);
   return vcard.join('\n');
+};
+
+// --- Helper: Levenshtein Distance (Iterative) ---
+const getLevenshteinDistance = (a: string, b: string): number => {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+
+  const matrix = [];
+
+  // increment along the first column of each row
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+
+  // increment each column in the first row
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  // Fill in the rest of the matrix
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1, // substitution
+          Math.min(
+            matrix[i][j - 1] + 1, // insertion
+            matrix[i - 1][j] + 1  // deletion
+          )
+        );
+      }
+    }
+  }
+
+  return matrix[b.length][a.length];
 };
