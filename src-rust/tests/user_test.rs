@@ -97,4 +97,28 @@ www. ektavision.de
         // Should NOT be extracted as a phone number
         assert!(result.tel.is_empty(), "VAT-ID was incorrectly detected as phone number!");
     }
+
+    #[test]
+    fn test_mixed_ocr_line() {
+        // Tesseract often merges independent info into one line
+        // We expect phone numbers to be extracted if separated by non-letters
+        // But alphanumeric IDs (E118...) should be skipped
+        let input = "Musterfirma GmbH 040 123 456 / 0176-999-888 // VAT-ID: DE999999";
+        
+        let result = parse(input);
+        
+        println!("\n=== MIXED LINE TEST ===");
+        for (i, tel) in result.tel.iter().enumerate() {
+            println!("  TEL {}: {} (score: {})", i+1, tel.value, tel.score);
+        }
+        
+        // Match 1: 040 123 456 -> 040123456
+        assert!(result.tel.iter().any(|p| p.value == "040123456"), "First phone missed");
+        
+        // Match 2: 0176-999-888 -> 0176999888
+        assert!(result.tel.iter().any(|p| p.value == "0176999888"), "Second phone missed");
+        
+        // Match 3: 999999 (from DE999999) -> SHOULD NOT EXIST
+        assert!(!result.tel.iter().any(|p| p.value.contains("999999")), "VAT-ID part incorrectly extracted");
+    }
 }

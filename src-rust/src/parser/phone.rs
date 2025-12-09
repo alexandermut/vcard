@@ -6,11 +6,15 @@ static PHONE_RE: OnceLock<Regex> = OnceLock::new();
 
 fn get_phone_regex() -> &'static Regex {
     PHONE_RE.get_or_init(|| {
-        // Broad regex to catch candidates
-        // Allows: +49, 0049, (040), /, -, spaces
+        // Strict start regex to avoid capturing leading spaces (which messes up boundary checks)
+        // Must start with: + (CC), 00 (CC), ( (Area), or Digit
         Regex::new(r"(?x)
-            (?:(?:\+|00)\d{1,3})?  # Optional Country Code
-            [\d\s./()-]{5,}        # Body (at least 5 chars)
+            (?:
+                (?:\+|00)\d{1,3}    # CC start (+49)
+                |
+                [\d(]               # OR Start with Digit or (
+            )
+            [\d\s./()-]{3,}         # Body (at least 3 more chars)
         ").unwrap()
     })
 }
@@ -38,6 +42,45 @@ pub fn extract_phones(input: &str) -> Vec<Scored<String>> {
         }
         
         let raw = mat.as_str();
+        
+        // Multi-Phone Split Strategy
+        // If Tesseract merges "040 123 / 0176 456", regex captures it all.
+        // We detect this by length (>15 digits) and explicit separators.
+        let digit_count = raw.chars().filter(|c| c.is_ascii_digit()).count();
+        if digit_count > 15 {
+            let separators = [" // ", " / ", " | "];
+            let mut detected_split = false;
+            
+            for &sep in &separators {
+                if raw.contains(sep) {
+                   let parts: Vec<&str> = raw.split(sep).collect();
+                   // If splitting yields valid phones, use them!
+                   if parts.iter().all(|p| is_valid_phone(p.trim())) {
+                       for part in parts {
+                           let trimmed = part.trim();
+                           let (mut score, mut label) = score_phone(trimmed);
+                           if is_fax_line {
+                               label = Some("FAX".to_string());
+                               score = score.max(0.95);
+                           }
+                           
+                           results.push(Scored {
+                               value: normalize_phone(trimmed),
+                               score,
+                               label,
+                               debug_info: "split_multi_phone".to_string(),
+                           });
+                       }
+                       detected_split = true;
+                       break; // Handled by this separator
+                   }
+                }
+            }
+            if detected_split {
+                continue;
+            }
+        }
+
         // Post-Validation
         if is_valid_phone(raw) {
              let (mut score, mut label) = score_phone(raw);
