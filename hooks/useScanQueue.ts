@@ -10,6 +10,7 @@ import { addFailedScan } from '../utils/db';
 import { wrap } from 'comlink';
 import type { ImageWorkerAPI } from '../workers/imageWorker';
 import { parseWithRust, rustToVCardString } from '../utils/rustParser';
+import { getOptimalConcurrency } from '../utils/concurrency';
 
 
 // ✅ NEW: Initialize image worker once (reuse across scans)
@@ -41,9 +42,14 @@ export const useScanQueue = (
   const isProcessing = queue.some(j => j.status === 'processing');
 
   // ✅ NEW: Create concurrency limiter based on llmConfig
-  const concurrency = llmConfig.concurrentScans || 1;
+  // For Tesseract (Offline), we use MAXIMUM hardware concurrency (Worker Pool handles distribution)
+  // For Cloud APIs, we respect the user setting (Rate Limits)
+  const hardwareConcurrency = getOptimalConcurrency();
+  const concurrency = ocrMethod === 'tesseract'
+    ? hardwareConcurrency
+    : (llmConfig.concurrentScans || 1);
 
-  console.log(`[ScanQueue] Concurrency limit: ${concurrency}`);
+  console.log(`[ScanQueue] Concurrency limit: ${concurrency} (Mode: ${ocrMethod})`);
 
   const addJob = useCallback((images: (string | File)[], mode: 'vision' | 'hybrid' = 'vision') => {
     const newJob: ScanJob = {

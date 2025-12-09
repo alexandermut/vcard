@@ -1,10 +1,12 @@
-import Tesseract, { createWorker, Worker, LoggerMessage } from 'tesseract.js';
+import Tesseract, { createWorker, createScheduler, Worker, Scheduler, LoggerMessage } from 'tesseract.js';
 import type { Language } from '../types';
 import { preprocessImage } from '../utils/tesseractPreprocessing';
+import { getOptimalConcurrency } from '../utils/concurrency';
 
 
-let tesseractWorker: Worker | null = null;
+let tesseractScheduler: Scheduler | null = null;
 let currentLanguage: Language | null = null;
+let initializationPromise: Promise<Scheduler> | null = null;
 
 export interface OCRLine {
     text: string;
@@ -25,90 +27,112 @@ export interface TesseractResult {
 }
 
 /**
- * Initialize Tesseract.js worker with German or English language data
- * FIX: Now properly handles language switching
+ * Initialize Tesseract.js SCHEDULER with multiple workers
+ * Utilizes hardware concurrency (capped at 8)
+ * Implements Initialization Lock to prevent race conditions.
  */
-export const initializeTesseract = async (lang: Language): Promise<Worker> => {
-    // Check if worker exists AND language matches
-    if (tesseractWorker && currentLanguage === lang) {
-        console.log(`[Tesseract] Reusing existing worker (${lang})`);
-        return tesseractWorker;
+export const initializeTesseract = async (lang: Language): Promise<Scheduler> => {
+    // 1. Wait for any pending initialization to finish (Barrier)
+    if (initializationPromise) {
+        try {
+            await initializationPromise;
+        } catch (e) {
+            // Ignore error from pending init; we will retry fresh below if needed
+        }
     }
 
-    // If language changed, terminate old worker
-    if (tesseractWorker && currentLanguage !== lang) {
-        console.log(`[Tesseract] Language changed from ${currentLanguage} to ${lang}, terminating old worker`);
-        await tesseractWorker.terminate();
-        tesseractWorker = null;
+    // 2. Check if we have a valid scheduler for the requested language
+    if (tesseractScheduler && currentLanguage === lang) {
+        // console.log(`[Tesseract] Reusing existing scheduler (${lang})`);
+        return tesseractScheduler;
+    }
+
+    // 3. Double-check lock (in case another call started init while we waited)
+    if (initializationPromise) {
+        return initializeTesseract(lang);
+    }
+
+    // 4. Terminate old/mismatched scheduler
+    if (tesseractScheduler) {
+        console.log(`[Tesseract] Language changed or restart needed. Terminating old scheduler...`);
+        await tesseractScheduler.terminate();
+        tesseractScheduler = null;
     }
 
     const tesseractLang = lang === 'de' ? 'deu' : 'eng';
 
-    console.log(`[Tesseract] Initializing worker with language: ${tesseractLang}`);
-    console.log('[Tesseract] About to call createWorker...');
+    // Determine worker count
+    const optimalWorkers = Math.min(getOptimalConcurrency(), 8);
+    const workerCount = Math.max(2, optimalWorkers);
 
-    try {
-        const worker = await createWorker(tesseractLang, 1, {
-            workerPath: '/tesseract/worker.min.js',
-            corePath: '/tesseract/tesseract-core.wasm.js',
-            langPath: '/tesseract',
-            gzip: true,
-            logger: (m: LoggerMessage) => {
-                console.log('[Tesseract] Worker log:', m.status, m.progress);
-                if (m.status === 'loading language traineddata') {
-                    console.log(`[Tesseract] Loading ${tesseractLang}.traineddata...`);
-                }
-            }
-        });
+    console.log(`[Tesseract] Initializing Scheduler with ${workerCount} workers for: ${tesseractLang}`);
 
-        console.log('[Tesseract] createWorker completed, worker:', worker);
+    // 5. Start Initialization (Locked)
+    initializationPromise = (async () => {
+        try {
+            const scheduler = createScheduler();
 
-        if (!worker) {
-            throw new Error('createWorker returned null/undefined');
+            // Create workers in parallel
+            const workerPromises = Array.from({ length: workerCount }).map(async (_, index) => {
+                // console.log(`[Tesseract] Creating worker ${index + 1}/${workerCount}...`);
+                const worker = await createWorker(tesseractLang, 1, {
+                    workerPath: '/tesseract/worker.min.js',
+                    corePath: '/tesseract/tesseract-core.wasm.js',
+                    langPath: '/tesseract',
+                    gzip: true,
+                    logger: (m: LoggerMessage) => {
+                        // Only log significant events from first worker
+                        if (index === 0 && (m.status === 'loading language traineddata' || m.progress === 1)) {
+                            // Keep log (optional)
+                            // console.log(`[Tesseract Worker 1] ${m.status} ${(m.progress * 100).toFixed(0)}%`);
+                        }
+                    }
+                });
+
+                await worker.setParameters({
+                    tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+                    preserve_interword_spaces: '1',
+                    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜßabcdefghijklmnopqrstuvwxyzäöüß0123456789@.,:;-+()/ \n',
+                });
+
+                scheduler.addWorker(worker);
+                // console.log(`[Tesseract] Worker ${index + 1} ready.`);
+            });
+
+            await Promise.all(workerPromises);
+            console.log(`[Tesseract] Scheduler fully ready with ${workerCount} workers.`);
+
+            // Assign global state on success
+            tesseractScheduler = scheduler;
+            currentLanguage = lang;
+            initializationPromise = null; // Release lock
+
+            return scheduler;
+        } catch (err) {
+            console.error('[Tesseract] Scheduler initialization failed:', err);
+            initializationPromise = null; // Release lock
+            tesseractScheduler = null;
+            throw err;
         }
+    })();
 
-        // Configure for business card recognition
-        console.log('[Tesseract] Setting parameters...');
-        await worker.setParameters({
-            tessedit_pageseg_mode: Tesseract.PSM.AUTO, // Automatic page segmentation
-            preserve_interword_spaces: '1',
-            tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜßabcdefghijklmnopqrstuvwxyzäöüß0123456789@.,:;-+()/ \n',
-        });
-        console.log('[Tesseract] Parameters set successfully');
-
-        tesseractWorker = worker;
-        currentLanguage = lang;
-
-        console.log('[Tesseract] Worker initialization complete');
-        return worker;
-    } catch (err) {
-        console.error('[Tesseract] Worker creation failed:', err);
-        console.error('[Tesseract] Error type:', typeof err);
-        console.error('[Tesseract] Error details:', err);
-        throw err;
-    }
+    return initializationPromise;
 };
 
 /**
- * Terminate Tesseract worker to free memory
+ * Terminate Tesseract scheduler to free memory
  */
 export const terminateTesseract = async (): Promise<void> => {
-    if (tesseractWorker) {
-        await tesseractWorker.terminate();
-        tesseractWorker = null;
+    if (tesseractScheduler) {
+        await tesseractScheduler.terminate();
+        tesseractScheduler = null;
         currentLanguage = null;
-        console.log('[Tesseract] Worker terminated');
+        console.log('[Tesseract] Scheduler terminated');
     }
 };
 
 /**
- * Scan business card using Tesseract.js OCR
- * 
- * @param base64Image - Base64-encoded image (with or without data:image/... prefix)
- * @param lang - Language for OCR (de or en)
- * @param enablePreprocessing - Apply image preprocessing for better accuracy
- * @param onProgress - Optional callback for progress updates (0-100)
- * @returns Extracted text and metadata
+ * Scan business card using Tesseract.js OCR via Scheduler
  */
 export const scanWithTesseract = async (
     base64Image: string,
@@ -119,15 +143,12 @@ export const scanWithTesseract = async (
     const startTime = Date.now();
 
     try {
-        // Initialize worker
-        console.log('[Tesseract] Starting OCR process...');
+        // Initialize Scheduler (Idempotent)
         if (onProgress) onProgress(5);
-
-        const worker = await initializeTesseract(lang);
-        console.log('[Tesseract] Worker initialized successfully');
+        const scheduler = await initializeTesseract(lang);
         if (onProgress) onProgress(10);
 
-        // Strip data:image/... prefix if present
+        // Strip data prefix
         let imageData = base64Image;
         if (base64Image.includes(',')) {
             imageData = base64Image.split(',')[1];
@@ -140,77 +161,61 @@ export const scanWithTesseract = async (
         if (enablePreprocessing) {
             try {
                 if (onProgress) onProgress(20);
-                console.log('[Tesseract] Preprocessing image...');
+                // Preprocessing happens on Main Thread for now (lightweight)
                 processedImage = await preprocessImage(originalImage);
-                console.log('[Tesseract] Preprocessing completed successfully');
                 if (onProgress) onProgress(30);
             } catch (preprocessError) {
-                console.warn('[Tesseract] Preprocessing failed, using original image:', preprocessError);
+                console.warn('[Tesseract] Preprocessing failed, using original image');
                 processedImage = originalImage;
                 if (onProgress) onProgress(30);
             }
         }
 
-        // Perform OCR (Attempt 1)
-        console.log('[Tesseract] Starting OCR recognition (Attempt 1)...');
-        const result1 = await worker.recognize(processedImage, {
-            rotateAuto: true,
+        // Perform OCR (Attempt 1) via Scheduler
+        // 'recognize' job is distributed to an available worker
+        console.log('[Tesseract] Scheduling OCR job (Attempt 1)...');
+
+        const result1 = await scheduler.addJob('recognize', processedImage, {
+            rotateAuto: true
         });
-        console.log('[Tesseract] OCR recognition completed (Attempt 1)');
+
+        console.log('[Tesseract] OCR job completed (Attempt 1)');
 
         const text1 = result1.data.text.trim();
         const conf1 = result1.data.confidence;
 
-        // Check quality of Attempt 1
+        // Check quality
         const isPoorResult = text1.length < 15 || conf1 < 40;
 
         // --- ATTEMPT 2: Retry without Preprocessing (if needed) ---
-        // Only if we used preprocessing AND the result is poor
         if (enablePreprocessing && isPoorResult) {
-            console.warn(`[Tesseract] Attempt 1 yielded poor results (Len: ${text1.length}, Conf: ${conf1}). Retrying without preprocessing...`);
+            console.warn(`[Tesseract] Attempt 1 poor (Len: ${text1.length}, Conf: ${conf1}). Retrying raw...`);
+            if (onProgress) onProgress(50);
 
-            if (onProgress) onProgress(50); // Reset progress slightly
-
-            const result2 = await worker.recognize(originalImage, {
-                rotateAuto: true,
+            const result2 = await scheduler.addJob('recognize', originalImage, {
+                rotateAuto: true
             });
 
             const text2 = result2.data.text.trim();
             const conf2 = result2.data.confidence;
 
-            console.log(`[Tesseract] Attempt 2 Result - Len: ${text2.length}, Conf: ${conf2}`);
-
-            // If Attempt 2 is better, use it
-            // "Better" = significantly more text, or better confidence if text length is comparable
+            // Pick best result
             const attempts = [
                 { r: result1, t: text1, c: conf1 },
                 { r: result2, t: text2, c: conf2 }
             ];
 
-            // Simple heuristic: prefer the one with more text (assuming business cards have content)
-            // But if text length is close, prefer higher confidence.
             const bestAttempt = attempts.reduce((prev, curr) => {
-                // If one has very little text, discard it
                 if (curr.t.length < 5) return prev;
                 if (prev.t.length < 5) return curr;
-
-                // If current has 50% more text, take it
                 if (curr.t.length > prev.t.length * 1.5) return curr;
-
-                // If lengths are comparable, take higher confidence
                 return curr.c > prev.c ? curr : prev;
             });
 
-            console.log('[Tesseract] improved result found:', bestAttempt === attempts[1]);
-
-            // Use local variable for final data to avoid TypeScript error with 'const'
             const finalData = bestAttempt.r.data;
-
             if (onProgress) onProgress(100);
-
             const processingTime = Date.now() - startTime;
 
-            // Extract lines with bounding boxes
             const lines: OCRLine[] = ((finalData as any).lines || []).map((line: any) => ({
                 text: line.text.trim(),
                 confidence: line.confidence,
@@ -225,16 +230,11 @@ export const scanWithTesseract = async (
             };
         }
 
-        // If Attempt 1 was good enough (or no preprocessing used), return it
         if (onProgress) onProgress(100);
-
         const processingTime = Date.now() - startTime;
 
-        console.log(`[Tesseract] OCR completed in ${processingTime}ms`);
-        console.log(`[Tesseract] Confidence: ${result1.data.confidence.toFixed(2)}%`);
-        console.log(`[Tesseract] Text length: ${result1.data.text.length} chars`);
+        console.log(`[Tesseract] Completed in ${processingTime}ms. Conf: ${result1.data.confidence.toFixed(2)}%`);
 
-        // Extract lines with bounding boxes
         const lines: OCRLine[] = ((result1.data as any).lines || []).map((line: any) => ({
             text: line.text.trim(),
             confidence: line.confidence,
@@ -249,41 +249,21 @@ export const scanWithTesseract = async (
         };
 
     } catch (error) {
-        const processingTime = Date.now() - startTime;
-        console.error('[Tesseract] OCR Error:', error);
-
-        // Improved error message
+        console.error('[Tesseract] Scheduler Error:', error);
         let errorMessage = 'Unknown error';
-        if (error instanceof Error) {
-            errorMessage = error.message;
-        } else if (error) {
-            errorMessage = String(error);
-        }
-
-        console.error('[Tesseract] Error details:', {
-            type: typeof error,
-            message: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined
-        });
-
+        if (error instanceof Error) errorMessage = error.message;
+        else if (error) errorMessage = String(error);
         throw new Error(`Tesseract OCR failed: ${errorMessage}`);
     }
 };
 
 /**
  * Extract contact data from Tesseract OCR result
- * Uses the existing regexParser for structured data extraction
- * 
- * Note: This is a placeholder - integrate with your actual contactParser/regexParser
  */
 export const extractContactFromOCR = (ocrText: string, lang: Language): any => {
-    // TODO: Import and use your existing regexParser.ts
-    // For now, return raw text
-    console.log('[Tesseract] Raw OCR text:', ocrText);
-
+    // Placeholder
     return {
         rawText: ocrText,
-        // Will be replaced with actual parser logic
-        note: 'Tesseract OCR result - parsing not yet implemented'
+        note: 'Tesseract OCR result'
     };
 };
