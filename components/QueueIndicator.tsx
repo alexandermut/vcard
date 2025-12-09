@@ -18,6 +18,41 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, failedCou
   const processing = queue.filter(j => j.status === 'processing').length;
   const errors = queue.filter(j => j.status === 'error').length;
 
+  const [elapsedTime, setElapsedTime] = React.useState(0);
+  const startTimeRef = React.useRef<number | null>(null);
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (processing > 0) {
+      if (!startTimeRef.current) {
+        startTimeRef.current = Date.now() - elapsedTime * 1000; // Resume or Start
+      }
+
+      interval = setInterval(() => {
+        if (startTimeRef.current) {
+          setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+        }
+      }, 1000);
+    } else {
+      if (pending === 0) {
+        // Reset when fully done
+        startTimeRef.current = null;
+        setElapsedTime(0);
+      }
+      // If pending > 0 but processing = 0 (paused?), we keep timer? 
+      // Actually usually processing > 0 is the trigger.
+    }
+
+    return () => clearInterval(interval);
+  }, [processing, pending]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
   if (queue.length === 0 && failedCount === 0) return null;
 
   return (
@@ -40,9 +75,16 @@ export const QueueIndicator: React.FC<QueueIndicatorProps> = ({ queue, failedCou
         </div>
 
         <div className="flex-1">
-          <p className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider mb-0.5">
-            {t.batchQueue}
-          </p>
+          <div className="flex justify-between items-center mb-0.5">
+            <p className="text-xs font-bold text-slate-800 dark:text-white uppercase tracking-wider">
+              {t.batchQueue}
+            </p>
+            {processing > 0 && (
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 rounded">
+                {formatTime(elapsedTime)}
+              </span>
+            )}
+          </div>
           <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-col">
             {processing > 0 && <span>{t.processing}: {processing}</span>}
             {pending > 0 && <span>{t.waiting}: {pending}</span>}
