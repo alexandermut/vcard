@@ -1,51 +1,40 @@
-// Use global PDF.js loaded via script tag in index.html
-// This avoids bundler/worker issues
-declare global {
-    interface Window {
-        pdfjsLib: any;
+import PdfWorker from '../workers/pdf.worker.ts?worker';
+
+// Queue system for worker
+const worker = new PdfWorker();
+const pendingPromises = new Map<string, { resolve: (blobs: Blob[]) => void, reject: (err: any) => void }>();
+
+// Listen for worker messages
+worker.onmessage = (e) => {
+    const { type, id, images, error } = e.data;
+    if (pendingPromises.has(id)) {
+        const { resolve, reject } = pendingPromises.get(id)!;
+        if (type === 'success') {
+            resolve(images);
+        } else {
+            reject(new Error(error));
+        }
+        pendingPromises.delete(id);
     }
-}
+};
 
 export const convertPdfToImages = async (file: File): Promise<Blob[]> => {
-    try {
-        const pdfjsLib = window.pdfjsLib;
-        if (!pdfjsLib) {
-            throw new Error("PDF.js library not loaded");
+    return new Promise(async (resolve, reject) => {
+        try {
+            const id = Math.random().toString(36).substring(7);
+            const arrayBuffer = await file.arrayBuffer();
+
+            pendingPromises.set(id, { resolve, reject });
+
+            // Send data to worker
+            worker.postMessage({
+                id,
+                fileData: arrayBuffer,
+                fileName: file.name
+            }, [arrayBuffer]); // Transfer buffer for performance
+
+        } catch (error) {
+            reject(error);
         }
-
-        console.log(`PDFJS Version (Global): ${pdfjsLib.version}`);
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        const images: Blob[] = [];
-
-        console.log(`PDF loaded: ${file.name}, Pages: ${pdf.numPages}`);
-
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const viewport = page.getViewport({ scale: 2.0 }); // 2.0 scale for better quality
-
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            if (context) {
-                const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport
-                };
-                await page.render(renderContext).promise;
-
-                const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
-                if (blob) {
-                    images.push(blob);
-                }
-            }
-        }
-
-        return images;
-    } catch (error) {
-        console.error("PDF Conversion Error:", error);
-        throw error;
-    }
+    });
 };

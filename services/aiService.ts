@@ -179,7 +179,7 @@ export const scanBusinessCard = async (
     return scanCardWithCustomLLM(images, {
       baseUrl: llmConfig.customBaseUrl,
       apiKey: llmConfig.customApiKey,
-      model: llmConfig.customModel,
+      model: llmConfig.customModel || 'llava', // Provide default
     }, lang);
   }
 
@@ -421,7 +421,7 @@ export const generateContent = async (
     return chatWithCustomLLM(prompt, {
       baseUrl: llmConfig.customBaseUrl,
       apiKey: llmConfig.customApiKey,
-      model: llmConfig.customModel,
+      model: llmConfig.customModel || 'llava', // Provide default
     });
   }
 

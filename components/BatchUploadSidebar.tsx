@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Trash2, RefreshCw, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import pLimit from 'p-limit';
 import { Language, ScanJob } from '../types';
 import { translations } from '../utils/translations';
 import { convertPdfToImages } from '../utils/pdfUtils';
@@ -107,14 +108,17 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
         if (!files) return;
 
         const filesArray = Array.from(files);
+        // Use p-limit to restrict parallel PDF processing to 3 workers
+        // This prevents freezing even on low-end devices
+        const limit = pLimit(3);
         const newJobs: File[][] = [];
 
         setIsProcessing(true);
         console.log(`[BatchUpload] Starting to process ${filesArray.length} files`);
 
-        for (const file of filesArray) {
+        const processingPromises = filesArray.map(file => limit(async () => {
             if (file.type === 'application/pdf') {
-                console.log(`[BatchUpload] Converting PDF: ${file.name}`);
+                console.log(`[BatchUpload] Converting PDF (Worker): ${file.name}`);
                 try {
                     const blobs = await convertPdfToImages(file);
                     console.log(`[BatchUpload] PDF converted: ${file.name} → ${blobs.length} pages`);
@@ -125,24 +129,33 @@ export const BatchUploadSidebar: React.FC<BatchUploadSidebarProps> = ({
                         pdfPages.push(imageFile);
                     }
                     if (pdfPages.length > 0) {
-                        newJobs.push(pdfPages); // All pages = 1 Job
-                        toast.success(`PDF "${file.name}" → ${pdfPages.length} Seiten extrahiert`);
+                        return pdfPages;
                     } else {
                         console.warn(`[BatchUpload] PDF has no pages: ${file.name}`);
                         toast.error(`PDF "${file.name}" enthält keine Seiten`);
+                        return null;
                     }
                 } catch (err: any) {
                     console.error(`[BatchUpload] PDF conversion failed for ${file.name}`, err);
                     toast.error(`Fehler beim Verarbeiten von ${file.name}: ${err.message}`);
+                    return null;
                 }
             } else if (file.type.startsWith('image/')) {
                 console.log(`[BatchUpload] Adding image: ${file.name}`);
-                newJobs.push([file]); // 1 Image = 1 Job
+                return [file];
             } else {
                 console.warn(`[BatchUpload] Unsupported file type: ${file.type} (${file.name})`);
                 toast.error(`Nicht unterstützter Dateityp: ${file.name}`);
+                return null;
             }
-        }
+        }));
+
+        const results = await Promise.all(processingPromises);
+
+        // Filter out nulls
+        results.forEach((res: File[] | null) => {
+            if (res) newJobs.push(res);
+        });
 
         console.log(`[BatchUpload] Processed ${newJobs.length} jobs from ${filesArray.length} files`);
         setSelectedJobs(prev => [...prev, ...newJobs]);

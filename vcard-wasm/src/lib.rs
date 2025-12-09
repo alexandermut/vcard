@@ -591,3 +591,101 @@ pub fn rust_fuzzy_search(items_json: &str, query: &str) -> String {
 
     serde_json::to_string(&final_items).unwrap_or("[]".to_string())
 }
+// ... (existing code)
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct IndexedItem {
+    id: String,
+    text: String, // Normalized text for searching
+}
+
+#[wasm_bindgen]
+pub struct SearchIndex {
+    items: Vec<IndexedItem>,
+}
+
+#[wasm_bindgen]
+impl SearchIndex {
+    #[wasm_bindgen(constructor)]
+    pub fn new() -> SearchIndex {
+        SearchIndex { items: Vec::new() }
+    }
+
+    pub fn add(&mut self, id: &str, name: &str, org: &str, keywords: &str) {
+        let full_text = format!("{} {} {}", name, org, keywords).to_lowercase();
+        self.items.push(IndexedItem {
+            id: id.to_string(),
+            text: full_text,
+        });
+    }
+
+    pub fn search(&self, query: &str) -> String {
+        let query_lower = query.to_lowercase();
+        let query_tokens: Vec<&str> = query_lower.split_whitespace().collect();
+        
+        let mut matches: Vec<(f64, String)> = Vec::new(); // (score, id)
+
+        for item in &self.items {
+            let mut score = 0.0;
+            
+            // 1. Exact Substring (Fast) - Score 1.0
+            if item.text.contains(&query_lower) {
+                score = 1.0;
+            } else {
+                // 2. Fuzzy Token Match
+                // Check if all query tokens are present loosely
+                let mut tokens_found = 0;
+                let mut total_token_score = 0.0;
+
+                for q_token in &query_tokens {
+                    // Find best match for this token in the item text
+                    // Optimization: We don't tokenize item text every time.
+                    // Just check if q_token is "close enough" to be a substring? 
+                    // No, strsim works on whole strings usually.
+                    // For perf, we actaully just check contains first.
+                    if item.text.contains(q_token) {
+                        tokens_found += 1;
+                        total_token_score += 1.0;
+                    } else {
+                        // Scan words in item text? 
+                        // This is slow O(N*M). For 1000 items it's OK locally.
+                        let mut best_word_score = 0.0;
+                         for word in item.text.split_whitespace() {
+                            let s = normalized_levenshtein(word, q_token);
+                             if s > best_word_score { best_word_score = s; }
+                         }
+                         if best_word_score > 0.7 {
+                             tokens_found += 1;
+                             total_token_score += best_word_score;
+                         }
+                    }
+                }
+
+                if tokens_found > 0 {
+                    let coverage = tokens_found as f64 / query_tokens.len() as f64;
+                    // Boost full coverage
+                    if coverage == 1.0 {
+                        score = 0.8 + (total_token_score / query_tokens.len() as f64 * 0.2);
+                    } else {
+                         score = coverage * 0.8; 
+                    }
+                }
+            }
+
+            if score > 0.4 {
+                matches.push((score, item.id.clone()));
+            }
+        }
+
+        // Sort by score
+        matches.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+        
+        // Return IDs
+        let ids: Vec<String> = matches.into_iter().take(50).map(|(_, id)| id).collect();
+        serde_json::to_string(&ids).unwrap_or("[]".to_string())
+    }
+    
+    pub fn clear(&mut self) {
+        self.items.clear();
+    }
+}

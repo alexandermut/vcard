@@ -1,0 +1,800 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e7]
+        - heading "Einstellungen" [level=3] [ref=e10]
+      - button [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - heading "Account" [level=3] [ref=e18]
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - img [ref=e23]
+            - generic [ref=e28]:
+              - paragraph [ref=e29]: Google Contacts
+              - paragraph [ref=e30]: Sync & Manager
+          - button "Verwalten" [ref=e31] [cursor=pointer]
+      - separator [ref=e32]
+      - generic [ref=e33]:
+        - heading "LLM Anbieter" [level=3] [ref=e34]
+        - generic [ref=e35]:
+          - button "Google Gemini" [ref=e36] [cursor=pointer]
+          - button "OpenAI" [ref=e37] [cursor=pointer]
+          - button "Custom / Lokales LLM" [ref=e38] [cursor=pointer]
+        - button "Mit Google verbinden" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+          - text: Mit Google verbinden
+        - generic [ref=e47]: oder manuell
+        - generic [ref=e48]:
+          - generic [ref=e49]: Gemini API Key
+          - textbox "AIzaSy..." [ref=e50]
+          - link "Key generieren" [ref=e52] [cursor=pointer]:
+            - /url: https://aistudio.google.com/app/apikey
+            - text: Key generieren
+            - img [ref=e53]
+      - separator [ref=e57]
+      - generic [ref=e58]:
+        - heading "Data" [level=3] [ref=e59]
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - img [ref=e62]
+            - generic [ref=e66]: Street Directory
+          - generic [ref=e67]:
+            - img [ref=e68]
+            - generic [ref=e70]: Ready
+      - generic [ref=e71]:
+        - heading "Backup" [level=3] [ref=e72]
+        - generic [ref=e73]:
+          - generic [ref=e74]:
+            - img [ref=e76]
+            - generic [ref=e80]: One-Click Backup
+          - generic [ref=e81]:
+            - button "Backup erstellen" [ref=e82] [cursor=pointer]:
+              - img [ref=e83]
+              - text: Backup erstellen
+            - generic [ref=e86] [cursor=pointer]:
+              - img [ref=e87]
+              - text: Backup einspielen
+          - paragraph [ref=e90]: Speichert Kontakte, Bilder & Listen in einer ZIP-Datei.
+      - generic [ref=e91]:
+        - heading "Import" [level=3] [ref=e92]
+        - generic [ref=e94]:
+          - generic [ref=e95] [cursor=pointer]:
+            - img [ref=e96]
+            - text: CSV
+          - generic [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - text: vCard
+          - generic [ref=e103] [cursor=pointer]:
+            - img [ref=e104]
+            - text: Backup
+      - generic [ref=e107]:
+        - heading "Export" [level=3] [ref=e108]
+        - generic [ref=e110]:
+          - button "CSV" [ref=e111] [cursor=pointer]:
+            - img [ref=e112]
+            - text: CSV
+          - button "vCard" [ref=e115] [cursor=pointer]:
+            - img [ref=e116]
+            - text: vCard
+          - button "Backup" [ref=e119] [cursor=pointer]:
+            - img [ref=e120]
+            - text: Backup
+      - separator [ref=e123]
+      - generic [ref=e124]:
+        - heading "App" [level=3] [ref=e125]
+        - generic [ref=e126]:
+          - button "Deutsch" [ref=e127] [cursor=pointer]:
+            - img [ref=e128]
+            - text: Deutsch
+          - button "Dark Mode" [ref=e132] [cursor=pointer]:
+            - img [ref=e133]
+            - text: Dark Mode
+      - separator [ref=e135]
+      - generic [ref=e136]:
+        - heading "Debug" [level=3] [ref=e137]
+        - generic [ref=e139]:
+          - generic [ref=e140]:
+            - img [ref=e141]
+            - generic [ref=e150]:
+              - paragraph [ref=e151]: Logdatei
+              - paragraph [ref=e152]: Deaktiviert
+          - checkbox [ref=e154]
+      - separator [ref=e156]
+      - generic [ref=e157]:
+        - heading "Offline OCR" [level=3] [ref=e158]
+        - generic [ref=e160]:
+          - generic [ref=e161]:
+            - generic [ref=e162]: 🤖
+            - paragraph [ref=e164]: OCR Methode
+          - combobox [ref=e165]:
+            - option "🤖 Auto (Offline-First)" [selected]
+            - option "🧪 Tesseract (Offline Only)"
+            - option "✨ Gemini (Online Only)"
+            - option "🟢 OpenAI (Online Only)"
+            - option "⚡ Hybrid (Parallel)"
+            - option "🛠️ Regex Training (Debug)"
+          - paragraph [ref=e166]: "Standard: Versucht erst den schnellen Offline-Scan (Tesseract). Nur bei unsicherem Ergebnis wird optional AI (Gemini) zur Verbesserung genutzt (Soft-Fallback)."
+      - separator [ref=e167]
+      - generic [ref=e168]:
+        - heading "⚡ Performance" [level=3] [ref=e169]
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - generic [ref=e172]: ⚡
+            - generic [ref=e173]:
+              - paragraph [ref=e174]: Parallele Verarbeitung
+              - paragraph [ref=e175]: Batch-Scans beschleunigen
+          - generic [ref=e176]:
+            - generic [ref=e177]:
+              - generic [ref=e178]: Gleichzeitige Anfragen
+              - generic [ref=e179]: "1"
+            - slider [ref=e180] [cursor=pointer]: "1"
+            - generic [ref=e181]:
+              - generic [ref=e182]: "1"
+              - generic [ref=e183]: "2"
+              - generic [ref=e184]: "3"
+              - generic [ref=e185]: "4"
+              - generic [ref=e186]: "5"
+          - generic [ref=e188]:
+            - paragraph [ref=e189]: 🐢 Standard
+            - paragraph [ref=e190]: Sequential (sicher)
+          - paragraph [ref=e191]: "💡 Tipp: 3 ist optimal für die meisten Szenarien. Höhere Werte können bei vielen API-Anfragen helfen, aber Gemini's Rate Limits (60/Min) beachten."
+  - generic [ref=e192]:
+    - generic [ref=e193]:
+      - heading "Karte scannen" [level=2] [ref=e194]:
+        - img [ref=e195]
+        - text: Karte scannen
+      - button [ref=e198] [cursor=pointer]:
+        - img [ref=e199]
+    - generic [ref=e202]:
+      - generic [ref=e203]:
+        - button "Standard (Nur Karte)" [ref=e204] [cursor=pointer]
+        - button "Hybrid (Karte + Notizen)" [ref=e205] [cursor=pointer]
+      - generic [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e209]: Vorderseite *
+          - generic [ref=e211] [cursor=pointer]:
+            - img [ref=e212]
+            - generic [ref=e215]: Foto / Upload
+            - generic [ref=e216]: oder Bild einfügen (Strg+V)
+          - generic [ref=e217]:
+            - button "Kamera" [ref=e218] [cursor=pointer]:
+              - img [ref=e219]
+              - text: Kamera
+            - button "Einfügen" [ref=e222] [cursor=pointer]:
+              - img [ref=e223]
+              - text: Einfügen
+        - generic [ref=e226]:
+          - generic [ref=e228]: Rückseite (Optional)
+          - generic [ref=e230] [cursor=pointer]:
+            - img [ref=e231]
+            - generic [ref=e234]: Foto / Upload
+          - generic [ref=e235]:
+            - button "Kamera" [ref=e236] [cursor=pointer]:
+              - img [ref=e237]
+              - text: Kamera
+            - button "Einfügen" [ref=e240] [cursor=pointer]:
+              - img [ref=e241]
+              - text: Einfügen
+      - button "Scan & Weiter" [disabled] [ref=e245]:
+        - img [ref=e246]
+        - text: Scan & Weiter
+      - paragraph [ref=e250]: Scannen Sie Karten nacheinander. Sie werden im Hintergrund verarbeitet.
+  - generic [ref=e251]:
+    - generic [ref=e252]:
+      - heading "Fehlgeschlagene Scans" [level=2] [ref=e253]:
+        - img [ref=e254]
+        - text: Fehlgeschlagene Scans
+      - button [ref=e256] [cursor=pointer]:
+        - img [ref=e257]
+    - generic [ref=e261]: Keine fehlgeschlagenen Scans vorhanden.
+  - generic [ref=e263]:
+    - generic [ref=e264]:
+      - heading "Stapel-Upload" [level=2] [ref=e266]:
+        - img [ref=e267]
+        - text: Stapel-Upload
+      - button [ref=e270] [cursor=pointer]:
+        - img [ref=e271]
+    - generic [ref=e274]:
+      - generic [ref=e275]:
+        - button "Standard (Nur Karte)" [ref=e276] [cursor=pointer]
+        - button "Hybrid (Karte + Notizen)" [ref=e277] [cursor=pointer]
+      - generic [ref=e278] [cursor=pointer]:
+        - img [ref=e279]
+        - paragraph [ref=e282]: Dateien hierher ziehen oder klicken
+        - paragraph [ref=e283]: Mehrere Bilder hochladen
+      - generic [ref=e284]:
+        - generic [ref=e285]:
+          - paragraph [ref=e286]: 10 Bilder ausgewählt
+          - button "Verarbeitung starten" [ref=e287] [cursor=pointer]
+        - generic [ref=e288]:
+          - generic [ref=e289]:
+            - img "Preview" [ref=e290]
+            - button [ref=e291] [cursor=pointer]:
+              - img [ref=e292]
+          - generic [ref=e295]:
+            - img "Preview" [ref=e296]
+            - button [ref=e297] [cursor=pointer]:
+              - img [ref=e298]
+          - generic [ref=e301]:
+            - img "Preview" [ref=e302]
+            - button [ref=e303] [cursor=pointer]:
+              - img [ref=e304]
+          - generic [ref=e307]:
+            - img "Preview" [ref=e308]
+            - button [ref=e309] [cursor=pointer]:
+              - img [ref=e310]
+          - generic [ref=e313]:
+            - img "Preview" [ref=e314]
+            - button [ref=e315] [cursor=pointer]:
+              - img [ref=e316]
+          - generic [ref=e319]:
+            - img "Preview" [ref=e320]
+            - button [ref=e321] [cursor=pointer]:
+              - img [ref=e322]
+          - generic [ref=e325]:
+            - img "Preview" [ref=e326]
+            - button [ref=e327] [cursor=pointer]:
+              - img [ref=e328]
+          - generic [ref=e331]:
+            - img "Preview" [ref=e332]
+            - button [ref=e333] [cursor=pointer]:
+              - img [ref=e334]
+          - generic [ref=e337]:
+            - img "Preview" [ref=e338]
+            - button [ref=e339] [cursor=pointer]:
+              - img [ref=e340]
+          - generic [ref=e343]:
+            - img "Preview" [ref=e344]
+            - button [ref=e345] [cursor=pointer]:
+              - img [ref=e346]
+  - generic [ref=e349]:
+    - generic [ref=e350]:
+      - heading "QR Code teilen" [level=2] [ref=e351]:
+        - img [ref=e352]
+        - text: QR Code teilen
+      - button [ref=e358] [cursor=pointer]:
+        - img [ref=e359]
+    - paragraph [ref=e365]: Scannen Sie diesen Code mit der Handy-Kamera, um den Kontakt sofort zu speichern.
+  - generic [ref=e366]:
+    - generic [ref=e367]:
+      - heading "Social Media Recherche" [level=2] [ref=e368]:
+        - img [ref=e369]
+        - text: Social Media Recherche
+      - button [ref=e372] [cursor=pointer]:
+        - img [ref=e373]
+    - generic [ref=e376]:
+      - generic [ref=e377]:
+        - generic [ref=e378]: Suchparameter
+        - generic [ref=e379]:
+          - textbox "Vorname Nachname" [ref=e381]: Alexander Mut
+          - textbox "Firma / Stadt" [ref=e383]: abcfinance GmbH
+      - generic [ref=e384]:
+        - generic [ref=e385]: Recherche starten
+        - generic [ref=e386]:
+          - button "LinkedIn Google Suche" [ref=e387] [cursor=pointer]:
+            - img [ref=e388]
+            - generic [ref=e392]: LinkedIn
+            - generic [ref=e393]:
+              - text: Google Suche
+              - img [ref=e394]
+          - button "Xing Google Suche" [ref=e398] [cursor=pointer]:
+            - img [ref=e399]
+            - generic [ref=e402]: Xing
+            - generic [ref=e403]:
+              - text: Google Suche
+              - img [ref=e404]
+          - button "Instagram Google Suche" [ref=e408] [cursor=pointer]:
+            - img [ref=e409]
+            - generic [ref=e412]: Instagram
+            - generic [ref=e413]:
+              - text: Google Suche
+              - img [ref=e414]
+          - button "Facebook Google Suche" [ref=e418] [cursor=pointer]:
+            - img [ref=e419]
+            - generic [ref=e421]: Facebook
+            - generic [ref=e422]:
+              - text: Google Suche
+              - img [ref=e423]
+          - button "X (Twitter) Google Suche" [ref=e427] [cursor=pointer]:
+            - img [ref=e428]
+            - generic [ref=e431]: X (Twitter)
+            - generic [ref=e432]:
+              - text: Google Suche
+              - img [ref=e433]
+      - generic [ref=e438]:
+        - generic [ref=e439]: Gefundenen Link hinzufügen
+        - generic [ref=e440]:
+          - combobox [ref=e442]:
+            - option "LinkedIn" [selected]
+            - option "Xing"
+            - option "Instagram"
+            - option "Facebook"
+            - option "X (Twitter)"
+            - option "Andere"
+          - textbox "https://linkedin.com/in/..." [ref=e444]
+    - generic [ref=e445]:
+      - button "Abbrechen" [ref=e446] [cursor=pointer]
+      - button "Zur vCard hinzufügen" [disabled] [ref=e447]:
+        - img [ref=e448]
+        - text: Zur vCard hinzufügen
+  - generic [ref=e449]:
+    - generic [ref=e450]:
+      - generic [ref=e451]:
+        - img [ref=e452]
+        - heading "Verlauf (0)" [level=3] [ref=e456]
+      - generic [ref=e457]:
+        - button "Auswählen" [ref=e458] [cursor=pointer]:
+          - img [ref=e459]
+        - button [ref=e461] [cursor=pointer]:
+          - img [ref=e462]
+    - generic [ref=e465]:
+      - generic [ref=e466]: "Sortierung:"
+      - combobox [ref=e467]:
+        - option "Neueste zuerst" [selected]
+        - option "Älteste zuerst"
+        - option "Name (A-Z)"
+        - option "Name (Z-A)"
+    - generic [ref=e469]:
+      - img [ref=e470]
+      - textbox "Verlauf durchsuchen..." [ref=e473]
+    - generic [ref=e475]:
+      - img [ref=e476]
+      - paragraph [ref=e480]: Keine gespeicherten Karten.
+      - paragraph [ref=e481]: Erstellte oder gescannte Karten erscheinen hier.
+  - generic [ref=e482]:
+    - generic [ref=e483]:
+      - generic [ref=e484]:
+        - img [ref=e485]
+        - heading "Notizen (0)" [level=3] [ref=e488]
+      - button [ref=e489] [cursor=pointer]:
+        - img [ref=e490]
+    - generic [ref=e494]:
+      - img [ref=e495]
+      - textbox "Notizen durchsuchen..." [ref=e498]
+    - generic [ref=e500]:
+      - img [ref=e501]
+      - paragraph [ref=e504]: Keine Notizen gefunden.
+  - generic [ref=e505]:
+    - generic [ref=e506]:
+      - generic [ref=e507]:
+        - button "Impressum" [ref=e508] [cursor=pointer]:
+          - img [ref=e509]
+          - text: Impressum
+        - button "Datenschutz" [ref=e513] [cursor=pointer]:
+          - img [ref=e514]
+          - text: Datenschutz
+        - button "Lizenzen" [ref=e516] [cursor=pointer]:
+          - img [ref=e518]
+          - text: Lizenzen
+      - button [ref=e524] [cursor=pointer]:
+        - img [ref=e525]
+    - generic [ref=e529]:
+      - heading "Impressum" [level=1] [ref=e530]
+      - generic [ref=e531]:
+        - heading "Angaben gemäß § 5 DDG" [level=2] [ref=e532]
+        - paragraph [ref=e533]:
+          - text: Alexander Mut
+          - text: Falkenbergsweg 66
+          - text: 21149 Hamburg
+          - text: Deutschland
+      - generic [ref=e534]:
+        - heading "Kontakt" [level=2] [ref=e535]
+        - paragraph [ref=e536]:
+          - text: "Telefon: +49 151 51 00 27 67"
+          - text: "E-Mail: mutalex (at) gmail (punkt) com"
+      - generic [ref=e537]:
+        - heading "Verantwortlich nach § 18 Abs. 2 MStV" [level=2] [ref=e538]
+        - paragraph [ref=e539]:
+          - text: Alexander Mut
+          - text: Falkenbergsweg 66
+          - text: 21149 Hamburg
+      - generic [ref=e540]:
+        - heading "Haftungsausschluss" [level=2] [ref=e541]
+        - heading "Haftung für Inhalte" [level=3] [ref=e542]
+        - paragraph [ref=e543]: Als Diensteanbieter sind wir gemäß § 7 Abs.1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich. Nach §§ 8 bis 10 DDG sind wir als Diensteanbieter jedoch nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen.
+        - paragraph [ref=e544]: Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben hiervon unberührt. Eine diesbezügliche Haftung ist jedoch erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden von entsprechenden Rechtsverletzungen werden wir diese Inhalte umgehend entfernen.
+        - heading "Haftung für Links" [level=3] [ref=e545]
+        - paragraph [ref=e546]: Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Deshalb können wir für diese fremden Inhalte auch keine Gewähr übernehmen. Für die Inhalte der verlinkten Seiten ist stets der jeweilige Anbieter oder Betreiber der Seiten verantwortlich. Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße überprüft. Rechtswidrige Inhalte waren zum Zeitpunkt der Verlinkung nicht erkennbar.
+        - paragraph [ref=e547]: Eine permanente inhaltliche Kontrolle der verlinkten Seiten ist jedoch ohne konkrete Anhaltspunkte einer Rechtsverletzung nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen werden wir derartige Links umgehend entfernen.
+        - heading "Urheberrecht" [level=3] [ref=e548]
+        - paragraph [ref=e549]: Die durch die Seitenbetreiber erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen Autors bzw. Erstellers. Downloads und Kopien dieser Seite sind nur für den privaten, nicht kommerziellen Gebrauch gestattet.
+  - generic [ref=e550]:
+    - generic [ref=e551]:
+      - generic [ref=e552]:
+        - img [ref=e553]
+        - heading "Hilfe & Handbuch" [level=3] [ref=e556]
+      - button [ref=e557] [cursor=pointer]:
+        - img [ref=e558]
+    - generic [ref=e561]:
+      - generic [ref=e562]:
+        - generic [ref=e563]:
+          - button "1. Scannen & Importieren" [ref=e564] [cursor=pointer]:
+            - heading "1. Scannen & Importieren" [level=3] [ref=e565]
+            - img [ref=e566]
+          - generic [ref=e568]:
+            - generic [ref=e570]:
+              - img [ref=e572]
+              - generic [ref=e577]:
+                - heading "Wie scanne ich Visitenkarten?" [level=4] [ref=e578]
+                - paragraph [ref=e579]: Nutzen Sie den 'Scannen' Button für einzelne Karten oder 'Stapel-Upload' für mehrere auf einmal. Sie können Fotos direkt aufnehmen oder Dateien (Bilder/PDFs) per Drag & Drop in das Fenster ziehen.
+                - generic [ref=e580]:
+                  - img [ref=e581]
+                  - paragraph [ref=e583]: "Tipp: Achten Sie auf gute Beleuchtung und einen dunklen Hintergrund für beste Ergebnisse. Bei glänzenden Karten hilft es, den Blitz auszuschalten, um Reflexionen zu vermeiden."
+            - generic [ref=e586]:
+              - img [ref=e588]
+              - generic [ref=e592]:
+                - heading "Stapel-Verarbeitung" [level=4] [ref=e593]
+                - paragraph [ref=e594]: Laden Sie bis zu 50 Bilder gleichzeitig hoch. Die KI verarbeitet diese im Hintergrund, während Sie weiterarbeiten können.
+                - generic [ref=e595]:
+                  - img [ref=e596]
+                  - paragraph [ref=e598]: "Pro-Tipp: Sie können auch mehrseitige PDFs hochladen – jede Seite wird als separate Karte erkannt."
+            - generic [ref=e601]:
+              - img [ref=e603]
+              - generic [ref=e608]:
+                - heading "QR-Codes scannen" [level=4] [ref=e609]
+                - paragraph [ref=e610]: Klicken Sie auf das QR-Icon im Header, um digitale Visitenkarten direkt über die Webcam zu erfassen.
+                - generic [ref=e611]:
+                  - img [ref=e612]
+                  - paragraph [ref=e614]: "Hinweis: Der Scanner erkennt automatisch vCards. Halten Sie den Code ruhig und parallel zur Kamera."
+        - button "2. Bearbeiten & KI" [ref=e616] [cursor=pointer]:
+          - heading "2. Bearbeiten & KI" [level=3] [ref=e617]
+          - img [ref=e618]
+        - button "3. Notizen & Organisation" [ref=e621] [cursor=pointer]:
+          - heading "3. Notizen & Organisation" [level=3] [ref=e622]
+          - img [ref=e623]
+        - button "4. Daten & Export" [ref=e626] [cursor=pointer]:
+          - heading "4. Daten & Export" [level=3] [ref=e627]
+          - img [ref=e628]
+        - button "5. Datenschutz & Technik" [ref=e631] [cursor=pointer]:
+          - heading "5. Datenschutz & Technik" [level=3] [ref=e632]
+          - img [ref=e633]
+        - button "🧪 Regex Training & Entwicklung" [ref=e636] [cursor=pointer]:
+          - heading "🧪 Regex Training & Entwicklung" [level=3] [ref=e637]
+          - img [ref=e638]
+        - button "6. Einstellungen & KI" [ref=e641] [cursor=pointer]:
+          - heading "6. Einstellungen & KI" [level=3] [ref=e642]
+          - img [ref=e643]
+        - button "7. Problemlösung" [ref=e646] [cursor=pointer]:
+          - heading "7. Problemlösung" [level=3] [ref=e647]
+          - img [ref=e648]
+        - button "8. App & Installation" [ref=e651] [cursor=pointer]:
+          - heading "8. App & Installation" [level=3] [ref=e652]
+          - img [ref=e653]
+      - paragraph [ref=e656]: Version 2025-12-08-082953 • Built with ❤️
+  - generic [ref=e657]:
+    - generic [ref=e658]:
+      - generic [ref=e659]:
+        - img [ref=e660]
+        - heading "Chat mit Daten" [level=3] [ref=e663]
+      - generic [ref=e664]:
+        - button "Clear Chat" [ref=e665] [cursor=pointer]:
+          - img [ref=e666]
+        - button [ref=e669] [cursor=pointer]:
+          - img [ref=e670]
+    - generic [ref=e674]:
+      - img [ref=e675]
+      - paragraph [ref=e679]: Stellen Sie Fragen zu Ihren Kontakten und Notizen!
+      - paragraph [ref=e680]: "\"Wer arbeitet bei Google?\""
+      - paragraph [ref=e681]: "\"Was habe ich über das Meeting notiert?\""
+    - generic [ref=e683]:
+      - textbox "Fragen Sie nach Ihren Daten..." [ref=e684]
+      - button [disabled] [ref=e685]:
+        - img [ref=e686]
+  - banner [ref=e689]:
+    - generic [ref=e691]:
+      - button "Scannen" [ref=e692] [cursor=pointer]:
+        - img [ref=e693]
+        - generic [ref=e696]: Scannen
+      - button "Stapel-Upload" [ref=e697] [cursor=pointer]:
+        - img [ref=e698]
+        - generic [ref=e701]: Stapel-Upload
+      - button "Verlauf" [ref=e703] [cursor=pointer]:
+        - img [ref=e704]
+        - generic: Verlauf
+      - button "Notizen..." [ref=e708] [cursor=pointer]:
+        - img [ref=e709]
+        - generic: Notizen...
+      - button "Chat" [ref=e712] [cursor=pointer]:
+        - img [ref=e713]
+        - generic: Chat
+      - button "Einstellungen" [ref=e715] [cursor=pointer]:
+        - img [ref=e716]
+        - generic: Einstellungen
+      - region "Notifications alt+T"
+      - button "Hilfe & Handbuch" [ref=e719] [cursor=pointer]:
+        - img [ref=e720]
+        - generic: Hilfe & Handbuch
+  - main [ref=e723]:
+    - generic [ref=e724]:
+      - generic [ref=e726]:
+        - generic [ref=e727]:
+          - generic [ref=e728]:
+            - button "Kontaktdaten Text" [ref=e729] [cursor=pointer]:
+              - img [ref=e730]
+              - text: Kontaktdaten Text
+            - button "vCard Code" [ref=e733] [cursor=pointer]:
+              - img [ref=e734]
+              - text: vCard Code
+          - generic [ref=e737]:
+            - button "Reset" [ref=e738] [cursor=pointer]:
+              - img [ref=e739]
+              - text: Reset
+            - button "Einfügen" [ref=e742] [cursor=pointer]:
+              - img [ref=e743]
+              - text: Einfügen
+            - button "AI" [ref=e746] [cursor=pointer]:
+              - img [ref=e747]
+              - text: AI
+        - 'textbox "Fügen Sie hier Kontaktdaten als Text ein, z.B. aus einer E-Mail-Signatur oder einem Impressum. Vermeiden Sie dabei unnötigen Text, der nicht zu den Kontaktdaten gehört. Für eine optimale Erkennung platzieren Sie jede Information in eine eigene Zeile. Beispiel: Alexander Mut abcfinance GmbH Kamekestrasse 2-8 50672 Köln 0171 552 81 87 alexander.mut@abcfinance.de www.abcfinance.de So kann das Offline-System (RegEx) die Daten am besten erkennen. Alternativ können Sie die KI-Funktion (Zauberstab) nutzen, wofür jedoch ein API-Key oder ein lokales LLM erforderlich ist." [ref=e750]':
+          - /placeholder: "Fügen Sie hier Kontaktdaten als Text ein, z.B. aus einer E-Mail-Signatur oder einem Impressum. Vermeiden Sie dabei unnötigen Text, der nicht zu den Kontaktdaten gehört. Für eine optimale Erkennung platzieren Sie jede Information in eine eigene Zeile.\n\nBeispiel:\nAlexander Mut\nabcfinance GmbH\nKamekestrasse 2-8\n50672 Köln\n0171 552 81 87\nalexander.mut@abcfinance.de\nwww.abcfinance.de\n\nSo kann das Offline-System (RegEx) die Daten am besten erkennen. Alternativ können Sie die KI-Funktion (Zauberstab) nutzen, wofür jedoch ein API-Key oder ein lokales LLM erforderlich ist."
+        - generic [ref=e751]:
+          - generic [ref=e752]: 0 Zeichen
+          - generic [ref=e753]: Regex Parser
+      - generic [ref=e755]:
+        - generic [ref=e756]:
+          - generic [ref=e757]:
+            - button "Notizen..." [ref=e758] [cursor=pointer]:
+              - img [ref=e759]
+            - button "QR Code anzeigen" [ref=e762] [cursor=pointer]:
+              - img [ref=e763]
+            - button "In Verlauf speichern" [ref=e769] [cursor=pointer]:
+              - img [ref=e770]
+            - button "Teilen" [ref=e774] [cursor=pointer]:
+              - img [ref=e775]
+            - button "Alles exportieren (ZIP)" [ref=e781] [cursor=pointer]:
+              - img [ref=e782]
+            - button "Export" [ref=e785] [cursor=pointer]:
+              - img [ref=e786]
+          - img [ref=e792]
+        - generic [ref=e795]:
+          - generic [ref=e796]:
+            - generic [ref=e797]:
+              - textbox "Voller Name" [ref=e798]: Alexander Mut
+              - generic [ref=e799]:
+                - img [ref=e800]
+                - textbox "Titel / Position" [ref=e803]: Finanzierung, Leasing, Factoring
+              - generic [ref=e804]:
+                - img [ref=e805]
+                - textbox "Firma" [ref=e809]: abcfinance GmbH
+            - generic [ref=e810]:
+              - link "Anrufen" [ref=e811] [cursor=pointer]:
+                - /url: "tel:00491715528187 "
+                - img [ref=e812]
+                - text: Anrufen
+              - link "Email" [ref=e814] [cursor=pointer]:
+                - /url: "mailto:Alexander.Mut@abcfinance.de "
+                - img [ref=e815]
+                - text: Email
+          - generic [ref=e818]:
+            - generic [ref=e819]:
+              - generic [ref=e820]:
+                - link "Email" [ref=e821] [cursor=pointer]:
+                  - /url: "mailto:Alexander.Mut@abcfinance.de "
+                  - img [ref=e822]
+                - generic [ref=e825]:
+                  - paragraph [ref=e826]: INTERNET
+                  - textbox [ref=e827]: Alexander.Mut@abcfinance.de
+              - generic [ref=e828]:
+                - link "Email" [ref=e829] [cursor=pointer]:
+                  - /url: "mailto:mutalex@gmail.com "
+                  - img [ref=e830]
+                - generic [ref=e833]:
+                  - paragraph [ref=e834]: INTERNET
+                  - textbox [ref=e835]: mutalex@gmail.com
+              - generic [ref=e836]:
+                - link "Anrufen" [ref=e837] [cursor=pointer]:
+                  - /url: "tel:00491715528187 "
+                  - img [ref=e838]
+                - generic [ref=e840]:
+                  - paragraph [ref=e841]: WORK
+                  - textbox [ref=e842]: "00491715528187"
+              - generic [ref=e843]:
+                - link "Anrufen" [ref=e844] [cursor=pointer]:
+                  - /url: "tel:004915151002767 "
+                  - img [ref=e845]
+                - generic [ref=e847]:
+                  - paragraph [ref=e848]: HOME
+                  - textbox [ref=e849]: "004915151002767"
+              - generic [ref=e850]:
+                - link [ref=e851] [cursor=pointer]:
+                  - /url: https://alexandermut.de
+                  - img [ref=e852]
+                - generic [ref=e855]:
+                  - generic [ref=e856]:
+                    - paragraph [ref=e857]: Website
+                    - button [ref=e859] [cursor=pointer]:
+                      - img [ref=e860]
+                  - generic [ref=e863]:
+                    - textbox [ref=e864]: https://alexandermut.de
+                    - link [ref=e865] [cursor=pointer]:
+                      - /url: https://alexandermut.de
+                      - img [ref=e866]
+              - generic [ref=e870]:
+                - link [ref=e871] [cursor=pointer]:
+                  - /url: https://vcardabc.alexandermut.de
+                  - img [ref=e872]
+                - generic [ref=e875]:
+                  - generic [ref=e876]:
+                    - paragraph [ref=e877]: Website
+                    - button [ref=e879] [cursor=pointer]:
+                      - img [ref=e880]
+                  - generic [ref=e883]:
+                    - textbox [ref=e884]: https://vcardabc.alexandermut.de
+                    - link [ref=e885] [cursor=pointer]:
+                      - /url: https://vcardabc.alexandermut.de
+                      - img [ref=e886]
+              - generic [ref=e890]:
+                - link [ref=e891] [cursor=pointer]:
+                  - /url: https://www.youtube.com/@AlexanderMut/videos
+                  - img [ref=e892]
+                - generic [ref=e895]:
+                  - generic [ref=e896]:
+                    - paragraph [ref=e897]: YouTube
+                    - button [ref=e899] [cursor=pointer]:
+                      - img [ref=e900]
+                  - generic [ref=e903]:
+                    - textbox [ref=e904]: https://www.youtube.com/@AlexanderMut/videos
+                    - link [ref=e905] [cursor=pointer]:
+                      - /url: https://www.youtube.com/@AlexanderMut/videos
+                      - img [ref=e906]
+              - generic [ref=e910]:
+                - link [ref=e911] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/alexandermut
+                  - img [ref=e912]
+                - generic [ref=e916]:
+                  - generic [ref=e917]:
+                    - paragraph [ref=e918]: LinkedIn
+                    - button [ref=e920] [cursor=pointer]:
+                      - img [ref=e921]
+                  - generic [ref=e924]:
+                    - textbox [ref=e925]: https://www.linkedin.com/in/alexandermut
+                    - link [ref=e926] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/in/alexandermut
+                      - img [ref=e927]
+              - generic [ref=e931]:
+                - link [ref=e932] [cursor=pointer]:
+                  - /url: https://instagram.com/alexandermut
+                  - img [ref=e933]
+                - generic [ref=e936]:
+                  - generic [ref=e937]:
+                    - paragraph [ref=e938]: Instagram
+                    - button [ref=e940] [cursor=pointer]:
+                      - img [ref=e941]
+                  - generic [ref=e944]:
+                    - textbox [ref=e945]: https://instagram.com/alexandermut
+                    - link [ref=e946] [cursor=pointer]:
+                      - /url: https://instagram.com/alexandermut
+                      - img [ref=e947]
+              - generic [ref=e951]:
+                - link [ref=e952] [cursor=pointer]:
+                  - /url: https://podcast-apple.alexmut.de
+                  - img [ref=e953]
+                - generic [ref=e956]:
+                  - generic [ref=e957]:
+                    - paragraph [ref=e958]: Website
+                    - button [ref=e960] [cursor=pointer]:
+                      - img [ref=e961]
+                  - generic [ref=e964]:
+                    - textbox [ref=e965]: https://podcast-apple.alexmut.de
+                    - link [ref=e966] [cursor=pointer]:
+                      - /url: https://podcast-apple.alexmut.de
+                      - img [ref=e967]
+              - generic [ref=e971]:
+                - link [ref=e972] [cursor=pointer]:
+                  - /url: https://podcast-spotify.alexmut.de
+                  - img [ref=e973]
+                - generic [ref=e976]:
+                  - generic [ref=e977]:
+                    - paragraph [ref=e978]: Website
+                    - button [ref=e980] [cursor=pointer]:
+                      - img [ref=e981]
+                  - generic [ref=e984]:
+                    - textbox [ref=e985]: https://podcast-spotify.alexmut.de
+                    - link [ref=e986] [cursor=pointer]:
+                      - /url: https://podcast-spotify.alexmut.de
+                      - img [ref=e987]
+              - generic [ref=e991]:
+                - link [ref=e992] [cursor=pointer]:
+                  - /url: https://music.apple.com/de/artist/alexander-mut/1780746079
+                  - img [ref=e993]
+                - generic [ref=e996]:
+                  - generic [ref=e997]:
+                    - paragraph [ref=e998]: Website
+                    - button [ref=e1000] [cursor=pointer]:
+                      - img [ref=e1001]
+                  - generic [ref=e1004]:
+                    - textbox [ref=e1005]: https://music.apple.com/de/artist/alexander-mut/1780746079
+                    - link [ref=e1006] [cursor=pointer]:
+                      - /url: https://music.apple.com/de/artist/alexander-mut/1780746079
+                      - img [ref=e1007]
+              - generic [ref=e1011]:
+                - link [ref=e1012] [cursor=pointer]:
+                  - /url: https://www.facebook.com/alexmutalex
+                  - img [ref=e1013]
+                - generic [ref=e1015]:
+                  - generic [ref=e1016]:
+                    - paragraph [ref=e1017]: Facebook
+                    - button [ref=e1019] [cursor=pointer]:
+                      - img [ref=e1020]
+                  - generic [ref=e1023]:
+                    - textbox [ref=e1024]: https://www.facebook.com/alexmutalex
+                    - link [ref=e1025] [cursor=pointer]:
+                      - /url: https://www.facebook.com/alexmutalex
+                      - img [ref=e1026]
+              - generic [ref=e1030]:
+                - link [ref=e1031] [cursor=pointer]:
+                  - /url: https://www.xing.com/profile/Alexander_Mut
+                  - img [ref=e1032]
+                - generic [ref=e1035]:
+                  - generic [ref=e1036]:
+                    - paragraph [ref=e1037]: Xing
+                    - button [ref=e1039] [cursor=pointer]:
+                      - img [ref=e1040]
+                  - generic [ref=e1043]:
+                    - textbox [ref=e1044]: https://www.xing.com/profile/Alexander_Mut
+                    - link [ref=e1045] [cursor=pointer]:
+                      - /url: https://www.xing.com/profile/Alexander_Mut
+                      - img [ref=e1046]
+              - generic [ref=e1050]:
+                - link [ref=e1051] [cursor=pointer]:
+                  - /url: https://tiktok.com/@mutalex
+                  - img [ref=e1052]
+                - generic [ref=e1056]:
+                  - generic [ref=e1057]:
+                    - paragraph [ref=e1058]: TikTok
+                    - button [ref=e1060] [cursor=pointer]:
+                      - img [ref=e1061]
+                  - generic [ref=e1064]:
+                    - textbox [ref=e1065]: https://tiktok.com/@mutalex
+                    - link [ref=e1066] [cursor=pointer]:
+                      - /url: https://tiktok.com/@mutalex
+                      - img [ref=e1067]
+              - generic [ref=e1071]:
+                - link "Google Maps" [ref=e1072] [cursor=pointer]:
+                  - /url: https://www.google.com/maps/search/?api=1&query=Kamekestrasse%202-8%2C%2050672%20Koeln%2C%20Deutschland
+                  - img [ref=e1073]
+                - generic [ref=e1076]:
+                  - paragraph [ref=e1077]: WORK
+                  - textbox "Straße" [ref=e1078]: Kamekestrasse 2-8
+                  - generic [ref=e1079]:
+                    - textbox "PLZ" [ref=e1080]: "50672"
+                    - textbox "Stadt" [ref=e1081]: Koeln
+                  - textbox "Land" [ref=e1082]: Deutschland
+              - generic [ref=e1083]:
+                - link "Google Maps" [ref=e1084] [cursor=pointer]:
+                  - /url: https://www.google.com/maps/search/?api=1&query=Bramfelder%20Strasse%20110a%2C%2022305%20Hamburg%2C%20Deutschland
+                  - img [ref=e1085]
+                - generic [ref=e1088]:
+                  - paragraph [ref=e1089]: OTHER
+                  - textbox "Straße" [ref=e1090]: Bramfelder Strasse 110a
+                  - generic [ref=e1091]:
+                    - textbox "PLZ" [ref=e1092]: "22305"
+                    - textbox "Stadt" [ref=e1093]: Hamburg
+                  - textbox "Land" [ref=e1094]: Deutschland
+            - generic [ref=e1095]:
+              - paragraph [ref=e1096]: NOTIZ
+              - textbox "Notizen..." [ref=e1097]
+  - contentinfo [ref=e1098]:
+    - generic [ref=e1099]:
+      - generic [ref=e1100]:
+        - img [ref=e1101]:
+          - generic [ref=e1102]: k◉ntakte.me
+        - generic [ref=e1103]: "|"
+        - generic [ref=e1104]: © 2025-12-08-082953
+        - generic [ref=e1105]: "|"
+        - link "Impressum" [ref=e1106] [cursor=pointer]:
+          - /url: impressum.html
+        - generic [ref=e1107]: "|"
+        - link "Datenschutz" [ref=e1108] [cursor=pointer]:
+          - /url: datenschutz.html
+      - link "Projekt unterstützen" [ref=e1110] [cursor=pointer]:
+        - /url: https://buy.stripe.com/28E9ATf3n6pl7Wfcmt24000
+        - img [ref=e1111]
+        - text: Projekt unterstützen
+```
